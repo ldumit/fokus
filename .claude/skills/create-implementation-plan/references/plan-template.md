@@ -1,0 +1,62 @@
+# Plan Template
+
+Use this template for every `docs/plans/{Feature}/plan.md` file. This template extends the plan format in `agents-workflow.md`. The Skill Mapping section and anti-pattern rules are additions — all other sections follow the existing format.
+
+---
+
+```markdown
+# {Feature Name}
+
+## Context
+What problem this solves. Which service(s) impacted and why.
+
+## Scope
+In scope. Explicitly out of scope.
+
+## Skill Mapping
+
+| Step | Skill | Disposition | Feature-Specific Inputs | Gap? |
+|------|-------|-------------|------------------------|------|
+| 1 | {skill-name} | Follow | {only what's unique: entity names, paths, types} | |
+| 2 | {skill-name} | Build | {what to build locally + feature inputs} | |
+| 3 | (none) | — | (full inline detail in step) | Log to lessons.md |
+
+**Disposition rules:**
+- **Follow** — apply the skill pattern. Adapt implementation specifics (e.g., SQLite instead of SQL Server) but never skip the pattern.
+- **Build** — skill references infrastructure that doesn't exist locally. Build it first, then follow the skill.
+- **None** — no skill covers this step. Full inline detail required. Log the gap.
+- **Never "Adapt"** — if you're about to write "adapted for this project's needs," you're skipping the skill. Either Follow (the pattern applies, specifics may differ) or Build (the infrastructure is missing).
+
+**Anti-patterns (if any of these appear, revise before proceeding):**
+- A skill dismissed as "simple" or "not needed" — Skills ensure consistency, not just complexity.
+- Pattern details restated alongside a skill reference — Over-specification. Delete the pattern detail, keep only feature-specific inputs.
+- "No shared BuildingBlocks to reference" used to skip a skill — The pattern is the value, not the package. Build locally or Follow.
+
+## Domain Model Changes
+New/modified aggregates, entities, value objects, domain events.
+
+## Data Model Changes
+New tables, columns, relationships, migrations needed.
+
+## Implementation Steps
+
+Numbered steps — each step is one focused task.
+For each step:
+- What to do (not how to code it — unless Skill Mapping says "None")
+- Which files to create or modify (full paths)
+- Skill reference (from the mapping table) — if Follow or Build, say "Follow {skill-name}" or "Build {what} then follow {skill-name}"
+- Feature-specific inputs only (entity names, property types, route paths)
+- Dependencies on previous steps
+
+## Cross-Service Changes (if applicable)
+gRPC contract changes, integration events, consumers.
+
+## Migration Notes
+EF Core migration commands. Seed data if needed.
+
+## Testing Strategy
+Key scenarios to test.
+
+## Open Questions
+Unresolved decisions needing input.
+```

@@ -30,7 +30,7 @@ Do not scaffold anything without the CLAUDE.md.
      - If CLAUDE.md says `Application layer: yes` → also follow `workflows/ScaffoldDomainApplication.md`.
      - If CLAUDE.md says `API layer: yes` → also follow `workflows/ScaffoldDomainApi.md`. Branches by framework.
 
-3. **Scaffold infrastructure** — follow `workflows/ScaffoldInfrastructure.md`. Updates `Articles.sln` with `dotnet sln add` for every created csproj.
+3. **Scaffold infrastructure** — follow `workflows/ScaffoldInfrastructure.md`. Updates `the solution file` with `dotnet sln add` for every created csproj.
 
 4. **Verify:** `dotnet build`. The solution must compile with only the empty skeleton in place.
 

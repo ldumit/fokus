@@ -11,7 +11,7 @@ Walks the Architect through the axis checklist for a new module and writes `src/
 Modules come in two archetypes, and the captured axes differ per archetype:
 
 - **Component** — infra adapter with a `.Contracts` interface + one or more implementation projects (e.g., `FileService`, `EmailService`)
-- **Domain** — a mini-service-without-host: owns its own domain model, persistence, optional application layer, optional class-library API layer (e.g., `ArticleTimeline`)
+- **Domain** — a mini-service-without-host: owns its own domain model, persistence, optional application layer, optional class-library API layer
 
 ## Precondition
 

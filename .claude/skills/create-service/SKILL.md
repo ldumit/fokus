@@ -31,7 +31,7 @@ Do not proceed without the CLAUDE.md.
 
 7. **Scaffold the `.Application` project files** (conditional) — follow `workflows/ScaffoldApplicationProject.md`. Only when the CLAUDE.md says shared-state = Y.
 
-8. **Scaffold the infrastructure** — follow `workflows/ScaffoldInfrastructure.md`. Updates `Articles.sln`, `docker-compose.yml`, `docker-compose.dcproj`. Runs `dotnet sln add` inline.
+8. **Scaffold the infrastructure** — follow `workflows/ScaffoldInfrastructure.md`. Updates `the solution file`, `docker-compose.yml`, `docker-compose.dcproj`. Runs `dotnet sln add` inline.
 
 9. **Verify:** `dotnet build`. The solution must compile cleanly with only the empty skeleton.
 

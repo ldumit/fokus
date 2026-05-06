@@ -87,6 +87,8 @@ After escalation to human, agents STOP and wait.
 
 ## Implementation Plan Format
 
+Plans created via the `create-implementation-plan` skill include an additional **Skill Mapping** section before Implementation Steps. See the skill's `references/plan-template.md` for the full template.
+
 Plans saved to `docs/plans/{FeatureName}/plan.md` by architect.
 
 ```
@@ -241,6 +243,7 @@ Only add items not already in CLAUDE.md, convention files, skills, or agent file
 - Security: no hardcoded secrets, inputs validated, no injection vectors
 - Logic: all branches reachable, no off-by-one, null handling correct
 - Performance: no N+1 queries, bulk vs per-entity matches plan
+- Skill mapping verified: any "None" disposition in the Skill Mapping was warranted (no existing skill actually covers the step)
 
 ### Severity Ratings (reviewer)
 - **CRITICAL**: Security vulnerability, data loss risk, fundamentally wrong approach. Blocks merge.
@@ -297,3 +300,5 @@ Skills in `.claude/skills/` are the authoritative source for patterns.
 - **Skill exists, codebase has what it needs:** Follow the skill.
 - **Skill exists, codebase missing something it references:** Build it. Escalate to architect only if scope seems too large.
 - **No matching skill:** Architect may inline snippets. Log the missing skill in lessons.md.
+
+The `create-architecture-doc` and `create-implementation-plan` skills enforce this principle via mandatory skill inventory checks. Architecture docs defer implementation patterns to skills. Plans map each step to a skill or justify inline detail.

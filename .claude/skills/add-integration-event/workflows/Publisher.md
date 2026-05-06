@@ -2,9 +2,9 @@
 
 A domain event handler that bridges to MassTransit `IPublishEndpoint.Publish()`.
 
-## MediatR Variant (Submission, Review, Production)
+## MediatR Variant
 
-**Reference:** `src/Services/Submission/Submission.Application/Features/ApproveArticle/PublishIntegrationEventOnArticleApprovedHandler.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/Features/{Domain}/{Feature}/PublishIntegrationEventOn{DomainEvent}Handler.cs`
 
 **Important:** Re-load the aggregate with full includes before mapping to DTO. The domain event's aggregate may have lazy-loaded collections that the DTO needs.
 
@@ -15,7 +15,7 @@ public class PublishIntegrationEventOn{DomainEvent}Handler({AggregateRepository}
     public async Task Handle({DomainEvent} notification, CancellationToken ct)
     {
         // Re-load with full includes for complete DTO mapping
-        var entity = await _repository.GetFull{Entity}ByIdAsync(notification.{Entity}.Id);
+        var entity = await _repository.GetFullByIdAsync(notification.{Entity}.Id);
 
         var dto = entity.Adapt<{DtoType}>();
         await _publishEndpoint.Publish(new {EventName}Event(dto), ct);
@@ -23,9 +23,9 @@ public class PublishIntegrationEventOn{DomainEvent}Handler({AggregateRepository}
 }
 ```
 
-## FastEndpoints Variant (Auth, Journals)
+## FastEndpoints Variant
 
-**Reference:** `src/Services/Journals/Journals.API/Features/Journals/Create/PublishIntegrationEventOnJournalCreatedHandler.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Features/{Domain}/{Feature}/PublishIntegrationEventOn{DomainEvent}Handler.cs`
 
 ```csharp
 public class PublishIntegrationEventOn{DomainEvent}Handler(Repository<{Entity}> _repository, IPublishEndpoint _publishEndpoint)
@@ -40,7 +40,7 @@ public class PublishIntegrationEventOn{DomainEvent}Handler(Repository<{Entity}> 
 }
 ```
 
-Note: `Handle` (MediatR) vs `HandleAsync` (FastEndpoints).
+Note: `Handle` (MediatR) vs `HandleAsync` (FastEndpoints). Check the service's CLAUDE.md for which variant to use.
 
 ## Naming Convention
 
@@ -48,5 +48,5 @@ Note: `Handle` (MediatR) vs `HandleAsync` (FastEndpoints).
 
 ## Location
 
-- MediatR: `{Service}.Application/Features/{Domain}/{Feature}/`
-- FastEndpoints: `{Service}.API/Features/{Domain}/{Feature}/`
+- MediatR: `{Svc}.Application/Features/{Domain}/{Feature}/`
+- FastEndpoints: `{Svc}.API/Features/{Domain}/{Feature}/`

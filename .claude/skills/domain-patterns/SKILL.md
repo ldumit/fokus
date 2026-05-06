@@ -14,7 +14,7 @@ user-invocable: false
 - Private `_domainEvents` list exposed as `IReadOnlyList<IDomainEvent>`
 - Methods: `AddDomainEvent()`, `ClearDomainEvents()`
 - Convenience form: `AggregateRoot` (non-generic, PK = int)
-- **Variant:** Auth `User` extends `IdentityUser<int>` and implements `IAggregateRoot` manually (ASP.NET Identity constraint)
+- **Variant:** Identity `User` extends `IdentityUser<int>` and implements `IAggregateRoot` manually (ASP.NET Identity constraint)
 
 ## Entity
 
@@ -46,9 +46,7 @@ public class EmailAddress : StringValueObject
 }
 ```
 
-Real examples: `Auth.Domain/Persons/ValueObjects/EmailAddress.cs`, `Production.Domain/Assets/ValueObjects/AssetName.cs`
-
-**Per-bounded-context duplication is intentional.** Each service defines its own VOs even if the shape is identical (e.g., `EmailAddress` in Auth, Review, Production). This follows DDD — each BC owns its types. Only share VOs through BuildingBlocks when they are truly cross-cutting (e.g., `SingleValueObject<T>` base).
+**Per-bounded-context duplication is intentional.** Each service defines its own VOs even if the shape is identical. This follows DDD — each BC owns its types. Only share VOs through BuildingBlocks when they are truly cross-cutting (e.g., `SingleValueObject<T>` base).
 
 ## Partial Class Behavior Split
 
@@ -58,18 +56,18 @@ All services split aggregate state from behavior:
 
 Backing collection pattern:
 ```csharp
-private readonly List<Asset> _assets = new();
-public IReadOnlyList<Asset> Assets => _assets.AsReadOnly();
+private readonly List<LineItem> _lineItems = new();
+public IReadOnlyList<LineItem> LineItems => _lineItems.AsReadOnly();
 ```
 
-Behavior method convention — **action parameter is typically last, but may precede factory parameters.** Review and Submission vary in ordering (e.g., Submission places action before stateMachineFactory in some methods, Review places it after). Prefer action last when writing new code:
+Behavior method convention — **action parameter is typically last.** Prefer action last when writing new code:
 ```csharp
-// Production — action last (preferred convention)
-public void AssignTypesetter(Typesetter typesetter, ArticleStateMachineFactory stateMachineFactory, IArticleAction action)
+// action last (preferred convention)
+public void AssignTo(Assignee assignee, IAction action)
 {
-    // validate via stateMachineFactory
+    // validate
     // mutate state
-    AddDomainEvent(new TypesetterAssigned(typesetter.Id, typesetter.UserId!.Value, action));
+    AddDomainEvent(new AssigneeChanged(this, action));
 }
 ```
 
@@ -77,28 +75,31 @@ public void AssignTypesetter(Typesetter typesetter, ArticleStateMachineFactory s
 
 **Interface:** `IDomainEvent : INotification, IEvent` (dual MediatR + FastEndpoints)
 
-**Base record:** `DomainEvent<TAction>(TAction Action)` where `TAction : IArticleAction`
+Two first-class variants:
 
-Events are simple records:
+**Variant A — With action tracking:**
 ```csharp
-public record ArticleApproved(Article Article, IArticleAction Action) : DomainEvent(Action);
+public abstract record DomainEvent<TAction>(TAction Action) : IDomainEvent;
+public record OrderApproved(Order Order, IAction Action) : DomainEvent<IAction>(Action);
 ```
+Services that track which action triggered an event use this variant. `TAction` is a per-service action marker interface (e.g., `IOrderAction`).
 
-Journals uses `IDomainEvent` directly (no action parameter):
+**Variant B — Aggregate reference only:**
 ```csharp
-public record JournalCreated(Journal Journal) : IDomainEvent;
+public sealed record OrderCreated(Order Order) : IDomainEvent;
 ```
+Services where events are simple notifications use this variant.
 
 ## Event Dispatch
 
 Two interceptor variants in `Blocks.EntityFrameworkCore/Interceptors/`:
 
-| Interceptor | Used by | Behavior |
-|-------------|---------|----------|
-| `DispatchDomainEventsInterceptor` | Submission, Review | Dispatches after SaveChanges completes, no transaction |
-| `TransactionalDispatchDomainEventsInterceptor` | Production | Wraps save + dispatch in single transaction, rolls back on failure |
+| Interceptor | When to use | Behavior |
+|-------------|-------------|----------|
+| `DispatchDomainEventsInterceptor` | Standard (default for most services) | Dispatches after SaveChanges completes, no transaction |
+| `TransactionalDispatchDomainEventsInterceptor` | Transactional (when event handlers write to the same DB in the same request) | Wraps save + dispatch in single transaction, rolls back on failure |
 
-Use **standard** by default. Use **transactional** when domain event handlers write to the same DB in the same request (e.g., Production + ArticleTimeline sharing a transaction).
+Use **standard** by default. Use **transactional** when domain event handlers write to the same DB in the same request (e.g., aggregate + timeline sharing a DbContext).
 
 Both scan `ChangeTracker` for aggregates with pending events, clear them, then publish via `IDomainEventPublisher`.
 
@@ -106,18 +107,18 @@ Both scan `ChangeTracker` for aggregates with pending events, clear them, then p
 
 | Implementation | Used by | Mechanism |
 |---------------|---------|-----------|
-| `Blocks.MediatR/DomainEventPublisher` | Submission, Review, Production | `IMediator.Publish()` → `INotificationHandler<T>` |
-| `Blocks.FastEndpoints/DomainEventPublisher` | Auth, Journals | `IEvent.PublishAsync(Mode.WaitForAll)` → `IEventHandler<T>` |
+| `Blocks.MediatR/DomainEventPublisher` | MediatR services | `IMediator.Publish()` → `INotificationHandler<T>` |
+| `Blocks.FastEndpoints/DomainEventPublisher` | FastEndpoints-native services | `IEvent.PublishAsync(Mode.WaitForAll)` → `IEventHandler<T>` |
 
-The variant follows the CQRS/dispatch axis. Production uses FastEndpoints for endpoints but MediatR for event dispatch (it needs `INotificationHandler`).
+The variant follows the CQRS/dispatch axis. Some services mix endpoint frameworks — FastEndpoints for HTTP but MediatR for event dispatch (when `INotificationHandler` pipeline is needed). Check the service's CLAUDE.md for which variant to use.
 
 ## State Machine Pattern
 
-**File:** `src/Services/Submission/Submission.Application/StateMachines/`
+**File:** `src/Services/{Svc}/{Svc}.Application/StateMachines/`
 
-- `ArticleStateMachineFactory` registered as delegate factory — avoids injecting into aggregates
-- Validates stage transitions via transition table stored in DB (`ArticleStageTransition`)
+- `{Aggregate}StateMachineFactory` registered as delegate factory — avoids injecting into aggregates
+- Validates stage transitions via transition table stored in DB (`{Aggregate}StageTransition`)
 - Called in aggregate behavior methods before state mutation
-- Per-service `ArticleActionType` enum defines allowed actions
+- Per-service `{Aggregate}ActionType` enum defines allowed actions
 
-Generalizable: replace `ArticleStage`/`ArticleActionType` with any entity states/transitions. The pattern is: DB-stored transition rules + factory-provided validator + aggregate-enforced invariants.
+The pattern is: DB-stored transition rules + factory-provided validator + aggregate-enforced invariants.

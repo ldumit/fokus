@@ -26,7 +26,7 @@ DomainException (in Blocks.Domain) → mapped to 400 by middleware
 | `DomainException` | Domain rule violation inside aggregate | Domain layer (behavior methods) |
 | `BadRequestException` | Input validation failure | Handlers, endpoints, validators |
 | `NotFoundException` | Entity not found by ID | Repositories, handlers |
-| `UnauthorizedException` | Auth/permission failure | Auth handlers, middleware |
+| `UnauthorizedException` | Auth/permission failure | Authentication middleware |
 | Custom `{Context}Exception : DomainException` | Service-specific domain errors | Domain layer |
 
 ### Extension Points
@@ -92,7 +92,7 @@ public static EmailAddress Create(string value)
 }
 
 // Guard in handler
-var article = await _repository.FindByIdOrThrowAsync(command.ArticleId);
+var entity = await _repository.FindByIdOrThrowAsync(command.{Entity}Id);
 ```
 
 To extend: add new static methods to `Guard` class or new extension methods following the same pattern.

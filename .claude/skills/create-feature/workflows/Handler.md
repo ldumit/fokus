@@ -1,10 +1,10 @@
 # Create MediatR Handler
 
-Used by services with MediatR: Submission, Review
+Used by: MediatR services
 
 ## Command + Handler Pattern
 
-**Reference:** `src/Services/Submission/Submission.Application/Features/CreateArticle/CreateArticleCommandHandler.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/Features/{FeatureName}/{FeatureName}CommandHandler.cs`
 
 ### Command file: `{FeatureName}Command.cs`
 

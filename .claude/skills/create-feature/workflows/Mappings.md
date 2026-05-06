@@ -2,7 +2,7 @@
 
 ## Pattern
 
-**Reference:** `src/Services/Submission/Submission.Application/Mappings/GrpcMappings.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/Mappings/{Domain}Mappings.cs`
 
 Mapster configs are auto-discovered via `IRegister` interface + assembly scan:
 
@@ -31,8 +31,8 @@ services.AddMapsterConfigsFromAssemblyContaining<GrpcMappings>();
 
 For simple cases where property names match:
 ```csharp
-var response = entity.Adapt<ArticleResponse>();
-var entity = command.Adapt<Article>();
+var response = entity.Adapt<{ResponseType}>();
+var entity = command.Adapt<{Entity}>();
 ```
 
 ## Post-Mapping Actions

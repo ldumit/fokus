@@ -21,17 +21,17 @@ The Architect picks these 3 axes first. Everything else cascades:
 ### Axis Selection Guide
 
 **Endpoint framework:**
-- **FastEndpoints** — when handler logic is simple (no separate handler class needed), endpoint + command in one class. Good for: Auth-style services, CRUD, services without complex pipelines.
+- **FastEndpoints** — when handler logic is simple (no separate handler class needed), endpoint + command in one class. Good for: simple CRUD services, services without complex pipelines.
 - **Carter + MediatR** — when you want clean endpoint-to-handler separation, pipeline behaviors (validation, logging, user assignment). Good for: domain-heavy services with complex handlers.
 - **Minimal APIs + MediatR** — same benefits as Carter but with static method endpoints and explicit registration. Good for: when you prefer explicit route wiring over auto-discovery.
 
 **CQRS/Dispatch:**
 - **MediatR** — when you need pipeline behaviors, `INotificationHandler` for domain events, or the service has complex cross-cutting concerns. Most services use this.
-- **FastEndpoints events** — when the service is simple and doesn't need pipeline behaviors. Auth and Journals use this.
+- **FastEndpoints events** — when the service is simple and doesn't need pipeline behaviors.
 
 **Persistence:**
 - **EF Core + SQL Server** — default. Complex domain, relational data, ACID transactions, reporting queries.
-- **EF Core + PostgreSQL** — same as SQL Server but for read-heavy aggregate views (ArticleHub pattern).
+- **EF Core + PostgreSQL** — same as SQL Server but for read-heavy aggregate views (read-model pattern).
 - **Redis** — read-heavy, low-complexity domain, shallow entity graph, data fits in memory. 1-2 services per system max.
 
 ### Cascading Effects Matrix
@@ -123,7 +123,7 @@ After scaffolding, the Developer continues with `create-aggregate` and `create-f
 |---------|------|-----------|
 | **gRPC (sync)** | Service needs data from another service to process a request | Code-first contracts (`[ServiceContract]`), `AddCodeFirstGrpcClient<T>()` |
 | **Integration event (async)** | Service needs to react to state changes in another service | MassTransit + RabbitMQ, record types in shared contracts |
-| **Event → local aggregate creation** | Receiving service needs its own copy of data | Consumer calls factory method (e.g., `Article.FromSubmission()`) |
+| **Event → local aggregate creation** | Receiving service needs its own copy of data | Consumer calls factory method (e.g., `{Entity}.From{Source}()`) |
 | **API Gateway** | External clients need unified entry point | YARP reverse proxy, route-based forwarding |
 
 ### Decision Rules

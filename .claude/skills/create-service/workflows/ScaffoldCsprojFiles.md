@@ -9,7 +9,7 @@ Create the `.csproj` files for each layer of the new service with the correct `P
 
 ## {Name}.Domain.csproj
 
-**Reference:** `src/Services/Review/Review.Domain/Review.Domain.csproj`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/{Svc}.Domain.csproj`
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -22,7 +22,7 @@ Create the `.csproj` files for each layer of the new service with the correct `P
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.Domain\Blocks.Domain.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Abstractions\Articles.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Abstractions\{ProjectName}.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
@@ -30,8 +30,8 @@ Create the `.csproj` files for each layer of the new service with the correct `P
 
 ## {Name}.Persistence.csproj
 
-**Reference (EF Core variants):** `src/Services/Review/Review.Persistence/Review.Persistence.csproj`
-**Reference (Redis variant):** `src/Services/Journals/Journals.Persistence/Journals.Persistence.csproj`
+**Reference (EF Core variants):** `src/Services/{Svc}/{Svc}.Persistence/{Svc}.Persistence.csproj`
+**Reference (Redis variant):** `src/Services/{Svc}/{Svc}.Persistence/{Svc}.Persistence.csproj`
 
 ### EF Core branch (SQL Server or PostgreSQL)
 
@@ -77,7 +77,7 @@ For PostgreSQL, the same Blocks.EntityFrameworkCore reference applies — the pr
 
 **Only created if shared-state axis = Y.**
 
-**Reference:** `src/Services/Review/Review.Application/Review.Application.csproj`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/{Svc}.Application.csproj`
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -94,9 +94,9 @@ For PostgreSQL, the same Blocks.EntityFrameworkCore reference applies — the pr
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.MediatR\Blocks.MediatR.csproj" />
     <!-- Integration events only: -->
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.Messaging\Blocks.Messaging.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Integration.Contracts\Articles.IntegrationEvents.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Integration.Contracts\{ProjectName}.Integration.Contracts.csproj" />
     <!-- gRPC clients only: -->
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Grpc.Contracts\Articles.Grpc.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Grpc.Contracts\{ProjectName}.Grpc.Contracts.csproj" />
     <!-- Always: -->
     <ProjectReference Include="..\{Name}.Persistence\{Name}.Persistence.csproj" />
   </ItemGroup>
@@ -108,10 +108,7 @@ Comment out (or omit) the `<ProjectReference>` lines that do not apply to the ne
 
 ## {Name}.API.csproj
 
-**Reference (FastEndpoints):** `src/Services/Production/Production.API/Production.API.csproj`
-**Reference (Carter + MediatR):** `src/Services/Review/Review.API/Review.API.csproj`
-**Reference (Minimal APIs):** `src/Services/Submission/Submission.API/Submission.API.csproj`
-**Reference (Carter read-model):** `src/Services/ArticleHub/ArticleHub.API/ArticleHub.API.csproj`
+**Reference:** `src/Services/{Svc}/{Svc}.API/{Svc}.API.csproj` (check an existing service matching your endpoint framework)
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">
@@ -145,7 +142,7 @@ Comment out (or omit) the `<ProjectReference>` lines that do not apply to the ne
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.AspNetCore\Blocks.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Security\Articles.Security.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Security\{ProjectName}.Security.csproj" />
     <!-- Framework branch: -->
     <!-- FastEndpoints: -->
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.FastEndpoints\Blocks.FastEndpoints.csproj" />
@@ -154,7 +151,7 @@ Comment out (or omit) the `<ProjectReference>` lines that do not apply to the ne
     <!-- Integration events (if any published or consumed): -->
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.Messaging\Blocks.Messaging.csproj" />
     <!-- gRPC clients (if any consumed): -->
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Grpc.Contracts\Articles.Grpc.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Grpc.Contracts\{ProjectName}.Grpc.Contracts.csproj" />
     <PackageReference Include="Grpc.Net.Client" />
     <!-- File storage (if configured): -->
     <!-- e.g., <ProjectReference Include="..\..\..\Modules\FileService\FileService.AzureBlob\FileService.AzureBlob.csproj" /> -->

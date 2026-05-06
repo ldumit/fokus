@@ -16,16 +16,10 @@ Creates a complete MassTransit integration event with contract, publisher, and c
 
 ## Arguments
 
-Pass the event name: `/add-integration-event ArticlePublished`
+Pass the event name: `/add-integration-event OrderApproved`
 
 ## Existing Integration Events
 
-| Event | Publisher | Consumers |
-|-------|----------|-----------|
-| ArticleApprovedForReviewEvent | Submission | Review, ArticleHub, Journals |
-| ArticleAcceptedForProductionEvent | Review | Production, ArticleHub |
-| JournalCreatedEvent | Journals | Submission, Review |
-| JournalUpdatedEvent | Journals | Submission, Review |
-| ArticleReviewedEvent | *(contract only — not yet implemented)* | — |
-| ArticlePublishedEvent | *(contract only — not yet implemented)* | — |
-| PersonUpdatedEvent | *(contract only — not yet implemented)* | — |
+| Event | Publisher | Consumers | Contract Location |
+|-------|-----------|-----------|-------------------|
+| (check `src/BuildingBlocks/{ProjectName}.Integration.Contracts/`) | | | |

@@ -134,4 +134,4 @@ public static class DependencyInjection
 
 ## After this step
 
-The Component module has `.Contracts` (first run only) and a fresh implementation project. Next: `ScaffoldInfrastructure.md` adds the new csprojs to `Articles.sln`.
+The Component module has `.Contracts` (first run only) and a fresh implementation project. Next: `ScaffoldInfrastructure.md` adds the new csprojs to the solution file.

@@ -22,29 +22,28 @@ Additional `RepositoryBase` methods (not on `IRepository`): `UpsertAsync()`, `Fi
 ### Tier 2: Service-Level Repository
 Each service defines a thin concrete `Repository<TEntity>` binding to its DbContext:
 ```csharp
-public class Repository<TEntity>(SubmissionDbContext dbContext)
-    : RepositoryBase<SubmissionDbContext, TEntity>(dbContext)
+public class Repository<TEntity>({Svc}DbContext dbContext)
+    : RepositoryBase<{Svc}DbContext, TEntity>(dbContext)
     where TEntity : class, IEntity<int>;
 ```
 
 ### Tier 3: Domain-Specific Repository
 Custom queries with eager loading:
 ```csharp
-public class ArticleRepository(SubmissionDbContext dbContext) : Repository<Article>(dbContext)
+public class {Entity}Repository({Svc}DbContext dbContext) : Repository<{Entity}>(dbContext)
 {
-    public override IQueryable<Article> Query()
+    public override IQueryable<{Entity}> Query()
     {
         return base.Entity
-            .Include(e => e.Actors)
-                .ThenInclude(e => e.Person)
-            .Include(e => e.Assets);
+            .Include(e => e.{Navigation})
+                .ThenInclude(e => e.{ChildNavigation})
+            .Include(e => e.{OtherNavigation});
     }
 
-    public async Task<Article?> GetFullArticleByIdAsync(int id, CancellationToken ct = default)
+    public async Task<{Entity}?> GetFullByIdAsync(int id, CancellationToken ct = default)
     {
         return await Query()
-            .Include(e => e.Journal)
-            .Include(e => e.SubmittedBy)
+            .Include(e => e.{AdditionalNavigation})
             .SingleOrDefaultAsync(e => e.Id == id, ct);
     }
 }
@@ -60,10 +59,10 @@ await repository.FindByIdOrThrowAsync(id);
 
 ### Repository Registration Variants
 
-| Variant | How | Services |
-|---------|-----|----------|
-| Auto (assembly scan) | `AddDerivedTypesOf(typeof(Repository<>))` | Submission, Review |
-| Manual | `AddScoped<ArticleRepository>()` per repo | Production, ArticleHub, Auth |
+| Variant | How | When to use |
+|---------|-----|-------------|
+| Auto (assembly scan) | `AddDerivedTypesOf(typeof(Repository<>))` | Services with many repositories |
+| Manual | `AddScoped<{Entity}Repository>()` per repo | Services with few repositories or explicit control needed |
 
 ## Entity Configuration
 
@@ -82,11 +81,11 @@ Extends `EntityConfiguration<T>`. Three opt-in override points:
 - `HasConcurrencyToken` — default `false`, set `true` for opt-in `RowVersion` shadow property
 
 ```csharp
-public class ArticleEntityConfiguration : AuditedEntityConfiguration<Article>
+public class {Entity}EntityConfiguration : AuditedEntityConfiguration<{Entity}>
 {
     protected override bool HasConcurrencyToken => true;
 
-    public override void Configure(EntityTypeBuilder<Article> builder)
+    public override void Configure(EntityTypeBuilder<{Entity}> builder)
     {
         base.Configure(builder);
         // custom configuration...
@@ -95,9 +94,9 @@ public class ArticleEntityConfiguration : AuditedEntityConfiguration<Article>
 ```
 
 ### Value Object Mapping
-Two approaches used in codebase:
-- `OwnsOne` (Auth): `builder.OwnsOne(p => p.Email, ...)`
-- `ComplexProperty` (Review): `builder.ComplexProperty(a => a.Email, ...)`
+Two approaches:
+- `OwnsOne` (owned entity type): `builder.OwnsOne(p => p.Email, ...)`
+- `ComplexProperty` (complex type): `builder.ComplexProperty(a => a.Email, ...)`
 
 ## DbContext Setup
 
@@ -107,11 +106,12 @@ Two approaches used in codebase:
 
 **Variants:**
 - `ApplicationDbContext<T>` — most services
-- `IdentityDbContext<User, Role, int>` — Auth (required by ASP.NET Identity)
+- `IdentityDbContext<User, Role, int>` — services using ASP.NET Identity
 
 **Database engine variants:**
-- SQL Server: `UseSqlServer(connectionString)` — Auth, Submission, Review, Production
-- PostgreSQL: `UseNpgsql(connectionString)` — ArticleHub
+- SQL Server: `UseSqlServer(connectionString)` — default
+- PostgreSQL: `UseNpgsql(connectionString)` — opt-in per service
+- SQLite: `UseSqlite(connectionString)` — lightweight single-node
 
 ## Seed Data (Dual Pattern)
 
@@ -125,7 +125,7 @@ Convention: drop a `Data/Master/{EntityName}.json` file → `EntityConfiguration
 **Files:**
 - `src/BuildingBlocks/Blocks.EntityFrameworkCore/Extensions/DbContextExtensions.Seed.cs`
 - `src/BuildingBlocks/Blocks.EntityFrameworkCore/Seeding/ManualGenerateIdScope.cs`
-- `src/Services/{Service}/*/Data/Test/Seed.cs` per service
+- `src/Services/{Svc}/*/Data/Test/Seed.cs` per service
 
 Pattern per service:
 ```csharp
@@ -133,11 +133,9 @@ public static class Seed
 {
     public static void SeedTestData(this IServiceProvider services)
     {
-        services.SeedTestData<SubmissionDbContext>(context =>
+        services.SeedTestData<{Svc}DbContext>(context =>
         {
-            context.SeedFromJsonFile<Person>();
-            context.SeedFromJsonFile<Journal>();
-            context.SeedFromJsonFile<Article>();
+            context.SeedFromJsonFile<{Entity}>();
         });
     }
 }
@@ -158,15 +156,15 @@ public static class Seed
 
 ### Seed Variants
 
-| Variant | Mechanism | Services |
-|---------|-----------|----------|
-| EF JSON | `context.SeedFromJsonFile<T>()` | Submission, Review, Production |
-| Identity custom | `UserManager.CreateAsync()` (can't bypass Identity) | Auth |
-| Redis JSON | `provider.SeedFromJson<T>(redisDb)` | Journals |
+| Variant | Mechanism | When to use |
+|---------|-----------|-------------|
+| EF JSON | `context.SeedFromJsonFile<T>()` | EF Core services (default) |
+| Identity custom | `UserManager.CreateAsync()` (can't bypass Identity) | Services using ASP.NET Identity |
+| Redis JSON | `provider.SeedFromJson<T>(redisDb)` | Redis-backed services |
 
 ### Wiring in Program.cs
 ```csharp
-app.Migrate<SubmissionDbContext>();
+app.Migrate<{Svc}DbContext>();
 if (app.Environment.IsDevelopment())
     app.Services.SeedTestData();
 ```

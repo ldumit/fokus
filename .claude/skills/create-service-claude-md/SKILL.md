@@ -33,6 +33,6 @@ Pass the service name: `create-service-claude-md Indexing`
 ## What this skill does NOT do
 
 - Does not scaffold any project files or folders — that is the Developer's `create-service` skill.
-- Does not update `Articles.sln`, `docker-compose.yml`, or any other repo-level file.
+- Does not update `the solution file`, `docker-compose.yml`, or any other repo-level file.
 - Does not create aggregates, features, or any business code.
 - Does not write the feature plan — that is the Architect's normal plan workflow.

@@ -6,7 +6,7 @@ Create the `.API` project source files. Branch on the endpoint framework axis.
 
 ### `{Name}.API/GlobalUsings.cs`
 
-Start minimal — add to it as needed. **Reference:** `src/Services/Review/Review.API/GlobalUsings.cs` or `src/Services/Production/Production.API/GlobalUsings.cs`.
+Start minimal — add to it as needed. **Reference:** `src/Services/{Svc}/{Svc}.API/GlobalUsings.cs`.
 
 Typical usings for a new service:
 
@@ -18,18 +18,18 @@ global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Hosting;
 global using Blocks.AspNetCore;
-global using Articles.Security;
+global using {ProjectName}.Security;
 ```
 
 Add framework-specific and MediatR/FastEndpoints usings from the exemplar service.
 
 ### `{Name}.API/appsettings.json`
 
-**Reference:** `src/Services/Review/Review.API/appsettings.json`
+**Reference:** `src/Services/{Svc}/{Svc}.API/appsettings.json`
 
 Sections to include (branch on axes):
 - `ConnectionStrings:Database` — connection string for the chosen DB
-- `ConnectionStrings:{secondary}` — if file storage is configured (e.g., `ReviewFileStorage`)
+- `ConnectionStrings:{secondary}` — if file storage is configured
 - `Logging` — standard
 - `AllowedHosts: "*"`
 - `JwtOptions` — `{ Issuer, Audience, Secret }` — copy from exemplar
@@ -40,13 +40,13 @@ Sections to include (branch on axes):
 
 ### `{Name}.API/appsettings.Development.json`
 
-**Reference:** `src/Services/Review/Review.API/appsettings.Development.json`
+**Reference:** `src/Services/{Svc}/{Svc}.API/appsettings.Development.json`
 
 Minimal — usually just verbose logging levels. Copy from exemplar.
 
 ### `{Name}.API/Properties/launchSettings.json`
 
-**Reference:** `src/Services/Review/Review.API/Properties/launchSettings.json`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Properties/launchSettings.json`
 
 Set the HTTP and HTTPS ports from the port axis. Four profiles: `http`, `https`, `IIS Express`, `Docker` (if docker=Y).
 
@@ -54,7 +54,7 @@ Set the HTTP and HTTPS ports from the port axis. Four profiles: `http`, `https`,
 
 ### Branch: FastEndpoints
 
-**Reference exemplar:** `src/Services/Production/Production.API/Program.cs` and `src/Services/Production/Production.API/DependencyInjection.cs`.
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.API/Program.cs` and `src/Services/{Svc}/{Svc}.API/DependencyInjection.cs` (use a FastEndpoints service as exemplar).
 
 **`{Name}.API/Program.cs`:**
 ```csharp
@@ -85,23 +85,23 @@ if (app.Environment.IsDevelopment())
 app.Run();
 ```
 
-**`{Name}.API/DependencyInjection.cs`:** registers FastEndpoints, Swagger, authentication, CORS, MassTransit (if integration events), gRPC clients. Follow `Production.API/DependencyInjection.cs` structure.
+**`{Name}.API/DependencyInjection.cs`:** registers FastEndpoints, Swagger, authentication, CORS, MassTransit (if integration events), gRPC clients. Follow an existing FastEndpoints service's `DependencyInjection.cs` structure.
 
 ### Branch: Carter + MediatR
 
-**Reference exemplar:** `src/Services/Review/Review.API/Program.cs` and `src/Services/Review/Review.API/DependecyInjection.cs`.
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.API/Program.cs` and `src/Services/{Svc}/{Svc}.API/DependencyInjection.cs` (use a Carter + MediatR service as exemplar).
 
-`Program.cs` follows the same shape as FastEndpoints but calls `AddCarter()` and `MapCarter()` instead of the FastEndpoints equivalents, and calls `AddMediatR(...)` with `Review.Application` assembly scan.
+`Program.cs` follows the same shape as FastEndpoints but calls `AddCarter()` and `MapCarter()` instead of the FastEndpoints equivalents, and calls `AddMediatR(...)` with `{Name}.Application` assembly scan.
 
 ### Branch: Minimal APIs + MediatR
 
-**Reference exemplar:** `src/Services/Submission/Submission.API/Program.cs` and `src/Services/Submission/Submission.API/DependecyInjection.cs`.
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.API/Program.cs` and `src/Services/{Svc}/{Svc}.API/DependencyInjection.cs` (use a Minimal APIs + MediatR service as exemplar).
 
 Adds `app.MapAllEndpoints()` in `Program.cs` that calls into each endpoint's static `Map()` method. Register MediatR with the `{Name}.Application` assembly.
 
 ### Branch: Carter read-model
 
-**Reference exemplar:** `src/Services/ArticleHub/ArticleHub.API/Program.cs` and `src/Services/ArticleHub/ArticleHub.API/DependecyInjection.cs`.
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.API/Program.cs` and `src/Services/{Svc}/{Svc}.API/DependencyInjection.cs` (use a Carter read-model service as exemplar).
 
 No MediatR registration. Carter is added. MassTransit is registered with the consumer assembly (since read-model services are consumer-driven).
 

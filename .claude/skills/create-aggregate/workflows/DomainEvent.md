@@ -2,31 +2,43 @@
 
 ## Pattern
 
-**Reference:** `src/Services/Submission/Submission.Domain/Events/`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/Events/`
 
-### With Action (services using IArticleAction)
+### Variant A: With Action Tracking
 
 ```csharp
-public record {EventName}({AggregateName} {AggregateName}, IArticleAction Action) : DomainEvent(Action);
+public record {EventName}({AggregateName} {AggregateName}, IAction Action) : DomainEvent<IAction>(Action);
 ```
 
-### Without Action (simple events)
+Services that track which action triggered an event use this variant.
+
+### Variant B: Aggregate Reference Only
 
 ```csharp
 public record {EventName}({AggregateName} {AggregateName}) : IDomainEvent;
 ```
 
-Journals uses this simpler form — no action parameter.
+Services where events are simple notifications use this variant.
 
 ## Raising Events
 
 In the aggregate behavior method (in `Behaviors/{Aggregate}.cs`):
 
+### Variant A (with action):
 ```csharp
-public void {Method}({Params}, IArticleAction action)
+public void {Method}({Params}, IAction action)
 {
     // validate + mutate
     AddDomainEvent(new {EventName}(this, action));
+}
+```
+
+### Variant B (without action):
+```csharp
+public void {Method}({Params})
+{
+    // validate + mutate
+    AddDomainEvent(new {EventName}(this));
 }
 ```
 
@@ -34,7 +46,7 @@ public void {Method}({Params}, IArticleAction action)
 
 Domain event handlers bridge to side effects (integration events, emails, timeline entries).
 
-### MediatR variant (Submission, Review, Production):
+### MediatR Variant
 ```csharp
 public class {HandlerName}({Dependencies})
     : INotificationHandler<{EventName}>
@@ -46,7 +58,7 @@ public class {HandlerName}({Dependencies})
 }
 ```
 
-### FastEndpoints variant (Auth, Journals):
+### FastEndpoints Variant
 ```csharp
 public class {HandlerName}({Dependencies})
     : IEventHandler<{EventName}>
@@ -58,13 +70,10 @@ public class {HandlerName}({Dependencies})
 }
 ```
 
-Note the method name difference: `Handle` (MediatR) vs `HandleAsync` (FastEndpoints).
+Note the method name difference: `Handle` (MediatR) vs `HandleAsync` (FastEndpoints). Check the service's CLAUDE.md for which variant to use.
 
 ## Location
 
-- Events: `{Service}.Domain/{AggregateName}/Events/{EventName}.cs`
-- Handlers (MediatR):
-  - Review: `{Service}.Application/Features/{Domain}/{Feature}/{HandlerName}.cs`
-  - Submission: `{Service}.Application/Features/{Feature}/{HandlerName}.cs` (flat — no {Domain} grouping level)
-  - Production: `{Service}.API/Features/{Domain}/{Feature}/{HandlerName}.cs` (uses MediatR but handlers live in API project, no separate Application layer)
-- Handlers (FastEndpoints): `{Service}.API/Features/{Domain}/{Feature}/{HandlerName}.cs`
+- Events: `{Svc}.Domain/{AggregateName}/Events/{EventName}.cs` or co-located with the aggregate in `{Svc}.Domain/Events/`
+- Handlers (MediatR): `{Svc}.Application/Features/{Domain}/{Feature}/{HandlerName}.cs` or `{Svc}.API/Features/{Domain}/{Feature}/{HandlerName}.cs`
+- Handlers (FastEndpoints): `{Svc}.API/Features/{Domain}/{Feature}/{HandlerName}.cs`

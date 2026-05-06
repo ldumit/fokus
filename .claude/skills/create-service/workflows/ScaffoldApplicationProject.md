@@ -6,12 +6,12 @@ If shared-state = N, skip this workflow entirely. The service has no `.Applicati
 
 ## Reference exemplars
 
-- **MediatR services (Carter / Minimal APIs):** `src/Services/Review/Review.Application/` — full Features/{Aggregate}/{Feature} layout
-- **FastEndpoints with shared state (no Features):** `src/Services/Production/Production.Application/` — StateMachines/, Dtos/, Mappings/ only, no Features/
+- **MediatR services (Carter / Minimal APIs):** `src/Services/{Svc}/{Svc}.Application/` — full Features/{Aggregate}/{Feature} layout
+- **FastEndpoints with shared state (no Features):** `src/Services/{Svc}/{Svc}.Application/` — StateMachines/, Dtos/, Mappings/ only, no Features/
 
 ## `{Name}.Application/GlobalUsings.cs`
 
-**Reference:** `src/Services/Review/Review.Application/GlobalUsings.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/GlobalUsings.cs`
 
 ```csharp
 global using Microsoft.Extensions.DependencyInjection;
@@ -23,11 +23,11 @@ global using {Name}.Persistence;
 
 Add MediatR usings (`global using MediatR;`) only for MediatR framework branches.
 
-Add integration event usings (`global using Articles.IntegrationEvents.Contracts;`, `global using MassTransit;`) only if events are published or consumed from this layer.
+Add integration event usings (`global using {ProjectName}.Integration.Contracts;`, `global using MassTransit;`) only if events are published or consumed from this layer.
 
 ## `{Name}.Application/DependencyInjection.cs`
 
-**Reference:** `src/Services/Review/Review.Application/DependencyInjection.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/DependencyInjection.cs`
 
 ```csharp
 namespace {Name}.Application;

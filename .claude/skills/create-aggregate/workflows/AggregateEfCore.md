@@ -1,10 +1,10 @@
 # Create Aggregate — EF Core
 
-Used by: Auth, Submission, Review, Production
+Used by: EF Core services
 
 ## State File: `{Service}.Domain/{AggregateName}/{AggregateName}.cs`
 
-**Reference:** `src/Services/Submission/Submission.Domain/Entities/Article.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/Entities/{Aggregate}.cs`
 
 ```csharp
 public partial class {AggregateName} : AggregateRoot
@@ -23,12 +23,12 @@ public partial class {AggregateName} : AggregateRoot
 
 ## Behavior File: `{Service}.Domain/{AggregateName}/Behaviors/{AggregateName}.cs`
 
-**Reference:** `src/Services/Submission/Submission.Domain/Behaviors/Article.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/Behaviors/{Aggregate}.cs`
 
 ```csharp
 public partial class {AggregateName}
 {
-    public void {DomainMethod}({Parameters}, IArticleAction action)
+    public void {DomainMethod}({Parameters}, TAction action)
     {
         // Validate business rules
         // Mutate state
@@ -37,11 +37,11 @@ public partial class {AggregateName}
 }
 ```
 
-**Convention:** action parameter is preferred last (Review and Production follow this; Submission may vary).
+**Convention:** action parameter is preferred last.
 
 ## Folder Structure
 
-Two layouts exist. **Aggregate-grouped** (recommended for new aggregates) is used by Review, Production, and Auth:
+Two layouts exist. **Aggregate-grouped** (recommended for new aggregates) is used by services with multiple aggregates:
 
 ```
 {Service}.Domain/
@@ -55,7 +55,7 @@ Two layouts exist. **Aggregate-grouped** (recommended for new aggregates) is use
 │       └── {ValueObjectName}.cs      (value objects)
 ```
 
-Submission uses a **flat layout** with top-level folders (Entities/, Behaviors/, Events/, ValueObjects/) instead of grouping by aggregate.
+Single-aggregate services may use a **flat layout** with top-level folders (Entities/, Behaviors/, Events/, ValueObjects/) instead of grouping by aggregate.
 
 ## EF Configuration: `{Service}.Persistence/EntityConfigurations/{AggregateName}EntityConfiguration.cs`
 
@@ -90,4 +90,4 @@ public class {AggregateName}Repository({DbContext} context) : Repository<{Aggreg
 }
 ```
 
-Registration: auto-discovered via `AddDerivedTypesOf(typeof(Repository<>))` in Submission/Review, or add `AddScoped<{AggregateName}Repository>()` manually in Production/Auth.
+Registration: auto via assembly scan (`AddDerivedTypesOf(typeof(Repository<>))`) or manual `AddScoped<{AggregateName}Repository>()` per repository. Check the service's CLAUDE.md for which approach to use.

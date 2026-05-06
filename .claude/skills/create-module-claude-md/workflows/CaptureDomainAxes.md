@@ -10,7 +10,7 @@ A Domain module owns its own aggregates, persistence, and (optionally) its own A
 >
 > Default choice for a module API: **Minimal APIs**. Override only if you know the module will live in one single-framework host forever.
 >
-> This realization is why `ArticleTimeline` has no API today — its endpoint framework choice would have bound it to Production's FastEndpoints, making it unusable from Review or Submission.
+> This is why some modules have no API today — their endpoint framework choice would have bound them to the host's framework, making them unusable from hosts with different frameworks.
 
 Do **not** skip this warning. Paste it into the conversation before asking the user about the framework axis.
 
@@ -24,7 +24,7 @@ Do **not** skip this warning. Paste it into the conversation before asking the u
 | DB connection pattern | `embedded-host-connection` / `own-connection` | `embedded-host-connection` | Embedded = shares host's DB with a schema. Own = module has its own database |
 | Schema name | PascalCase | `{Name}` | Only required when `embedded-host-connection`. Sets `HasDefaultSchema` |
 | Cross-feature shared state | Y / N | N | Drives whether `.Application` project is created |
-| Current hosts | list of service names | required | Services that mount the module today (e.g., `Production`, `Review`) — informs the pattern |
+| Current hosts | list of service names | required | Services that mount the module today (check which services host modules) — informs the pattern |
 
 ## Derived rules
 
@@ -47,7 +47,7 @@ Persistence: EF Core + SQL Server
 DB connection: embedded-host-connection  [default]
 Schema: Audit  [default = Name]
 Shared state: N
-Current hosts: Production, Review
+Current hosts: (list host service names)
 ```
 
 ## After this step

@@ -4,9 +4,9 @@ Code-first contracts using `protobuf-net.Grpc` — no .proto files.
 
 ## Pattern
 
-**Reference:** `src/BuildingBlocks/Articles.Grpc.Contracts/Auth/PersonContracts.cs`
+**Reference:** `src/BuildingBlocks/{ProjectName}.Grpc.Contracts/{ServiceName}/{Entity}Contracts.cs`
 
-Create in `BuildingBlocks/Articles.Grpc.Contracts/{ServiceName}/`:
+Create in `BuildingBlocks/{ProjectName}.Grpc.Contracts/{ServiceName}/`:
 
 ### Service Interface
 

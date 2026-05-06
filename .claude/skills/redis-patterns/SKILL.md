@@ -33,17 +33,17 @@ Does NOT inherit from `AggregateRoot` — Redis entities are simpler. No audit f
 Domain entities use Redis.OM attributes:
 
 ```csharp
-[Document(StorageType = StorageType.Json, Prefixes = new[] { nameof(Journal) })]
-public partial class Journal : Entity
+[Document(StorageType = StorageType.Json, Prefixes = new[] { nameof({Entity}) })]
+public partial class {Entity} : Entity
 {
     [Indexed] public required string Abbreviation { get; set; }
     [Searchable] public required string Name { get; set; }          // full-text search
     [Indexed(Sortable = true)] public required string NormalizedName { get; set; } // case-insensitive queries
     [Searchable] public required string Description { get; set; }
-    public required string ISSN { get; set; }
-    public int ChiefEditorId { get; set; }
-    [Indexed(JsonPath = "$.Name")] public List<Section> Sections { get; set; } = new();
-    public int ArticlesCount { get; set; }
+    public required string Code { get; set; }
+    public int OwnerId { get; set; }
+    [Indexed(JsonPath = "$.Name")] public List<{ChildEntity}> {Children} { get; set; } = new();
+    public int ItemCount { get; set; }
 }
 ```
 
@@ -53,7 +53,7 @@ public partial class Journal : Entity
 - `[Indexed(Sortable = true)]` — sortable field
 - `[Indexed(JsonPath = "$.Name")]` — index nested object property
 
-**Storage types:** `StorageType.Json` (complex objects) vs `StorageType.Hash` (flat objects like `Editor`).
+**Storage types:** `StorageType.Json` (complex objects) vs `StorageType.Hash` (flat objects).
 
 **NormalizedName trick:** Set in property setter for case-insensitive LINQ queries without full-text search overhead.
 
@@ -79,13 +79,13 @@ Key operations:
 
 ### ReplaceAsync Workaround
 
-**Redis.OM does not properly update nested child collections.** `UpdateAsync` silently fails to persist changes to child lists (e.g., `Journal.Sections`).
+**Redis.OM does not properly update nested child collections.** `UpdateAsync` silently fails to persist changes to child lists.
 
 `ReplaceAsync` = delete + re-insert. Use it whenever saving a parent entity with modified child collections:
 
 ```csharp
 // UpdateAsync does NOT work for children collections
-await _repository.ReplaceAsync(journal); // delete + insert
+await _repository.ReplaceAsync(entity); // delete + insert
 ```
 
 Use `UpdateAsync` ONLY for scalar-only changes (e.g., incrementing a counter).
@@ -103,24 +103,24 @@ Use `UpdateAsync` ONLY for scalar-only changes (e.g., incrementing a counter).
 
 ## Multi-Collection Accessor
 
-**File:** `src/Services/Journals/Journals.Persistence/JournalDbContext.cs`
+**File:** `src/Services/{Svc}/{Svc}.Persistence/{Svc}DbContext.cs`
 
 Lightweight typed accessor for read endpoints that query multiple collections:
 
 ```csharp
-public class JournalDbContext
+public class {Svc}DbContext
 {
-    public IRedisCollection<Journal> Journals => _provider.RedisCollection<Journal>();
-    public IRedisCollection<Editor> Editors => _provider.RedisCollection<Editor>();
+    public IRedisCollection<{Entity}> {Entities} => _provider.RedisCollection<{Entity}>();
+    public IRedisCollection<{OtherEntity}> {OtherEntities} => _provider.RedisCollection<{OtherEntity}>();
     public RedisConnectionProvider Provider => _provider;
 }
 ```
 
-Use `JournalDbContext` for multi-collection reads. Use `Repository<T>` for single-entity writes.
+Use `{Svc}DbContext` for multi-collection reads. Use `Repository<T>` for single-entity writes.
 
 ## DI Registration
 
-**File:** `src/Services/Journals/Journals.Persistence/DependencyInjection.cs`
+**File:** `src/Services/{Svc}/{Svc}.Persistence/DependencyInjection.cs`
 
 ```csharp
 var connectionString = config.GetConnectionString("Database")!;
@@ -133,30 +133,29 @@ var redisConnectionString = connectionString.StartsWith("redis://") || connectio
 var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 services.AddSingleton<IConnectionMultiplexer>(redis);
 
-services.AddSingleton<JournalDbContext>();
+services.AddSingleton<{Svc}DbContext>();
 services.AddScoped(typeof(Repository<>)); // open-generic — all entity types resolved automatically
 ```
 
 ## Index Creation Middleware
 
-**File:** `src/Services/Journals/Journals.API/AppBuilderExtensions.cs`
+**File:** `src/Services/{Svc}/{Svc}.API/AppBuilderExtensions.cs`
 
 ```csharp
 public static IApplicationBuilder UseRedis(this IApplicationBuilder app)
 {
     using var scope = app.ApplicationServices.CreateScope();
     var provider = scope.ServiceProvider.GetRequiredService<RedisConnectionProvider>();
-    provider.Connection.CreateIndex(typeof(Editor));
-    provider.Connection.CreateIndex(typeof(Journal));
+    provider.Connection.CreateIndex(typeof({Entity}));
     return app;
 }
 ```
 
-Called at startup in `Program.cs`: `app.UseRedis()`. Only index top-level collections — nested documents (e.g., `Section` inside `Journal`) are NOT indexed separately.
+Called at startup in `Program.cs`: `app.UseRedis()`. Only index top-level collections — nested documents are NOT indexed separately.
 
 ## Seeding
 
-**File:** `src/Services/Journals/Journals.Persistence/Data/Seed.cs`
+**File:** `src/Services/{Svc}/{Svc}.Persistence/Data/Seed.cs`
 
 ```csharp
 public static async Task SeedTestData(this IHost host)
@@ -164,10 +163,9 @@ public static async Task SeedTestData(this IHost host)
     using var scope = host.Services.CreateScope();
     var provider = scope.ServiceProvider.GetRequiredService<RedisConnectionProvider>();
     var redis = scope.ServiceProvider.GetRequiredService<IConnectionMultiplexer>();
-    await provider.SeedFromJson<Editor>(redis.GetDatabase());
-    await provider.SeedFromJson<Journal>(redis.GetDatabase());
-    await redis.GetDatabase().SetSequenceSeed<Journal>(7);
-    await redis.GetDatabase().SetSequenceSeed<Section>(14);
+    await provider.SeedFromJson<{Entity}>(redis.GetDatabase());
+    await redis.GetDatabase().SetSequenceSeed<{Entity}>(7);
+    await redis.GetDatabase().SetSequenceSeed<{ChildEntity}>(14);
 }
 ```
 

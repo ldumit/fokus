@@ -31,7 +31,7 @@ src/Services/{Name}/
     ├── Features/
 ```
 
-The `Features/` folder in `.Application/` is where handlers live for MediatR services (Review, Submission). For FastEndpoints services that happen to need a `.Application` project (Production pattern), leave `Features/` out and let the Developer add feature folders to `.API/Features/` instead.
+The `Features/` folder in `.Application/` is where handlers live for MediatR services. For FastEndpoints services that happen to need a `.Application` project, leave `Features/` out and let the Developer add feature folders to `.API/Features/` instead.
 
 **Rule:** create `.Application/Features/` **only when** the endpoint framework is Carter + MediatR or Minimal APIs + MediatR. For FastEndpoints services with shared state, omit `.Application/Features/`.
 
@@ -47,8 +47,8 @@ Redis services do not use EF Core entity configurations or migrations — omit t
 ### If persistence = EF Core → keep full Persistence tree
 Keep `EntityConfigurations/`, `Repositories/`, `Migrations/`, `MasterData/` as above.
 
-### If endpoint framework = read-model (ArticleHub) → Features/ in `.API`
-ArticleHub-style services use a flat `{Aggregate}/Consumers/` layout inside the API project rather than `Features/`. For read-model services:
+### If endpoint framework = read-model → Features/ in `.API`
+Read-model services use a flat `{Aggregate}/Consumers/` layout inside the API project rather than `Features/`. For read-model services:
 
 ```
 {Name}.API/

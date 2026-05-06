@@ -10,12 +10,12 @@ Wire the new service into the repository infrastructure: solution file, Dockerfi
 4. **Reference the new API csproj from `docker-compose.dcproj`** (if docker = Y)
 5. **Set `<DockerComposeProjectPath>` in the new API csproj** (already handled in `ScaffoldCsprojFiles.md` — verify only)
 
-## Step 1: Add projects to `Articles.sln`
+## Step 1: Add projects to `{SolutionFile}`
 
 Run from the repo root:
 
 ```bash
-dotnet sln src/Articles.sln add \
+dotnet sln src/{SolutionFile} add \
   src/Services/{Name}/{Name}.Domain/{Name}.Domain.csproj \
   src/Services/{Name}/{Name}.Persistence/{Name}.Persistence.csproj \
   src/Services/{Name}/{Name}.API/{Name}.API.csproj
@@ -24,16 +24,16 @@ dotnet sln src/Articles.sln add \
 Add `.Application` only if it was scaffolded:
 
 ```bash
-dotnet sln src/Articles.sln add src/Services/{Name}/{Name}.Application/{Name}.Application.csproj
+dotnet sln src/{SolutionFile} add src/Services/{Name}/{Name}.Application/{Name}.Application.csproj
 ```
 
-Use the `--solution-folder Services/{Name}` flag if the exemplar services are grouped in solution folders — check `Articles.sln` first.
+Use the `--solution-folder Services/{Name}` flag if the exemplar services are grouped in solution folders — check `{SolutionFile}` first.
 
 ## Step 2: Service Dockerfile
 
 **Skip this step if docker axis = N.**
 
-**Reference:** `src/Services/Review/Review.API/Dockerfile`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Dockerfile`
 
 Create `src/Services/{Name}/{Name}.API/Dockerfile`:
 
@@ -51,7 +51,7 @@ COPY ["Services/{Name}/{Name}.API/{Name}.API.csproj", "Services/{Name}/{Name}.AP
 COPY ["Services/{Name}/{Name}.Application/{Name}.Application.csproj", "Services/{Name}/{Name}.Application/"]
 COPY ["Services/{Name}/{Name}.Persistence/{Name}.Persistence.csproj", "Services/{Name}/{Name}.Persistence/"]
 COPY ["Services/{Name}/{Name}.Domain/{Name}.Domain.csproj", "Services/{Name}/{Name}.Domain/"]
-# Add every BuildingBlocks reference used by the new service — copy from Review's Dockerfile
+# Add every BuildingBlocks reference used by the new service — copy from an existing service's Dockerfile
 RUN dotnet restore "./Services/{Name}/{Name}.API/{Name}.API.csproj"
 COPY . .
 WORKDIR "/src/Services/{Name}/{Name}.API"
@@ -71,7 +71,7 @@ Omit the `.Application` COPY line if there is no Application project. List every
 
 ## Step 3: Add a service block to `docker-compose.yml`
 
-**Reference:** existing service blocks in `src/docker-compose.yml` (e.g., `review.api`, `submission.api`).
+**Reference:** existing service blocks in `src/docker-compose.yml`.
 
 Add a new top-level service entry:
 
@@ -99,7 +99,7 @@ Add a new top-level service entry:
 - **PostgreSQL:** `postgres`
 - **Redis:** `redis`
 - **Any integration events:** add `rabbitmq`
-- **gRPC client calls to Auth/Journals:** do not add to depends_on (gRPC retries handle transient unavailability)
+- **gRPC client calls to other services:** do not add to depends_on (gRPC retries handle transient unavailability)
 
 Do **not** add a new database container — reuse the shared `sqlserver` / `postgres` / `redis` container with a unique schema or database name.
 
@@ -136,7 +136,7 @@ Do **not** touch `src/ApiGateway/`. Routing through YARP is a deliberate decisio
 ## Step 7: Final build
 
 ```bash
-dotnet build src/Articles.sln
+dotnet build src/{SolutionFile}
 ```
 
 The solution must compile with zero errors and zero warnings introduced by the new service. If the build fails, fix the csproj references or DI stubs before reporting to the user. Do not leave a broken solution.

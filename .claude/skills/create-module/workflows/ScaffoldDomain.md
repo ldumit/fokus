@@ -2,7 +2,7 @@
 
 Scaffolds the `.Domain` + `.Persistence` projects of a Domain archetype module. Always runs for Domain modules. `.Application` and `.API` are conditional follow-ups.
 
-**Reference exemplar:** `src/Modules/ArticleTimeline/ArticleTimeline.Domain/` + `src/Modules/ArticleTimeline/ArticleTimeline.Persistence/`
+**Reference exemplar:** `src/Modules/{Module}/{Module}.Domain/` + `src/Modules/{Module}/{Module}.Persistence/`
 
 ## Folder tree created
 
@@ -26,7 +26,7 @@ src/Modules/{Name}/
 
 ## `{Name}.Domain.csproj`
 
-**Reference:** `src/Modules/ArticleTimeline/ArticleTimeline.Domain/ArticleTimeline.Domain.csproj`
+**Reference:** `src/Modules/{Module}/{Module}.Domain/{Module}.Domain.csproj`
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -38,7 +38,7 @@ src/Modules/{Name}/
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.Domain\Blocks.Domain.csproj" />
-    <ProjectReference Include="..\..\..\BuildingBlocks\Articles.Abstractions\Articles.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\{ProjectName}.Abstractions\{ProjectName}.Abstractions.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -49,12 +49,12 @@ src/Modules/{Name}/
 global using Blocks.Domain;
 global using Blocks.Domain.Entities;
 global using Blocks.Domain.ValueObjects;
-global using Articles.Abstractions;
+global using {ProjectName}.Abstractions;
 ```
 
 ## `{Name}.Persistence.csproj`
 
-**Reference:** `src/Modules/ArticleTimeline/ArticleTimeline.Persistence/ArticleTimeline.Persistence.csproj`
+**Reference:** `src/Modules/{Module}/{Module}.Persistence/{Module}.Persistence.csproj`
 
 ### EF Core branch (SQL Server or PostgreSQL)
 
@@ -92,7 +92,7 @@ global using Articles.Abstractions;
 
 ## `{Name}.Persistence/{Name}DbContext.cs` (EF branch only)
 
-**Reference:** `src/Modules/ArticleTimeline/ArticleTimeline.Persistence/ArticleTimelineDbContext.cs`
+**Reference:** `src/Modules/{Module}/{Module}.Persistence/{Module}DbContext.cs`
 
 ### Embedded-host-connection branch
 
@@ -126,7 +126,7 @@ Same as above but omit the `HasDefaultSchema(...)` line. The module has its own 
 
 ## `{Name}.Persistence/DependencyInjection.cs`
 
-**Reference:** `src/Modules/ArticleTimeline/ArticleTimeline.Persistence/DependencyInjection.cs`
+**Reference:** `src/Modules/{Module}/{Module}.Persistence/DependencyInjection.cs`
 
 ### Embedded-host-connection branch
 

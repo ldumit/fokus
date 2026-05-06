@@ -16,15 +16,14 @@ Creates a complete gRPC code-first contract with server and client. No .proto fi
 
 ## Arguments
 
-Pass the service contract name: `/create-grpc-contract ArticleQueryService`
+Pass the service contract name: `/create-grpc-contract OrderQueryService`
 
 ## Existing Contracts
 
-| Contract | Host Service | Port | Location |
-|----------|-------------|------|----------|
-| IPersonService | Auth | 4401 | `Articles.Grpc.Contracts/Auth/PersonContracts.cs` |
-| IJournalService | Journals | 4402 | `Articles.Grpc.Contracts/Journals/JournalContracts.cs` |
+| Contract | Service | Port | Location |
+|----------|---------|------|----------|
+| (check `src/BuildingBlocks/{ProjectName}.Grpc.Contracts/`) | | | |
 
 ## Port Conventions
 
-gRPC uses the same ports as HTTP. Services: 4401-4406 (HTTP), 4451-4456 (HTTPS).
+Check the root CLAUDE.md Port Convention section for assigned service indices and derived ports.

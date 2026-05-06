@@ -2,14 +2,14 @@
 
 Wire every project created in this skill run into the solution file, then verify the build. Modules do not get Dockerfiles or docker-compose entries — they run inside host services.
 
-## Step 1: Add projects to `Articles.sln`
+## Step 1: Add projects to `{SolutionFile}`
 
 Run from the repo root. The exact list depends on the archetype and which conditional projects were scaffolded:
 
 ### Component archetype — first run
 
 ```bash
-dotnet sln src/Articles.sln add \
+dotnet sln src/{SolutionFile} add \
   src/Modules/{Name}/{Name}.Contracts/{Name}.Contracts.csproj \
   src/Modules/{Name}/{Name}.{FirstImpl}/{Name}.{FirstImpl}.csproj
 ```
@@ -17,7 +17,7 @@ dotnet sln src/Articles.sln add \
 ### Component archetype — second run (new impl only)
 
 ```bash
-dotnet sln src/Articles.sln add src/Modules/{Name}/{Name}.{NewImpl}/{Name}.{NewImpl}.csproj
+dotnet sln src/{SolutionFile} add src/Modules/{Name}/{Name}.{NewImpl}/{Name}.{NewImpl}.csproj
 ```
 
 ### Domain archetype
@@ -25,7 +25,7 @@ dotnet sln src/Articles.sln add src/Modules/{Name}/{Name}.{NewImpl}/{Name}.{NewI
 Always add `.Domain` + `.Persistence`:
 
 ```bash
-dotnet sln src/Articles.sln add \
+dotnet sln src/{SolutionFile} add \
   src/Modules/{Name}/{Name}.Domain/{Name}.Domain.csproj \
   src/Modules/{Name}/{Name}.Persistence/{Name}.Persistence.csproj
 ```
@@ -33,16 +33,16 @@ dotnet sln src/Articles.sln add \
 Conditionally add `.Application`:
 
 ```bash
-dotnet sln src/Articles.sln add src/Modules/{Name}/{Name}.Application/{Name}.Application.csproj
+dotnet sln src/{SolutionFile} add src/Modules/{Name}/{Name}.Application/{Name}.Application.csproj
 ```
 
 Conditionally add `.API`:
 
 ```bash
-dotnet sln src/Articles.sln add src/Modules/{Name}/{Name}.API/{Name}.API.csproj
+dotnet sln src/{SolutionFile} add src/Modules/{Name}/{Name}.API/{Name}.API.csproj
 ```
 
-Use `--solution-folder Modules/{Name}` if the exemplar modules are grouped in solution folders — check `Articles.sln` first.
+Use `--solution-folder Modules/{Name}` if the exemplar modules are grouped in solution folders — check `{SolutionFile}` first.
 
 ## Step 2: No Dockerfile, no docker-compose
 
@@ -64,7 +64,7 @@ This keeps host adoption an explicit decision per service.
 ## Step 4: Final build
 
 ```bash
-dotnet build src/Articles.sln
+dotnet build src/{SolutionFile}
 ```
 
 The solution must compile with zero errors and zero new warnings. If the build fails, fix csproj references or DI stubs before reporting success — do not leave a broken solution.

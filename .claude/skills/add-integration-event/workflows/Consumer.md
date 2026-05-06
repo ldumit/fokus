@@ -4,7 +4,7 @@ MassTransit consumer in the target service. Auto-discovered — no manual regist
 
 ## Simple Consumer (Update/Upsert)
 
-**Reference:** `src/Services/ArticleHub/ArticleHub.API/Articles/Consumers/ArticleAcceptedForProductionConsumer.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/{Domain}/Consumers/{EventName}Consumer.cs`
 
 ```csharp
 public sealed class {EventName}Consumer({DbContext} _dbContext)
@@ -35,7 +35,7 @@ public sealed class {EventName}Consumer({DbContext} _dbContext)
 
 ## Rich Consumer (Factory Method + Supporting Entities)
 
-**Reference:** `src/Services/Review/Review.Application/Features/Articles/InitializeFromSubmission/ArticleApprovedForReviewConsumer.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Application/Features/{Domain}/{Feature}/{EventName}Consumer.cs`
 
 When the consumer creates a full local aggregate with supporting entities:
 
@@ -54,8 +54,7 @@ public sealed class {EventName}Consumer({Dependencies})
         var entity = {Entity}.From{Source}(dto);
 
         // Create supporting entities
-        await CreateActors(dto);
-        await GetOrCreateJournal(dto);
+        await GetOrCreate{RelatedEntity}(dto);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
@@ -70,7 +69,7 @@ public sealed class {EventName}Consumer({Dependencies})
 3. Use `sealed class`
 4. Inject DbContext or repository depending on the service's persistence pattern
 5. Use Mapster for DTO → entity mapping
-6. Factory methods (e.g., `Article.FromSubmission()`) keep creation logic in the domain
+6. Factory methods (e.g., `{Entity}.From{Source}()`) keep creation logic in the domain
 
 ## Registration
 
@@ -84,9 +83,9 @@ Queue naming handled by `SnakeCaseWithServiceSuffixNameFormatter`.
 ## Naming Convention
 
 `{EventName}Consumer` — matches the event name without "Event" suffix.
-Example: `ArticleAcceptedForProductionEvent` → `ArticleAcceptedForProductionConsumer`
+Example: `OrderAcceptedForFulfillmentEvent` -> `OrderAcceptedForFulfillmentConsumer`
 
 ## Location
 
-- ArticleHub: `ArticleHub.API/Articles/Consumers/`
-- Other services: `{Service}.API/Features/{Domain}/Consumers/` or `{Service}.Application/Features/{Domain}/Consumers/`
+- Read-model services: `{Svc}.API/{Domain}/Consumers/`
+- Other services: `{Svc}.API/Features/{Domain}/Consumers/` or `{Svc}.Application/Features/{Domain}/Consumers/`

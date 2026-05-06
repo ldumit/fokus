@@ -4,7 +4,7 @@ Create the `.Persistence` project source files. Branch on the persistence techno
 
 ## Branch: EF Core (SQL Server or PostgreSQL)
 
-**Reference exemplar:** `src/Services/Review/Review.Persistence/`
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.Persistence/`
 
 ### `{Name}.Persistence/GlobalUsings.cs`
 
@@ -17,7 +17,7 @@ global using {Name}.Domain;
 
 ### `{Name}.Persistence/{Name}DbContext.cs`
 
-**Reference:** `src/Services/Review/Review.Persistence/ReviewDbContext.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Persistence/{Svc}DbContext.cs`
 
 ```csharp
 namespace {Name}.Persistence;
@@ -38,7 +38,7 @@ public class {Name}DbContext : ApplicationDbContext
 
 ### `{Name}.Persistence/DependencyInjection.cs`
 
-**Reference:** `src/Services/Review/Review.Persistence/DependencyInjection.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Persistence/DependencyInjection.cs`
 
 ```csharp
 namespace {Name}.Persistence;
@@ -73,7 +73,7 @@ If the service uses split-project migrations (Persistence project vs API startup
 
 ## Branch: Redis
 
-**Reference exemplar:** `src/Services/Journals/Journals.Persistence/`
+**Reference exemplar:** `src/Services/{Svc}/{Svc}.Persistence/`
 
 ### `{Name}.Persistence/GlobalUsings.cs`
 
@@ -86,7 +86,7 @@ global using {Name}.Domain;
 
 ### `{Name}.Persistence/DependencyInjection.cs`
 
-**Reference:** `src/Services/Journals/Journals.Persistence/DependencyInjection.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Persistence/DependencyInjection.cs`
 
 ```csharp
 namespace {Name}.Persistence;

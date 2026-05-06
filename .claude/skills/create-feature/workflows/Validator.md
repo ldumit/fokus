@@ -18,7 +18,7 @@ public class {FeatureName}CommandValidator : Validator<{FeatureName}Command>
 }
 ```
 
-**Production variant:** extend `BaseValidator<T>` instead of `Validator<T>`.
+**Optional:** if the service defines a custom base validator (check service CLAUDE.md), extend it instead of `Validator<T>`.
 
 ### MediatR: `AbstractValidator<T>`
 

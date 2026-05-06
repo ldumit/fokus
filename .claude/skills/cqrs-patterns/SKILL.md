@@ -92,7 +92,7 @@ MediatR Behavior and Endpoint Filter resolve `IClaimsProvider.TryGetUserId()`. F
 |---------|-----------|------------|-----------|
 | FE Validator | FastEndpoints | `Validator<T>` | Auto-discovered by FastEndpoints |
 | MediatR Validator | Carter, Minimal APIs | `AbstractValidator<T>` | `AddValidatorsFromAssemblyContaining<T>()` + `ValidationBehavior` |
-| Production custom | FastEndpoints | `BaseValidator<T>` (extends `Validator<T>`) | Adds null-guard + logging |
+| Custom base (opt-in per service) | FastEndpoints | `BaseValidator<T>` (extends `Validator<T>`) | Adds null-guard + logging |
 
 Custom validation extensions in `Blocks.Core/FluentValidation/Extensions.cs`:
 - `NotEmptyWithMessage(propertyName)`, `MaximumLengthWithMessage(maxLength, propertyName)` — consistent error message format
@@ -101,12 +101,12 @@ Custom validation extensions in `Blocks.Core/FluentValidation/Extensions.cs`:
 
 ## Registration
 
-**File:** `src/Services/Submission/Submission.Application/DependencyInjection.cs`
+**File:** `src/Services/{Svc}/{Svc}.Application/DependencyInjection.cs`
 
 ```csharp
 services
-    .AddMapsterConfigsFromAssemblyContaining<GrpcMappings>()
-    .AddValidatorsFromAssemblyContaining<CreateArticleCommandValidator>()
+    .AddMapsterConfigsFromAssemblyContaining<{Domain}Mappings>()
+    .AddValidatorsFromAssemblyContaining<{FeatureName}CommandValidator>()
     .AddMediatR(config =>
     {
         config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

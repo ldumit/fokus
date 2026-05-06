@@ -1,12 +1,12 @@
 # Create Endpoint — Carter
 
-Used by: Review, ArticleHub
+Used by: Carter + MediatR services
 
 Class implementing `ICarterModule` with fluent route building. Dispatches to MediatR handler.
 
 ## Pattern
 
-**Reference:** `src/Services/Review/Review.API/Endpoints/Articles/AcceptArticleEndpoint.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Endpoints/{Domain}/{FeatureName}Endpoint.cs`
 
 Create `{FeatureName}Endpoint.cs` in `Endpoints/{Domain}/`:
 
@@ -38,6 +38,22 @@ The endpoint dispatches to a handler in the Application project:
 ## Registration
 
 Carter auto-discovers modules via `AddCarter()` + `app.MapCarter()` — no manual registration.
+
+## Error Handling
+
+**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
+
+The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
+
+```csharp
+catch (SomeDomainException ex)
+{
+    // side effect only — then re-throw for the middleware
+    throw;
+}
+```
+
+Never write `catch → Results.Problem(statusCode)` in an endpoint.
 
 ## Notes
 

@@ -76,6 +76,8 @@ Never ask the user or developer about codebase facts you can look up. Check the 
 - `docs/architecture/v1.md` — always loaded via `@` (technical architecture, system shape)
 - `docs/specs/v1.md` — read on-demand during spec work or plan cross-checks
 - `.claude/rules/agents-workflow.md` — auto-loaded (coordination protocol, file formats)
+- `.claude/skills/create-architecture-doc/` — architecture doc skill (scan + template)
+- `.claude/skills/create-implementation-plan/` — plan skill (mapping + template)
 
 ## Feature Spec Workflow
 
@@ -85,10 +87,18 @@ Every feature needs a spec before a plan. A separate agent (PO) creates feature 
 2. If no spec exists, or spec is not `Status: Ready`: stop and tell the user. Do not create the spec yourself.
 3. When reading a spec before planning, cross-check it against `docs/specs/v1.md` and `docs/architecture/v1.md`. Flag gaps or conflicts — but route fixes to the user/PO, don't write them.
 
+## Architecture Doc Workflow
+
+Use the `create-architecture-doc` skill when writing or updating architecture documentation. The skill scans the skill inventory and structures the document to defer implementation patterns to skills.
+
+Two modes:
+- **Generate** — first-time creation for a new project or service.
+- **Refresh** — re-scan skills after skill additions/changes. Flags sections where inline detail now has a matching skill.
+
 ## Plan Workflow
 
 1. **Gate:** Verify `docs/features/{Feature}.md` exists with `Status: Ready`.
-2. User describes the feature.
+2. Use the `create-implementation-plan` skill when writing plans. The skill's reading protocol, skill mapping, and anti-pattern check replace the freeform approach.
 3. Read all relevant context. Ask every clarifying question in one batch.
 4. **Gap analysis before writing:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
 5. Produce the plan following the format in the coordination protocol.
@@ -99,10 +109,11 @@ Every feature needs a spec before a plan. A separate agent (PO) creates feature 
 
 ## Plan Writing Rules
 
+Follow the `create-implementation-plan` skill. The skill's template enforces skill references and prevents over-specification.
+
+Additionally:
 - Be explicit about **performance approach** — bulk vs per-entity for data operations.
 - **Reference existing code as pattern examples** — point to a specific file.
-- **Reference relevant skills** — check `.claude/skills/` for matches. Mention by name. When a skill exists, provide only feature-specific inputs — never inline what the skill defines.
-- **Missing skill → lessons entry** — log it so it can be created later.
 - **Specify full file paths** for every file to create or modify.
 
 

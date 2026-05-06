@@ -4,13 +4,13 @@ Create the `.Domain` project source files. The domain project is intentionally t
 
 ## `{Name}.Domain/GlobalUsings.cs`
 
-**Reference:** `src/Services/Review/Review.Domain/GlobalUsings.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/GlobalUsings.cs`
 
 ```csharp
 global using Blocks.Domain;
 global using Blocks.Domain.Entities;
 global using Blocks.Domain.ValueObjects;
-global using Articles.Abstractions;
+global using {ProjectName}.Abstractions;
 ```
 
 Add more usings only if a specific aggregate needs them later.

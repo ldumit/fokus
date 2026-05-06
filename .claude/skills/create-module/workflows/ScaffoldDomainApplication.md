@@ -4,7 +4,7 @@
 
 A Domain module's `.Application` project holds cross-feature state, event handlers, DTOs, and mapping profiles. It depends on `.Persistence` (no repository interfaces in `.Domain` — same rule as services).
 
-**Reference exemplar:** The `ArticleTimeline` module does not have an `.Application` project today. Follow the shape of `src/Services/Review/Review.Application/` as the pattern, scoped down for a module.
+**Reference exemplar:** Follow the shape of an existing service's `.Application` project (e.g., `src/Services/{Svc}/{Svc}.Application/`) as the pattern, scoped down for a module.
 
 ## Folder tree
 
@@ -75,7 +75,7 @@ public static class DependencyInjection
 
 **In `.Application`:**
 - Cross-feature DTOs (reused by more than one feature)
-- Domain event handlers that need application-level services (the Timeline module would put its `ArticleSubmittedDomainEventHandler` here if Application is present)
+- Domain event handlers that need application-level services
 - Mapping profiles (AutoMapper, Mapperly)
 - State machines
 

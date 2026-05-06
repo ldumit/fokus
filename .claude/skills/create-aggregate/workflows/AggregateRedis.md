@@ -1,12 +1,12 @@
 # Create Aggregate — Redis
 
-Used by: Journals
+Used by: Redis-backed services
 
 Redis entities do NOT use `AggregateRoot`. No audit fields, no domain events from base class.
 
 ## Entity File: `{Service}.Domain/{EntityName}/{EntityName}.cs`
 
-**Reference:** `src/Services/Journals/Journals.Domain/Journals/Journal.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.Domain/{Aggregate}/{Aggregate}.cs`
 
 ```csharp
 [Document(StorageType = StorageType.Json, Prefixes = new[] { nameof({EntityName}) })]
@@ -39,7 +39,7 @@ public class {ChildEntity} : Entity
 }
 ```
 
-Note: `[Indexed(JsonPath = "$.Name")]` goes on the **parent entity's collection property**, not on the child. For example, `Journal` declares `[Indexed(JsonPath = "$.Name")] public List<Section> Sections { get; set; }` to index the nested `Name` field.
+Note: `[Indexed(JsonPath = "$.Name")]` goes on the **parent entity's collection property**, not on the child. For example, the parent declares `[Indexed(JsonPath = "$.Name")] public List<{ChildEntity}> {Children} { get; set; }` to index the nested `Name` field.
 
 ## Registration
 

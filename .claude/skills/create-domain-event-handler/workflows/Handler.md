@@ -2,7 +2,7 @@
 
 ## Location Rule
 
-The handler lives in `{Service}.API/Features/{Domain}/{Feature}/` — the feature folder it *serves*, not necessarily the one that raised the event.
+The handler lives in `{Svc}.API/Features/{Domain}/{Feature}/` — the feature folder it *serves*, not necessarily the one that raised the event.
 
 - **Single handler for an event:** Place in the feature folder that triggers the event (cause and effect are the same feature).
 - **Multiple handlers for the same event:** Each handler goes in the feature folder its *effect* belongs to.
@@ -12,21 +12,21 @@ The handler lives in `{Service}.API/Features/{Domain}/{Feature}/` — the featur
 Handler names describe their effect, not their trigger.
 
 - **Effect matches event name (e.g., SignalR broadcast):** `Broadcast{EventName}Handler.cs` (short form).
-  - Example: `CardCreatedEvent` -> `BroadcastCardCreatedHandler.cs`
+  - Example: `OrderCreatedEvent` -> `BroadcastOrderCreatedHandler.cs`
 - **Effect differs from event name:** `{EffectDescription}On{EventName}Handler.cs` (full form).
-  - Example: `EvidenceLinkDetachedEvent` broadcasts "CardUpdated" -> `BroadcastCardUpdatedOnEvidenceLinkDetachedHandler.cs`
+  - Example: `LineItemRemovedEvent` broadcasts "OrderUpdated" -> `BroadcastOrderUpdatedOnLineItemRemovedHandler.cs`
 - **Multiple effects:** `{Effect1}And{Effect2}On{EventName}Handler.cs`.
-  - Example: `EvidenceLinkAttachedEvent` broadcasts and enqueues a fetch -> `BroadcastAndFetchOnEvidenceLinkAttachedHandler.cs`
+  - Example: `LineItemAddedEvent` broadcasts and enqueues a calculation -> `BroadcastAndRecalculateOnLineItemAddedHandler.cs`
 
 ## Namespace
 
 Matches the folder path exactly.
 
 ```
-Reflekt.API.Features.Cards.CreateCard
+{Svc}.API.Features.{Domain}.{Feature}
 ```
 
-## Pattern — FastEndpoints variant (Reflekt, Auth, Journals)
+## Pattern — FastEndpoints Variant
 
 ```csharp
 public sealed class {HandlerName}({Dependencies})
@@ -39,7 +39,7 @@ public sealed class {HandlerName}({Dependencies})
 }
 ```
 
-## Pattern — MediatR variant (Submission, Review, Production)
+## Pattern — MediatR Variant
 
 ```csharp
 public sealed class {HandlerName}({Dependencies})
@@ -52,10 +52,12 @@ public sealed class {HandlerName}({Dependencies})
 }
 ```
 
+Check the service's CLAUDE.md for which variant to use.
+
 ## Reference
 
 Canonical example:
 
 ```
-src/Services/Reflekt/Reflekt.API/Features/Cards/CreateCard/BroadcastCardCreatedHandler.cs
+src/Services/{Svc}/{Svc}.API/Features/{Domain}/{Feature}/Broadcast{EventName}Handler.cs
 ```

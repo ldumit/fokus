@@ -30,9 +30,9 @@ Creates a DDD aggregate root following the partial class behavior split pattern.
 
 ## Arguments
 
-Pass the aggregate name: `/create-aggregate ArticleRevision`
+Pass the aggregate name: `/create-aggregate OrderItem`
 
 ## Special Cases
 
-- **Auth `User`:** Cannot extend `AggregateRoot<T>` due to `IdentityUser` constraint — must implement `IAggregateRoot` manually
-- **Journals/Redis:** Uses `Blocks.Redis.Entity` base, not `AggregateRoot`. No audit fields, no domain event queue on the base class. Domain events still exist (`IDomainEvent` records) and are dispatched via FastEndpoints `IEventHandler`.
+- **Identity `User`:** Cannot extend `AggregateRoot<T>` due to `IdentityUser` constraint — must implement `IAggregateRoot` manually
+- **Redis services:** Uses `Blocks.Redis.Entity` base, not `AggregateRoot`. No audit fields, no domain event queue on the base class. Domain events still exist (`IDomainEvent` records) and are dispatched via FastEndpoints `IEventHandler`.

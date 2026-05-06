@@ -1,12 +1,12 @@
 # Create Endpoint — FastEndpoints
 
-Used by: Auth, Journals, Production
+Used by: FastEndpoints services
 
 Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in `HandleAsync` — no MediatR dispatch.
 
 ## Pattern
 
-**Reference:** `src/Services/Auth/Auth.API/Features/Users/CreateAccount/CreateUserEndpoint.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Features/{Domain}/{FeatureName}/{FeatureName}Endpoint.cs`
 
 Create `{FeatureName}Endpoint.cs` in `Features/{Domain}/{FeatureName}/`:
 
@@ -23,16 +23,14 @@ public class {FeatureName}Endpoint({Dependencies})
         // Execute domain logic
         // Save changes
 
-        await Send.OkAsync(new {ResponseType}(...), ct);
+        await SendOkAsync(new {ResponseType}(...), ct);
     }
 }
 ```
 
-## Production Variant: BaseEndpoint
+## Optional: Custom Base Endpoint
 
-Production adds an abstract `BaseEndpoint<TCommand, TResponse>` that wraps common patterns:
-
-**Reference:** `src/Services/Production/Production.API/Features/_Shared/BaseEndpoint.cs`
+If the service defines a custom base endpoint (check service CLAUDE.md), extend it instead of `Endpoint<TReq, TRes>`:
 
 ```csharp
 public class {FeatureName}Endpoint({Dependencies})
@@ -66,9 +64,26 @@ public partial class {FeatureName}Endpoint
 }
 ```
 
+## Error Handling
+
+**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
+
+The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
+
+```csharp
+catch (SomeDomainException ex)
+{
+    // side effect only — then re-throw for the middleware
+    throw;
+}
+```
+
+Never write `catch → SendAsync(statusCode)` or `catch → SendUnauthorizedAsync()` in an endpoint.
+
 ## Notes
 
-- Journals: handler class name sometimes ends with `QueryHandler` or `CommandHandler` even though it's an endpoint (legacy naming — avoid in new code)
-- Production validators extend `BaseValidator<T>` (custom, wraps `Validator<T>`)
-- Use `Send.OkAsync()` for all FastEndpoints responses — the pattern used across all services
+- If the service defines a custom base validator (check service CLAUDE.md), extend it instead of `Validator<T>`
+- Use `SendOkAsync()` for all FastEndpoints responses — the pattern used across all services
 - Domain events: dispatched automatically via interceptor on SaveChanges, or via `await PublishAsync(new {Event}(...))` for FastEndpoints events
+
+Check the service's CLAUDE.md for which variant to use.

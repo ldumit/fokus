@@ -91,18 +91,18 @@ Or via policy with just the role requirement, no access checker.
 ### Full (role + resource)
 Both layers. Use when users can only access resources they own or are assigned to.
 
-Current implementation: `ArticleAccessAuthorizationHandler` checks role via `ArticleRoleRequirement` AND queries DB via `IArticleAccessChecker` to verify the user is assigned to the specific article.
+The handler checks role via `{Resource}RoleRequirement` AND queries DB via `I{Resource}AccessChecker` to verify the user has access to the specific resource.
 
 ### Tenant-scoped
 Extend Layer 2 to include tenant ID in the access check. For multi-tenant apps, the checker verifies both resource access AND tenant membership.
 
 ## Source Files
 
-- `src/BuildingBlocks/Articles.Abstractions/Security/IArticleAccessChecker.cs` — access checker interface
-- `src/BuildingBlocks/Articles.Security/ArticleRoleRequirement.cs`
-- `src/BuildingBlocks/Articles.Security/ArticleAccessAuthorizationHandler.cs`
-- `src/BuildingBlocks/Articles.Security/Extensions.cs` — `RequireRoleAuthorization()` extension
-- `src/BuildingBlocks/Articles.Security/Role.cs` — role string constants
+- `src/BuildingBlocks/{ProjectName}.Abstractions/Security/I{Resource}AccessChecker.cs` — access checker interface
+- `src/BuildingBlocks/{ProjectName}.Security/{Resource}RoleRequirement.cs`
+- `src/BuildingBlocks/{ProjectName}.Security/{Resource}AccessAuthorizationHandler.cs`
+- `src/BuildingBlocks/{ProjectName}.Security/Extensions.cs` — `RequireRoleAuthorization()` extension
+- `src/BuildingBlocks/{ProjectName}.Security/Role.cs` — role string constants
 
 ## Endpoint Authorization by Framework
 

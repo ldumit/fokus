@@ -4,7 +4,7 @@
 
 | Base | When | Example |
 |------|------|---------|
-| `StringValueObject` | Single string value (email, name, URL) | `EmailAddress`, `ArticleTitle` |
+| `StringValueObject` | Single string value (email, name, URL) | `EmailAddress`, `{ValueObjectName}` |
 | `SingleValueObject<T>` | Single struct value (int, decimal, Guid) | `Money`, `Quantity` |
 | `ValueObject` | Multiple properties | `Address`, `DateRange` |
 
@@ -81,7 +81,7 @@ public static implicit operator {Name}(string value) => Create(value);
 public static implicit operator string({Name} vo) => vo.Value;
 ```
 
-Used in Review's `EmailAddress`. Optional — only add when the conversion is unambiguous.
+Optional — only add when the conversion is unambiguous.
 
 ## EF Core Mapping
 

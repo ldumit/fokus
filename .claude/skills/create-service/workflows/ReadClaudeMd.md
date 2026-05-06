@@ -23,9 +23,9 @@ Parse the CLAUDE.md and extract every axis into a working model. The file format
 | Database | `**Database:**` line | `ScaffoldPersistenceProject.md` branch + docker-compose `depends_on` |
 | HTTP/HTTPS ports | `**Port:**` line | `launchSettings.json`, `appsettings.json`, docker-compose |
 | Application layer Y/N | `## Domain model` → `**Application layer:**` line | whether `ScaffoldApplicationProject.md` runs |
-| gRPC clients consumed | `## gRPC clients` section | `.Application` or `.API` ProjectReference to `Articles.Grpc.Contracts` + DI registrations |
+| gRPC clients consumed | `## gRPC clients` section | `.Application` or `.API` ProjectReference to `{ProjectName}.Grpc.Contracts` + DI registrations |
 | gRPC server exposed | `## gRPC server` section | `.API` DI registrations, port mapping |
-| Integration events published | `## Integration events` → `**Published:**` | `.API` or `.Application` references to `Articles.Integration.Contracts` + `Blocks.Messaging` |
+| Integration events published | `## Integration events` → `**Published:**` | `.API` or `.Application` references to `{ProjectName}.Integration.Contracts` + `Blocks.Messaging` |
 | Integration events consumed | `## Integration events` → `**Consumed:**` | same as above + `depends_on: rabbitmq` in docker-compose |
 | File storage | `## File storage` section (optional) | extra ProjectReference to the module (e.g., `FileService.AzureBlob`) |
 

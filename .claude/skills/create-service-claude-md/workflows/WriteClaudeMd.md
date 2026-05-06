@@ -10,12 +10,7 @@ The folder `src/Services/{Name}/` does not yet exist — create it as part of wr
 
 ## Output format
 
-Match the shape of existing service CLAUDE.md files. Canonical exemplars:
-- `src/Services/Review/CLAUDE.md` — MediatR + Carter + SQL Server + Application layer
-- `src/Services/Production/CLAUDE.md` — FastEndpoints + SQL Server + Application layer
-- `src/Services/Auth/CLAUDE.md` — FastEndpoints + SQL Server + no Application layer
-- `src/Services/Journals/CLAUDE.md` — FastEndpoints + Redis + no Application layer
-- `src/Services/ArticleHub/CLAUDE.md` — Carter read-model + PostgreSQL
+Match the shape of existing service CLAUDE.md files. Check `src/Services/` for exemplars covering different framework + persistence combinations (e.g., MediatR + Carter, FastEndpoints + SQL Server, FastEndpoints + Redis, Carter read-model + PostgreSQL).
 
 ## Template
 

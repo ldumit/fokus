@@ -2,7 +2,7 @@
 
 ## Pattern
 
-**Reference:** `src/Services/Auth/Auth.API/Features/Persons/PersonGrpcService.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Features/{Domain}/{ServiceName}GrpcService.cs`
 
 Create in `{Service}.API/Features/{Domain}/{ServiceName}GrpcService.cs`:
 

@@ -1,12 +1,12 @@
 # Create Endpoint — Minimal APIs
 
-Used by: Submission
+Used by: Minimal API + MediatR services
 
 Static class with `Map(IEndpointRouteBuilder)` extension method. Dispatches to MediatR handler.
 
 ## Pattern
 
-**Reference:** `src/Services/Submission/Submission.API/Endpoints/CreateArticleEndpoint.cs`
+**Reference:** `src/Services/{Svc}/{Svc}.API/Endpoints/{FeatureName}Endpoint.cs`
 
 Create `{FeatureName}Endpoint.cs` in `Endpoints/`:
 
@@ -41,7 +41,7 @@ public static class EndpointRegistration
     {
         var api = app.MapGroup("/api");
 
-        CreateArticleEndpoint.Map(api);
+        // existing endpoints...
         {FeatureName}Endpoint.Map(api); // ADD THIS LINE
 
         return app;
@@ -54,12 +54,28 @@ public static class EndpointRegistration
 The endpoint dispatches to a handler in the Application project:
 - `{Service}.Application/Features/{Domain}/{FeatureName}/{FeatureName}CommandHandler.cs`
 
+## Error Handling
+
+**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
+
+The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
+
+```csharp
+catch (SomeDomainException ex)
+{
+    // side effect only — then re-throw for the middleware
+    throw;
+}
+```
+
+Never write `catch → Results.Problem(statusCode)` in an endpoint.
+
 ## File Upload Variant
 
 For file uploads, use `[FromForm]` + `.DisableAntiforgery()`:
 
 ```csharp
-app.MapPost("/articles/{articleId}/files",
-    async ([FromRoute] int articleId, [FromForm] {UploadCommand} command, ISender sender) => { ... })
+app.MapPost("/{domain}/{entityId}/files",
+    async ([FromRoute] int entityId, [FromForm] {UploadCommand} command, ISender sender) => { ... })
     .DisableAntiforgery();
 ```
