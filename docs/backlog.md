@@ -37,7 +37,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
-| F1 | Project Scaffolding | Not Started | — |
+| F1 | Project Scaffolding | Done | — |
 
 .NET solution (API/Domain/Persistence three-project split), Vue SPA with Vite + Tailwind + ApexCharts + Pinia, Vite build → wwwroot, dev proxy setup.
 
@@ -47,7 +47,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
-| F2 | Domain Model & Persistence | Not Started | — |
+| F2 | Domain Model & Persistence | Done | — |
 | F7 | App Shell & Navigation | Not Started | — |
 
 **F2:** All 5 entities (Sprint, Developer, Ticket, SprintMembership, StatusTransition), EF Core configs, composite keys, indexes, SQLite setup, initial migration.
@@ -60,7 +60,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
-| F3 | Settings System | Not Started | — |
+| F3 | Settings System | Done | — |
 | F4 | Jira Integration | Not Started | — |
 
 **F3:** AppSettings entity (single-row, typed, JSON columns for complex values). CRUD endpoints. Settings UI: board selector, done statuses, health thresholds + weights, workflow stages. Developer sub-team tagging lives here.

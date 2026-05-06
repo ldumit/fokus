@@ -1,0 +1,20 @@
+using Fokus.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Fokus.Persistence;
+
+public class FokusDbContext(DbContextOptions<FokusDbContext> options) : DbContext(options)
+{
+    public DbSet<Sprint> Sprints => Set<Sprint>();
+    public DbSet<Developer> Developers => Set<Developer>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<SprintMembership> SprintMemberships => Set<SprintMembership>();
+    public DbSet<StatusTransition> StatusTransitions => Set<StatusTransition>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(FokusDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
+    }
+}
