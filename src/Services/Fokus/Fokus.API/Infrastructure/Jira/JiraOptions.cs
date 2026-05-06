@@ -1,0 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace Fokus.API.Infrastructure.Jira;
+
+public class JiraOptions
+{
+    [Required]
+    public string InstanceUrl { get; set; } = string.Empty;
+    [Required]
+    public string Email { get; set; } = string.Empty;
+    [Required]
+    public string ApiToken { get; set; } = string.Empty;
+}

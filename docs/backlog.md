@@ -61,7 +61,7 @@ Tier 5: F12
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
 | F3 | Settings System | Done | — |
-| F4 | Jira Integration | Not Started | — |
+| F4 | Jira Integration | Done | [JiraSync](../features/JiraSync.md) |
 
 **F3:** AppSettings entity (single-row, typed, JSON columns for complex values). CRUD endpoints. Settings UI: board selector, done statuses, health thresholds + weights, workflow stages. Developer sub-team tagging lives here.
 
@@ -73,7 +73,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
-| F5 | Sprint Sync | Not Started | — |
+| F5 | Sprint Sync | Done | [JiraSync](../features/JiraSync.md) |
 
 SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for configured board). Full flow: fetch from Jira → map → upsert entities → compute WasCommitted. Idempotent (re-sync overwrites). Active sprints allowed but flagged. Returns sync summary with counts.
 

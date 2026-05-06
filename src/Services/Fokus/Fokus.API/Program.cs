@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddFokusServices();
+builder.Services.AddFokusServices(builder.Configuration);
 builder.Services.AddFokusPersistence(builder.Configuration);
 
 var app = builder.Build();

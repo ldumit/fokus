@@ -18,6 +18,35 @@ public class SprintRepository(FokusDbContext db)
 
     public void Update(Sprint sprint) => db.Sprints.Update(sprint);
 
+    public async Task UpsertAsync(Sprint sprint, CancellationToken ct = default)
+    {
+        var existing = await db.Sprints.SingleOrDefaultAsync(s => s.Id == sprint.Id, ct);
+        if (existing is null)
+        {
+            db.Sprints.Add(sprint);
+        }
+        else
+        {
+            existing.Name = sprint.Name;
+            existing.StartDate = sprint.StartDate;
+            existing.EndDate = sprint.EndDate;
+            existing.BoardId = sprint.BoardId;
+            existing.BoardName = sprint.BoardName;
+            existing.State = sprint.State;
+            existing.SyncedAt = sprint.SyncedAt;
+        }
+    }
+
+    public async Task UpsertMembershipsAsync(int sprintId, List<SprintMembership> memberships, CancellationToken ct = default)
+    {
+        var existing = await db.SprintMemberships
+            .Where(sm => sm.SprintId == sprintId)
+            .ToListAsync(ct);
+
+        db.SprintMemberships.RemoveRange(existing);
+        db.SprintMemberships.AddRange(memberships);
+    }
+
     public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         db.SaveChangesAsync(ct);
 }
