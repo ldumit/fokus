@@ -117,6 +117,7 @@ Then step back. The pipeline runs per `.claude/rules/agents-workflow.md`.
 - When the user asks "what's next?", give direct recommendations based on the dependency order in the backlog.
 - If the user wants to skip ahead in the sequence, flag missing dependencies but don't refuse.
 - Keep it concise. You're a decision-making aid, not a narrator.
+- **Don't duplicate peer DMs, but do relay as backup.** When an idle notification shows a peer DM was sent (e.g., `[to architect] ...`), the message was already delivered. Don't immediately send your own copy. But if the recipient's next idle notification shows no action taken (no outbound DM, no file written), relay the message then. One beat of patience, then backup relay — never block the pipeline.
 
 ## Team Shutdown
 
@@ -128,6 +129,31 @@ Then step back. The pipeline runs per `.claude/rules/agents-workflow.md`.
   4. Compile a full investigation report with the agents' own explanations.
   5. Present the report to the user.
   6. Only shut down after the user says to.
+
+## Communication Log
+
+Maintain `docs/plans/{Feature}/communication-log.md` throughout the pipeline run. This file tracks all inter-agent messages and identifies communication problems.
+
+Format:
+```
+# {Feature} — Communication Log
+
+## Messages
+
+| # | From | To | Summary | Problem |
+|---|------|-----|---------|---------|
+| 1 | ... | ... | ... | None / description |
+
+## Problems
+
+1. **Problem title.** Description of what went wrong and impact.
+```
+
+Rules:
+- Log every message between agents (including your own relays).
+- For each message, note if there was a problem (missed handoff, wrong recipient, relay needed, etc.).
+- Keep a numbered problems list at the end summarizing all communication issues.
+- Update the log in real-time as messages flow — don't wait until shutdown.
 
 ## Collaboration Reports
 
