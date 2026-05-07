@@ -1,28 +1,21 @@
-using FastEndpoints;
-using Fokus.Domain.Entities;
-using Fokus.Persistence.Repositories;
-
 namespace Fokus.API.Features.Settings.SaveSettings;
 
+[AllowAnonymous]
+[HttpPut("/api/settings")]
+[Tags("Settings")]
 public class SaveSettingsEndpoint(AppSettingsRepository repository)
-    : Endpoint<SaveSettingsRequest, SaveSettingsResponse>
+    : Endpoint<SaveSettingsCommand, SaveSettingsResponse>
 {
-    public override void Configure()
-    {
-        Put("/api/settings");
-        AllowAnonymous();
-    }
-
-    public override async Task HandleAsync(SaveSettingsRequest req, CancellationToken ct)
+    public override async Task HandleAsync(SaveSettingsCommand command, CancellationToken ct)
     {
         var settings = new AppSettings
         {
             Id = 1,
-            BoardId = req.BoardId,
-            DoneStatuses = req.DoneStatuses,
-            WorkflowStages = req.WorkflowStages,
-            HealthThresholds = req.HealthThresholds,
-            HealthWeights = req.HealthWeights
+            BoardId = command.BoardId,
+            DoneStatuses = command.DoneStatuses,
+            WorkflowStages = command.WorkflowStages,
+            HealthThresholds = command.HealthThresholds,
+            HealthWeights = command.HealthWeights
         };
 
         await repository.SaveAsync(settings, ct);

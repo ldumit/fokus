@@ -1,44 +1,28 @@
-using System.Net;
-using FastEndpoints;
-using Fokus.API.Infrastructure.Jira;
+using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync.GetJiraSprints;
 
-public class GetJiraSprintsEndpoint(JiraClient jiraClient)
-    : Endpoint<GetJiraSprintsRequest, GetJiraSprintsResponse>
+[AllowAnonymous]
+[HttpGet("/api/jira/sprints")]
+[Tags("Sync")]
+public class GetJiraSprintsEndpoint(IJiraClient jiraClient)
+    : Endpoint<GetJiraSprintsQuery, GetJiraSprintsResponse>
 {
-    public override void Configure()
+    public override async Task HandleAsync(GetJiraSprintsQuery query, CancellationToken ct)
     {
-        Get("/api/jira/sprints");
-        AllowAnonymous();
-    }
+        var sprints = await jiraClient.GetSprintsAsync(query.BoardId, ct, SprintState.Active, SprintState.Closed);
 
-    public override async Task HandleAsync(GetJiraSprintsRequest req, CancellationToken ct)
-    {
-        try
-        {
-            var sprints = await jiraClient.GetSprintsAsync(req.BoardId, state: "active,closed", ct);
+        var ordered = sprints
+            .OrderBy(s => s.StartDate)
+            .Select(s => new JiraSprintDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                StartDate = s.StartDate,
+                State = s.State
+            })
+            .ToList();
 
-            var ordered = sprints
-                .OrderBy(s => s.StartDate)
-                .Select(s => new JiraSprintDto
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    StartDate = s.StartDate,
-                    State = s.State
-                })
-                .ToList();
-
-            await SendOkAsync(new GetJiraSprintsResponse { Sprints = ordered }, ct);
-        }
-        catch (JiraApiException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            await SendUnauthorizedAsync(ct);
-        }
-        catch (JiraApiException)
-        {
-            await SendAsync(new GetJiraSprintsResponse(), statusCode: 502, cancellation: ct);
-        }
+        await SendOkAsync(new GetJiraSprintsResponse { Sprints = ordered }, ct);
     }
 }

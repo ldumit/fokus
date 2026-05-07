@@ -1,41 +1,25 @@
-using System.Net;
-using FastEndpoints;
-using Fokus.API.Infrastructure.Jira;
+using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync.GetBoards;
 
-public class GetBoardsEndpoint(JiraClient jiraClient)
+[AllowAnonymous]
+[HttpGet("/api/boards")]
+[Tags("Sync")]
+public class GetBoardsEndpoint(IJiraClient jiraClient)
     : EndpointWithoutRequest<GetBoardsResponse>
 {
-    public override void Configure()
-    {
-        Get("/api/boards");
-        AllowAnonymous();
-    }
-
     public override async Task HandleAsync(CancellationToken ct)
     {
-        try
-        {
-            var boards = await jiraClient.GetBoardsAsync(ct);
+        var boards = await jiraClient.GetBoardsAsync(ct);
 
-            await SendOkAsync(new GetBoardsResponse
+        await SendOkAsync(new GetBoardsResponse
+        {
+            Boards = boards.Select(b => new BoardDto
             {
-                Boards = boards.Select(b => new BoardDto
-                {
-                    Id = b.Id,
-                    Name = b.Name,
-                    Type = b.Type
-                }).ToList()
-            }, ct);
-        }
-        catch (JiraApiException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            await SendUnauthorizedAsync(ct);
-        }
-        catch (JiraApiException)
-        {
-            await SendAsync(new GetBoardsResponse(), statusCode: 502, cancellation: ct);
-        }
+                Id = b.Id,
+                Name = b.Name,
+                Type = b.Type
+            }).ToList()
+        }, ct);
     }
 }

@@ -1,26 +1,22 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Blocks.EntityFrameworkCore.Repositories;
 
 namespace Fokus.Persistence.Repositories;
 
 public class DeveloperRepository(FokusDbContext db)
+    : RepositoryBase<FokusDbContext, Developer, string>(db)
 {
-    public async Task<Developer?> GetByIdAsync(string accountId, CancellationToken ct = default) =>
-        await db.Developers.SingleOrDefaultAsync(d => d.AccountId == accountId, ct);
+    public async Task<Developer?> GetByIdAsync(string id, CancellationToken ct = default) =>
+        await Entity.SingleOrDefaultAsync(d => d.Id == id, ct);
 
     public async Task<List<Developer>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Developers.OrderBy(d => d.DisplayName).ToListAsync(ct);
+        await Entity.OrderBy(d => d.DisplayName).ToListAsync(ct);
 
-    public void Add(Developer developer) => db.Developers.Add(developer);
-
-    public void Update(Developer developer) => db.Developers.Update(developer);
-
-    public async Task UpsertAsync(Developer developer, CancellationToken ct = default)
+    public new async Task UpsertAsync(Developer developer, CancellationToken ct = default)
     {
-        var existing = await db.Developers.SingleOrDefaultAsync(d => d.AccountId == developer.AccountId, ct);
+        var existing = await Entity.SingleOrDefaultAsync(d => d.Id == developer.Id, ct);
         if (existing is null)
         {
-            db.Developers.Add(developer);
+            Entity.Add(developer);
         }
         else
         {
@@ -29,7 +25,4 @@ public class DeveloperRepository(FokusDbContext db)
             existing.IsActive = developer.IsActive;
         }
     }
-
-    public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
-        db.SaveChangesAsync(ct);
 }

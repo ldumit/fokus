@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fokus.Domain\Fokus.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.EntityFrameworkCore\Blocks.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.FastEndpoints\Blocks.FastEndpoints.csproj" />
   </ItemGroup>
 
 </Project>

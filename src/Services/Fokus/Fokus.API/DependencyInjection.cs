@@ -1,8 +1,7 @@
-using FastEndpoints;
 using FastEndpoints.Swagger;
-using Fokus.API.Infrastructure.Jira;
+using Fokus.API.Features.Sync;
 using Fokus.Persistence;
-using Microsoft.Extensions.Options;
+using Jira.RestApi;
 using Scalar.AspNetCore;
 
 namespace Fokus.API;
@@ -15,16 +14,9 @@ public static class DependencyInjection
         services.SwaggerDocument();
         services.AddOpenApi();
 
-        services.AddOptions<JiraOptions>()
-            .Bind(configuration.GetSection("Jira"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        services.AddRestApiJira(configuration);
 
-        services.AddHttpClient<JiraClient>((sp, client) =>
-        {
-            var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
-            client.BaseAddress = new Uri(options.InstanceUrl);
-        });
+        services.AddScoped<SprintIssueSyncService>();
 
         return services;
     }

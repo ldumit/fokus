@@ -1,5 +1,8 @@
+using Blocks.Domain.Events;
+using Blocks.EntityFrameworkCore.Interceptors;
+using Blocks.FastEndpoints;
 using Fokus.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,8 +12,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddFokusPersistence(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<FokusDbContext>(options =>
-            options.UseSqlite(configuration.GetConnectionString("Database")));
+        services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+        services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
+
+        services.AddDbContext<FokusDbContext>((sp, options) =>
+        {
+            options.UseSqlite(configuration.GetConnectionString("Database"));
+            options.AddInterceptors(sp.GetRequiredService<ISaveChangesInterceptor>());
+        });
 
         services.AddScoped<SprintRepository>();
         services.AddScoped<TicketRepository>();

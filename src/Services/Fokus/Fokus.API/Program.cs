@@ -1,5 +1,5 @@
+using Blocks.AspNetCore.Middlewares;
 using Fokus.API;
-using Fokus.Domain.Entities;
 using Fokus.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +22,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseStaticFiles();
 app.UseFokusMiddleware();
 app.MapFallbackToFile("index.html");

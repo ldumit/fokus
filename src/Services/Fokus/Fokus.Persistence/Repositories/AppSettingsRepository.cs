@@ -1,6 +1,3 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-
 namespace Fokus.Persistence.Repositories;
 
 public class AppSettingsRepository(FokusDbContext db)

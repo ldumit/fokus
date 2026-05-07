@@ -1,9 +1,9 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Blocks.EntityFrameworkCore;
 
 namespace Fokus.Persistence;
 
-public class FokusDbContext(DbContextOptions<FokusDbContext> options) : DbContext(options)
+public class FokusDbContext(DbContextOptions<FokusDbContext> options)
+    : ApplicationDbContext<FokusDbContext>(options)
 {
     public DbSet<Sprint> Sprints => Set<Sprint>();
     public DbSet<Developer> Developers => Set<Developer>();

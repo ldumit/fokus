@@ -1,16 +1,12 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace Fokus.Persistence.Configurations;
 
 public class SprintMembershipConfiguration : IEntityTypeConfiguration<SprintMembership>
 {
     public void Configure(EntityTypeBuilder<SprintMembership> builder)
     {
-        builder.HasKey(sm => new { sm.SprintId, sm.TicketKey });
+        builder.HasKey(sm => new { sm.SprintId, sm.TicketId });
 
-        builder.Property(sm => sm.TicketKey).HasMaxLength(64);
+        builder.Property(sm => sm.TicketId).HasMaxLength(64);
         builder.Property(sm => sm.FinalStatus).IsRequired().HasMaxLength(128);
         builder.Property(sm => sm.StoryPoints).HasColumnType("decimal(8,2)");
 
@@ -21,9 +17,9 @@ public class SprintMembershipConfiguration : IEntityTypeConfiguration<SprintMemb
 
         builder.HasOne(sm => sm.Ticket)
             .WithMany()
-            .HasForeignKey(sm => sm.TicketKey)
+            .HasForeignKey(sm => sm.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(sm => sm.TicketKey).HasDatabaseName("IX_SprintMembership_TicketKey");
+        builder.HasIndex(sm => sm.TicketId).HasDatabaseName("IX_SprintMembership_TicketId");
     }
 }

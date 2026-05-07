@@ -17,7 +17,7 @@ namespace Fokus.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0-preview.4.25258.110");
 
-            modelBuilder.Entity("Fokus.Domain.Entities.AppSettings", b =>
+            modelBuilder.Entity("Fokus.Domain.AppSettings", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
@@ -38,9 +38,9 @@ namespace Fokus.Persistence.Migrations
                     b.ToTable("AppSettings");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Developer", b =>
+            modelBuilder.Entity("Fokus.Domain.Developer", b =>
                 {
-                    b.Property<string>("AccountId")
+                    b.Property<string>("Id")
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
@@ -60,12 +60,12 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("AccountId");
+                    b.HasKey("Id");
 
                     b.ToTable("Developers");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Sprint", b =>
+            modelBuilder.Entity("Fokus.Domain.Sprint", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
@@ -78,7 +78,21 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CreatedById")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CreatedOn")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedById")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedOn")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -102,12 +116,12 @@ namespace Fokus.Persistence.Migrations
                     b.ToTable("Sprints");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.SprintMembership", b =>
+            modelBuilder.Entity("Fokus.Domain.SprintMembership", b =>
                 {
                     b.Property<int>("SprintId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TicketKey")
+                    b.Property<string>("TicketId")
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
@@ -128,15 +142,15 @@ namespace Fokus.Persistence.Migrations
                     b.Property<bool>("WasCommitted")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("SprintId", "TicketKey");
+                    b.HasKey("SprintId", "TicketId");
 
-                    b.HasIndex("TicketKey")
-                        .HasDatabaseName("IX_SprintMembership_TicketKey");
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("IX_SprintMembership_TicketId");
 
                     b.ToTable("SprintMemberships");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.StatusTransition", b =>
+            modelBuilder.Entity("Fokus.Domain.StatusTransition", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -151,7 +165,7 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TicketKey")
+                    b.Property<string>("TicketId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
@@ -166,15 +180,15 @@ namespace Fokus.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TicketKey", "Timestamp")
-                        .HasDatabaseName("IX_StatusTransition_TicketKey_Timestamp");
+                    b.HasIndex("TicketId", "Timestamp")
+                        .HasDatabaseName("IX_StatusTransition_TicketId_Timestamp");
 
                     b.ToTable("StatusTransitions");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Ticket", b =>
+            modelBuilder.Entity("Fokus.Domain.Ticket", b =>
                 {
-                    b.Property<string>("Key")
+                    b.Property<string>("Id")
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
@@ -182,7 +196,14 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CreatedById")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CreatedOn")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CurrentStatus")
@@ -203,6 +224,13 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LastModifiedById")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -219,7 +247,7 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Key");
+                    b.HasKey("Id");
 
                     b.HasIndex("AssigneeId")
                         .HasDatabaseName("IX_Ticket_AssigneeId");
@@ -230,9 +258,9 @@ namespace Fokus.Persistence.Migrations
                     b.ToTable("Tickets");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.AppSettings", b =>
+            modelBuilder.Entity("Fokus.Domain.AppSettings", b =>
                 {
-                    b.OwnsOne("Fokus.Domain.ValueObjects.HealthThresholdConfig", "HealthThresholds", b1 =>
+                    b.OwnsOne("Fokus.Domain.HealthThresholdConfig", "HealthThresholds", b1 =>
                         {
                             b1.Property<int>("AppSettingsId")
                                 .HasColumnType("INTEGER");
@@ -265,7 +293,7 @@ namespace Fokus.Persistence.Migrations
                                 .HasForeignKey("AppSettingsId");
                         });
 
-                    b.OwnsOne("Fokus.Domain.ValueObjects.HealthWeightConfig", "HealthWeights", b1 =>
+                    b.OwnsOne("Fokus.Domain.HealthWeightConfig", "HealthWeights", b1 =>
                         {
                             b1.Property<int>("AppSettingsId")
                                 .HasColumnType("INTEGER");
@@ -296,17 +324,17 @@ namespace Fokus.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.SprintMembership", b =>
+            modelBuilder.Entity("Fokus.Domain.SprintMembership", b =>
                 {
-                    b.HasOne("Fokus.Domain.Entities.Sprint", "Sprint")
+                    b.HasOne("Fokus.Domain.Sprint", "Sprint")
                         .WithMany("Memberships")
                         .HasForeignKey("SprintId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fokus.Domain.Entities.Ticket", "Ticket")
+                    b.HasOne("Fokus.Domain.Ticket", "Ticket")
                         .WithMany()
-                        .HasForeignKey("TicketKey")
+                        .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -315,20 +343,20 @@ namespace Fokus.Persistence.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.StatusTransition", b =>
+            modelBuilder.Entity("Fokus.Domain.StatusTransition", b =>
                 {
-                    b.HasOne("Fokus.Domain.Entities.Ticket", "Ticket")
+                    b.HasOne("Fokus.Domain.Ticket", "Ticket")
                         .WithMany("StatusTransitions")
-                        .HasForeignKey("TicketKey")
+                        .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Ticket", b =>
+            modelBuilder.Entity("Fokus.Domain.Ticket", b =>
                 {
-                    b.HasOne("Fokus.Domain.Entities.Developer", "Assignee")
+                    b.HasOne("Fokus.Domain.Developer", "Assignee")
                         .WithMany()
                         .HasForeignKey("AssigneeId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -336,12 +364,12 @@ namespace Fokus.Persistence.Migrations
                     b.Navigation("Assignee");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Sprint", b =>
+            modelBuilder.Entity("Fokus.Domain.Sprint", b =>
                 {
                     b.Navigation("Memberships");
                 });
 
-            modelBuilder.Entity("Fokus.Domain.Entities.Ticket", b =>
+            modelBuilder.Entity("Fokus.Domain.Ticket", b =>
                 {
                     b.Navigation("StatusTransitions");
                 });

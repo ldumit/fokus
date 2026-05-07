@@ -1,18 +1,18 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Blocks.EntityFrameworkCore.Repositories;
 
 namespace Fokus.Persistence.Repositories;
 
 public class TicketRepository(FokusDbContext db)
+    : RepositoryBase<FokusDbContext, Ticket, string>(db)
 {
-    public IQueryable<Ticket> Query() =>
-        db.Tickets.Include(t => t.StatusTransitions);
+    public override IQueryable<Ticket> Query() =>
+        Entity.Include(t => t.StatusTransitions);
 
-    public async Task<Ticket?> GetByKeyAsync(string key, CancellationToken ct = default) =>
-        await Query().SingleOrDefaultAsync(t => t.Key == key, ct);
+    public async Task<Ticket?> GetByIdAsync(string id, CancellationToken ct = default) =>
+        await Query().SingleOrDefaultAsync(t => t.Id == id, ct);
 
     public async Task<List<string>> GetAllKeysWithEpicAsync(CancellationToken ct = default) =>
-        await db.Tickets
+        await Entity
             .Where(t => t.EpicKey != null)
             .Select(t => t.EpicKey!)
             .Distinct()
@@ -21,23 +21,19 @@ public class TicketRepository(FokusDbContext db)
     public async Task<HashSet<string>> GetExistingKeysAsync(IEnumerable<string> keys, CancellationToken ct = default)
     {
         var keyList = keys.ToList();
-        var existing = await db.Tickets
-            .Where(t => keyList.Contains(t.Key))
-            .Select(t => t.Key)
+        var existing = await Entity
+            .Where(t => keyList.Contains(t.Id))
+            .Select(t => t.Id)
             .ToListAsync(ct);
         return [.. existing];
     }
 
-    public void Add(Ticket ticket) => db.Tickets.Add(ticket);
-
-    public void Update(Ticket ticket) => db.Tickets.Update(ticket);
-
-    public async Task UpsertAsync(Ticket ticket, CancellationToken ct = default)
+    public new async Task UpsertAsync(Ticket ticket, CancellationToken ct = default)
     {
-        var existing = await db.Tickets.SingleOrDefaultAsync(t => t.Key == ticket.Key, ct);
+        var existing = await Entity.SingleOrDefaultAsync(t => t.Id == ticket.Id, ct);
         if (existing is null)
         {
-            db.Tickets.Add(ticket);
+            Entity.Add(ticket);
         }
         else
         {
@@ -54,16 +50,13 @@ public class TicketRepository(FokusDbContext db)
         }
     }
 
-    public async Task ReplaceTransitionsAsync(string ticketKey, List<StatusTransition> transitions, CancellationToken ct = default)
+    public async Task ReplaceTransitionsAsync(string ticketId, List<StatusTransition> transitions, CancellationToken ct = default)
     {
-        var existing = await db.StatusTransitions
-            .Where(st => st.TicketKey == ticketKey)
+        var existing = await DbContext.StatusTransitions
+            .Where(st => st.TicketId == ticketId)
             .ToListAsync(ct);
 
-        db.StatusTransitions.RemoveRange(existing);
-        db.StatusTransitions.AddRange(transitions);
+        DbContext.StatusTransitions.RemoveRange(existing);
+        DbContext.StatusTransitions.AddRange(transitions);
     }
-
-    public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
-        db.SaveChangesAsync(ct);
 }

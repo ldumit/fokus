@@ -1,15 +1,16 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Blocks.EntityFrameworkCore.EntityConfigurations;
 
 namespace Fokus.Persistence.Configurations;
 
-public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
+public class TicketConfiguration : AuditedEntityConfiguration<Ticket, string>
 {
-    public void Configure(EntityTypeBuilder<Ticket> builder)
+    protected override bool HasGeneratedId => false;
+
+    public override void Configure(EntityTypeBuilder<Ticket> builder)
     {
-        builder.HasKey(t => t.Key);
-        builder.Property(t => t.Key).HasMaxLength(64);
+        base.Configure(builder);
+
+        builder.Property(t => t.Id).HasMaxLength(64);
 
         builder.Property(t => t.Summary).IsRequired().HasMaxLength(1024);
         builder.Property(t => t.IssueType).IsRequired().HasMaxLength(64);

@@ -15,12 +15,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Mapster" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fokus.Domain\Fokus.Domain.csproj" />
     <ProjectReference Include="..\Fokus.Persistence\Fokus.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Blocks.AspNetCore\Blocks.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\..\Modules\Jira\Jira.Contracts\Jira.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Modules\Jira\Jira.RestApi\Jira.RestApi.csproj" />
   </ItemGroup>
 
 </Project>

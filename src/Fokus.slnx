@@ -1,4 +1,17 @@
 <Solution>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="BuildingBlocks/Blocks.Core/Blocks.Core.csproj" />
+    <Project Path="BuildingBlocks/Blocks.Domain/Blocks.Domain.csproj" />
+    <Project Path="BuildingBlocks/Blocks.Exceptions/Blocks.Exceptions.csproj" />
+    <Project Path="BuildingBlocks/Blocks.EntityFrameworkCore/Blocks.EntityFrameworkCore.csproj" />
+    <Project Path="BuildingBlocks/Blocks.AspNetCore/Blocks.AspNetCore.csproj" />
+    <Project Path="BuildingBlocks/Blocks.FastEndpoints/Blocks.FastEndpoints.csproj" />
+  </Folder>
+  <Folder Name="/Modules/" />
+  <Folder Name="/Modules/Jira/">
+    <Project Path="Modules/Jira/Jira.Contracts/Jira.Contracts.csproj" />
+    <Project Path="Modules/Jira/Jira.RestApi/Jira.RestApi.csproj" />
+  </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Fokus/">
     <Project Path="Services/Fokus/Fokus.API/Fokus.API.csproj" />

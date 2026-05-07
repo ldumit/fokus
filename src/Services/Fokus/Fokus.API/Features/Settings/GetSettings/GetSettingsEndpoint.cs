@@ -1,17 +1,11 @@
-using FastEndpoints;
-using Fokus.Persistence.Repositories;
-
 namespace Fokus.API.Features.Settings.GetSettings;
 
+[AllowAnonymous]
+[HttpGet("/api/settings")]
+[Tags("Settings")]
 public class GetSettingsEndpoint(AppSettingsRepository repository)
     : EndpointWithoutRequest<GetSettingsResponse>
 {
-    public override void Configure()
-    {
-        Get("/api/settings");
-        AllowAnonymous();
-    }
-
     public override async Task HandleAsync(CancellationToken ct)
     {
         var settings = await repository.GetAsync(ct);

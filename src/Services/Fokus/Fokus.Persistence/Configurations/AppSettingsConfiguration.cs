@@ -1,8 +1,3 @@
-using Fokus.Domain.Entities;
-using Fokus.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace Fokus.Persistence.Configurations;
 
 public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>

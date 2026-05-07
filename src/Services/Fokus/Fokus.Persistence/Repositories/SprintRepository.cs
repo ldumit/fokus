@@ -1,29 +1,25 @@
-using Fokus.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Blocks.EntityFrameworkCore.Repositories;
 
 namespace Fokus.Persistence.Repositories;
 
 public class SprintRepository(FokusDbContext db)
+    : RepositoryBase<FokusDbContext, Sprint, int>(db)
 {
-    public IQueryable<Sprint> Query() =>
-        db.Sprints.Include(s => s.Memberships);
+    public override IQueryable<Sprint> Query() =>
+        Entity.Include(s => s.Memberships);
 
     public async Task<Sprint?> GetByIdAsync(int id, CancellationToken ct = default) =>
         await Query().SingleOrDefaultAsync(s => s.Id == id, ct);
 
     public async Task<List<Sprint>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Sprints.OrderByDescending(s => s.EndDate).ToListAsync(ct);
+        await Entity.OrderByDescending(s => s.EndDate).ToListAsync(ct);
 
-    public void Add(Sprint sprint) => db.Sprints.Add(sprint);
-
-    public void Update(Sprint sprint) => db.Sprints.Update(sprint);
-
-    public async Task UpsertAsync(Sprint sprint, CancellationToken ct = default)
+    public new async Task UpsertAsync(Sprint sprint, CancellationToken ct = default)
     {
-        var existing = await db.Sprints.SingleOrDefaultAsync(s => s.Id == sprint.Id, ct);
+        var existing = await Entity.SingleOrDefaultAsync(s => s.Id == sprint.Id, ct);
         if (existing is null)
         {
-            db.Sprints.Add(sprint);
+            Entity.Add(sprint);
         }
         else
         {
@@ -39,14 +35,11 @@ public class SprintRepository(FokusDbContext db)
 
     public async Task UpsertMembershipsAsync(int sprintId, List<SprintMembership> memberships, CancellationToken ct = default)
     {
-        var existing = await db.SprintMemberships
+        var existing = await DbContext.SprintMemberships
             .Where(sm => sm.SprintId == sprintId)
             .ToListAsync(ct);
 
-        db.SprintMemberships.RemoveRange(existing);
-        db.SprintMemberships.AddRange(memberships);
+        DbContext.SprintMemberships.RemoveRange(existing);
+        DbContext.SprintMemberships.AddRange(memberships);
     }
-
-    public Task<int> SaveChangesAsync(CancellationToken ct = default) =>
-        db.SaveChangesAsync(ct);
 }
