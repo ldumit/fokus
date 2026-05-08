@@ -77,7 +77,7 @@ await repository.FindByIdOrThrowAsync(id);
 
 Extends `EntityConfiguration<T>`. Three opt-in override points:
 - `HasGeneratedId` — `ValueGeneratedOnAdd()` vs `ValueGeneratedNever()`
-- `DefaultDateSql` — default `"GETUTCDATE()"`, override `"NOW() AT TIME ZONE 'UTC'"` for PostgreSQL
+- `DefaultDateSql` — default `"GETUTCDATE()"`, override `"NOW() AT TIME ZONE 'UTC'"` for PostgreSQL. **Requires** `Microsoft.EntityFrameworkCore.Relational` package — `HasDefaultValueSql()` is not in the base EF Core package.
 - `HasConcurrencyToken` — default `false`, set `true` for opt-in `RowVersion` shadow property
 
 ```csharp
@@ -102,7 +102,7 @@ Two approaches:
 
 **File:** `src/BuildingBlocks/Blocks.EntityFrameworkCore/ApplicationDbContext.cs`
 
-- `ApplicationDbContext<TDbContext>` base with in-memory cache helpers (`GetAllCached`, `GetByIdCached`)
+- `ApplicationDbContext<TDbContext>` base with in-memory cache helpers (`GetAllCached`, `GetByIdCached`). **Warning:** these methods use `ref` parameters internally — they cannot be called from `async` methods. Call them from synchronous code paths or extract the cached value before entering an async context.
 
 **Variants:**
 - `ApplicationDbContext<T>` — most services

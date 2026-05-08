@@ -85,7 +85,7 @@ API  ──▶  Domain
 
 ## Tech Stack
 
-- .NET 10 / ASP.NET Core
+- .NET 10 / ASP.NET Core — solution uses `.slnx` format (XML-based, .NET 10 default)
 - **FastEndpoints** — endpoint classes per feature. One class owns request + response + handler logic; validator is a sibling class in the same folder. Built-in FluentValidation integration runs pre-handler; pre/post processors handle cross-cutting (logging, auth enrichment).
 - **FluentValidation** — request validators, auto-discovered and executed by FastEndpoints before the handler runs.
 - **FastEndpoints `IEvent` bus** — in-process publish/subscribe for domain events. Aggregates raise events onto a `DomainEvents` list; a `SaveChangesInterceptor` in Persistence publishes them after a successful save. `IEventHandler<T>` implementations (SignalR broadcasters, background-job triggers) live alongside their feature slices in `{Svc}.API`.
@@ -147,7 +147,7 @@ Example — a service at index `1` with app prefix `44`:
 
 ## Guardrails — DO NOT
 
-- **No service layer classes** (e.g. `ArticleService`). Use: domain methods, handlers, repositories, gRPC clients, infra helpers.
+- **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
 - **No repository interfaces** — single implementation, interfaces add zero value. Other components (modules, cross-cutting) do use interfaces where contracts are needed.
 - **No god folders** (`Services/`, `Helpers/`, `Utils/`).
 - **No bypassing domain rules** via EF configs or endpoints.

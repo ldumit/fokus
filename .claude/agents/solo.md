@@ -90,3 +90,4 @@ Before telling the user you're done:
 - Add patterns not already in the codebase.
 - Refactor beyond what was asked.
 - Make architecture decisions — flag them and discuss with the user.
+- Promote lessons — never edit CLAUDE.md, convention files, agent files, or skills based on lessons learned.

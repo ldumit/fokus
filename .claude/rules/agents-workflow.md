@@ -1,8 +1,24 @@
 # Agent Coordination Protocol
 
-Three-agent pipeline for feature development. Agents coordinate through file-based handoffs and SendMessage in CC Agent Teams.
+Three-agent pipeline for feature development. Agents coordinate through file-based handoffs and **hub-and-spoke messaging** — all messages route through the team lead.
 
 **Deploy to:** `.claude/rules/agents-workflow.md` (auto-loads every session)
+
+## Communication Model: Hub-and-Spoke
+
+All agent messages go through the team lead. Agents never message each other directly.
+
+**Why:** The team lead triages all communication, intercepts decisions that need user approval, and prevents agents from silently overriding user requirements.
+
+**How agents send messages:** Address the team lead, specifying the intended recipient and content:
+```
+To team-lead: "For {recipient}: {message content}"
+```
+
+**How the team lead dispatches:** Read the message, decide:
+1. **Routine handoff** (e.g., "ready for review") → forward to recipient.
+2. **Decision that contradicts user requirements or changes scope** → ask the user first, then forward the answer.
+3. **Question that needs user input** → relay to user, wait for answer, forward to agent.
 
 ## Team Lead Rules
 
@@ -10,70 +26,96 @@ Three-agent pipeline for feature development. Agents coordinate through file-bas
 - Only read a file yourself when you need its content to make a routing or coordination decision — not to relay it.
 - Relay user questions about plan content to the architect — do not investigate or answer them yourself.
 - When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references).
+- **Triage all inter-agent messages.** Before forwarding, check: does this message reverse a user decision, change scope, or remove a plan step? If yes, escalate to the user first.
 
 ## Agents
 
-| Agent | Model | Scope |
-|-------|-------|-------|
-| architect | opus | Specs, plans, Step 1 review (done check), question answers, escalation decisions |
-| developer | opusplan | Implementation, implementation.md, questions.md |
-| reviewer | sonnet | Step 2 review (code review), severity-rated conformance checks |
+| Agent | Model | Scope | Managed by |
+|-------|-------|-------|------------|
+| architect | opus | Plans, Step 1 review (done check), question answers, escalation decisions | team lead |
+| developer | opusplan | Implementation, implementation.md, questions.md | team lead |
+| reviewer | sonnet | Step 2 review (code review), severity-rated conformance checks | team lead |
+| critic | opus | Cross-reference review of feature specs (vs v1.md) and plans (vs feature spec) | PO (spec reviews), architect (plan reviews) |
 
 ## Pipeline
 
 ```
-Human → architect (spec → plan → auto-approve if ≤12 steps & no open questions, else human approves)
-                                    ↓
-                              developer (implement → implementation.md)
-                                    ↓
-                              architect (Step 1: done check)
-                               ↓ fail          ↓ pass
-                        developer (fix)    reviewer (Step 2: code review)
-                                           ↓ approve       ↓ request changes
-                                    architect (close)    developer ↔ reviewer
-                                                       (max 3 fix cycles)
-                                                            ↓ exhausted
-                                                      architect (escalation)
+Human → PO (shape feature → write spec)
+                    ↓
+         PO offers: cross-check or critic?
+          ↓ self                ↓ critic
+     PO cross-checks      PO spawns critic (Mode 1: spec vs v1.md)
+          ↓                     ↓ findings
+     Status: Ready         PO fixes gaps → Status: Ready
+                    ↓
+Human → architect (plan)
+                    ↓
+         architect offers: self-review or critic?
+          ↓ self                ↓ critic
+     architect reviews     architect spawns critic (Mode 2: plan vs spec)
+          ↓                     ↓ findings
+     plan approved         architect fixes gaps → plan approved
+                    ↓
+         auto-approve if ≤12 steps & no open questions, else human approves
+                    ↓
+              developer (implement → implementation.md)
+                    ↓
+              architect (Step 1: done check)
+               ↓ fail          ↓ pass
+        developer (fix)    reviewer (Step 2: code review)
+                           ↓ approve       ↓ request changes
+                    architect (close)    developer ↔ reviewer
+                                       (max 3 fix cycles)
+                                            ↓ exhausted
+                                      architect (escalation)
 ```
 
-## SendMessage Handoffs
+## Message Handoffs (all via team lead)
 
-Each handoff: trigger → sender → receiver → action.
+Each handoff: trigger → sender → team lead action → receiver.
 
-### Developer → Architect: Ready for review
-**Trigger:** Any implementation round complete (initial, amendment, or additional plan steps) — implementation.md written/updated.
-**Message:** "implementation.md written for {FeatureName}, ready for Step 1."
-**Architect:** Reads implementation.md against plan. Pass → messages reviewer. Fail → writes review.md, messages developer.
+### Developer → Team Lead → Architect: Ready for review
+**Trigger:** Any implementation round complete — implementation.md written/updated.
+**Developer says:** "For architect: implementation.md written for {FeatureName}, ready for Step 1."
+**Team lead:** Forward to architect.
+**Architect:** Reads implementation.md against plan. Pass → messages team lead for reviewer. Fail → writes review.md, messages team lead for developer.
 
-### Architect → Reviewer: Step 1 passed
+### Architect → Team Lead → Reviewer: Step 1 passed
 **Trigger:** Done check passes.
-**Message:** "Step 1 passed for {FeatureName}. Plan: docs/plans/{FeatureName}/plan.md"
-**Reviewer:** Re-reads plan, reviews code, writes review.md, issues verdict.
+**Architect says:** "For reviewer: Step 1 passed for {FeatureName}. Plan: docs/plans/{FeatureName}/plan.md"
+**Team lead:** Forward to reviewer.
 
-### Reviewer → Developer: Fixes needed
+### Reviewer → Team Lead → Developer: Fixes needed
 **Trigger:** CRITICAL or HIGH issues found.
-**Message:** "Fixes needed for {FeatureName}, see review.md. Cycle {N}/3."
-**Developer:** Reads review.md, fixes each item, updates implementation.md, messages reviewer.
+**Reviewer says:** "For developer: Fixes needed for {FeatureName}, see review.md. Cycle {N}/3."
+**Team lead:** Forward to developer.
 
-### Developer → Reviewer: Fixes applied
+### Developer → Team Lead → Reviewer: Fixes applied
 **Trigger:** All review items addressed.
-**Message:** "Fixes applied for {FeatureName}, ready for re-review. Cycle {N}/3."
-**Reviewer:** Re-reviews, issues new verdict.
+**Developer says:** "For reviewer: Fixes applied for {FeatureName}, ready for re-review. Cycle {N}/3."
+**Team lead:** Forward to reviewer.
 
-### Reviewer → Architect: Approved
+### Reviewer → Team Lead → Architect: Approved
 **Trigger:** APPROVE verdict.
-**Message:** "APPROVED: {FeatureName}."
-**Architect:** Writes summary.md, updates lessons.md, reports to human.
+**Reviewer says:** "For architect: APPROVED: {FeatureName}."
+**Team lead:** Forward to architect.
+**Architect:** Writes summary.md, updates lessons.md, reports to team lead.
 
-### Reviewer → Architect: Escalation
+### Reviewer → Team Lead → Architect: Escalation
 **Trigger:** 3 fix cycles exhausted OR architecture decision needed.
-**Message:** "ESCALATION for {FeatureName}: {reason}."
-**Architect:** Reads review.md, decides: update plan or redirect developer. Messages developer with resolution.
+**Reviewer says:** "For architect: ESCALATION for {FeatureName}: {reason}."
+**Team lead:** Forward to architect.
 
-### Developer → Architect: Question
+### Developer → Team Lead → Architect: Question
 **Trigger:** Blocker mid-implementation.
-**Message:** "Blocked on step {N} for {FeatureName}. Question in questions.md."
-**Architect:** Reads questions.md, answers inline, updates plan if needed, messages developer: "Answered, continue from step {N}."
+**Developer says:** "For architect: Blocked on step {N} for {FeatureName}. Question in questions.md."
+**Team lead:** Read questions.md. If the answer would reverse a user decision, change scope, or remove a plan step → **ask the user first** before forwarding. Otherwise, forward to architect.
+**Architect:** Answers inline, updates plan if needed, messages team lead for developer.
+
+### Architect answers that need user approval
+**Trigger:** Architect's answer to a developer question would reverse a user decision, change scope, or remove a plan step.
+**Architect says:** "For team lead: Question from developer requires user decision. Options: {A, B, C}. I recommend {X} because {reason}."
+**Team lead:** Present options to user. Forward user's decision to architect. Architect updates plan and answers developer.
 
 ## Cycle Caps
 
@@ -201,10 +243,15 @@ Written by developer when blocked. Architect answers inline.
 
 ## Lessons File Format
 
-All three agents append under their own heading: `docs/plans/{FeatureName}/lessons.md`.
+All pipeline agents append under their own heading: `docs/plans/{FeatureName}/lessons.md`. The PO writes lessons during spec shaping (before a plan folder exists) — create the folder and lessons file if needed.
 
 ```
 # {Feature Name} — Lessons
+
+## PO Lessons
+- Spec gaps the critic caught
+- Research that changed a decision
+- Questions that should have been asked earlier or differently
 
 ## Architect Lessons
 - Plan instructions that were ambiguous
@@ -223,6 +270,8 @@ All three agents append under their own heading: `docs/plans/{FeatureName}/lesso
 ```
 
 Only add items not already in CLAUDE.md, convention files, skills, or agent files. Update before `/compact` or `/clear`.
+
+**Mandatory:** Every agent must write lessons before finishing its work. This is not optional — if you learned something (a gap, a pattern, a mistake, an ambiguity), write it down. If the lessons file doesn't exist yet, create it. If your heading already exists, append to it. No agent exits without writing lessons.
 
 ## Review Checklist
 
