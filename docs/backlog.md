@@ -87,9 +87,9 @@ SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for con
 | F8 | Sprint Summary Card | Done | [SprintSummaryCard](../features/SprintSummaryCard.md) |
 | F9 | Developer Throughput | Done | [DeveloperThroughput](../features/DeveloperThroughput.md) |
 | F10 | Scope Change & Disruption | Done | [ScopeChangeDisruption](../features/ScopeChangeDisruption.md) |
-| F11 | Carry-Over Tracker | Spec Ready | [CarryOverTracker](../features/CarryOverTracker.md) |
-| F13 | Bug Ratio | Not Started | — |
-| F14 | Epic Progress | Not Started | — |
+| F11 | Carry-Over Tracker | Done | [CarryOverTracker](../features/CarryOverTracker.md) |
+| F13 | Bug Ratio | Done | [BugRatio](../features/BugRatio.md) |
+| F14 | Epic Progress | Spec Ready | [EpicProgress](../features/EpicProgress.md) |
 
 **F6:** Analyze StatusTransition data after sync, build directed transition graph weighted by frequency, topological sort → suggested workflow stage order. Present in Settings UI for confirmation. Triggered when no WorkflowStages configured.
 

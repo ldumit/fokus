@@ -7,6 +7,8 @@ public class SaveSettingsCommand
     public List<string> WorkflowStages { get; set; } = [];
     public HealthThresholdConfig HealthThresholds { get; set; } = new();
     public HealthWeightConfig HealthWeights { get; set; } = new();
+    public int BugRatioAlertThreshold { get; set; } = 50;
+    public int BugRatioConsecutiveSprintCount { get; set; } = 2;
 }
 
 public class SaveSettingsResponse
@@ -54,5 +56,13 @@ public class SaveSettingsCommandValidator : Validator<SaveSettingsCommand>
             .InclusiveBetween(0, 100)
             .GreaterThan(x => x.HealthThresholds.CarryOverGreen)
             .WithMessage("Carry-over amber threshold must be greater than green.");
+
+        RuleFor(x => x.BugRatioAlertThreshold)
+            .InclusiveBetween(0, 100)
+            .WithMessage("Bug ratio alert threshold must be between 0 and 100.");
+
+        RuleFor(x => x.BugRatioConsecutiveSprintCount)
+            .InclusiveBetween(1, 10)
+            .WithMessage("Bug ratio consecutive sprint count must be between 1 and 10.");
     }
 }

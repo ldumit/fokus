@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, ScopeChangeResponse } from '../types'
-import { getScopeChange, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, ScopeChangeResponse, CarryOverResponse } from '../types'
+import { getScopeChange, getCarryOver, getClosedSprints, getSubTeams } from '../api/analytics'
 
 export const useSprintsStore = defineStore('sprints', () => {
   const closedSprints = ref<ClosedSprintItem[]>([])
@@ -11,6 +11,7 @@ export const useSprintsStore = defineStore('sprints', () => {
   const sprintMode = ref<'single' | 'multi'>('multi')
   const selectedSubTeam = ref<string | null>(null)
   const scopeChange = ref<ScopeChangeResponse | null>(null)
+  const carryOver = ref<CarryOverResponse | null>(null)
   const loading = ref(false)
   const initializing = ref(false)
   const error = ref<string | null>(null)
@@ -23,7 +24,7 @@ export const useSprintsStore = defineStore('sprints', () => {
       closedSprints.value = sprints
       subTeams.value = teams
 
-      await fetchScopeChange()
+      await fetchAllData()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to initialize sprints page'
     } finally {
@@ -35,42 +36,38 @@ export const useSprintsStore = defineStore('sprints', () => {
     sprintMode.value = 'single'
     selectedSprintId.value = sprintId
     selectedLast.value = null
-    await fetchScopeChange()
+    await fetchAllData()
   }
 
   async function selectLastN(n: number | null) {
     sprintMode.value = 'multi'
     selectedLast.value = n
     selectedSprintId.value = null
-    await fetchScopeChange()
+    await fetchAllData()
   }
 
   async function selectSubTeam(subTeam: string | null) {
     selectedSubTeam.value = subTeam
-    await fetchScopeChange()
+    await fetchAllData()
   }
 
-  async function fetchScopeChange() {
+  async function fetchAllData() {
     loading.value = true
     error.value = null
     try {
-      if (sprintMode.value === 'single') {
-        scopeChange.value = await getScopeChange(
-          selectedSprintId.value ?? undefined,
-          undefined,
-          selectedSubTeam.value ?? undefined
-        )
-      } else {
-        // selectedLast === null means "All Sprints" — send 0 as sentinel
-        const last = selectedLast.value === null ? 0 : selectedLast.value
-        scopeChange.value = await getScopeChange(
-          undefined,
-          last,
-          selectedSubTeam.value ?? undefined
-        )
-      }
+      const sprintId = sprintMode.value === 'single' ? selectedSprintId.value ?? undefined : undefined
+      const last = sprintMode.value === 'single' ? undefined : (selectedLast.value === null ? 0 : selectedLast.value)
+      const subTeam = selectedSubTeam.value ?? undefined
+
+      const [scopeChangeResult, carryOverResult] = await Promise.all([
+        getScopeChange(sprintId, last, subTeam),
+        getCarryOver(sprintId, last, subTeam)
+      ])
+
+      scopeChange.value = scopeChangeResult
+      carryOver.value = carryOverResult
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load scope change data'
+      error.value = e instanceof Error ? e.message : 'Failed to load analytics data'
     } finally {
       loading.value = false
     }
@@ -84,6 +81,7 @@ export const useSprintsStore = defineStore('sprints', () => {
     sprintMode,
     selectedSubTeam,
     scopeChange,
+    carryOver,
     loading,
     initializing,
     error,
@@ -91,6 +89,6 @@ export const useSprintsStore = defineStore('sprints', () => {
     selectSprint,
     selectLastN,
     selectSubTeam,
-    fetchScopeChange
+    fetchAllData
   }
 })

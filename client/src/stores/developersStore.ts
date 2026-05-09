@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, DeveloperThroughputResponse } from '../types'
-import { getDeveloperThroughput, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse } from '../types'
+import { getDeveloperThroughput, getBugRatio, getClosedSprints, getSubTeams } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
 
 export const useDevelopersStore = defineStore('developers', () => {
@@ -15,6 +15,11 @@ export const useDevelopersStore = defineStore('developers', () => {
   const loading = ref(false)
   const initializing = ref(false)
   const error = ref<string | null>(null)
+
+  const activeTab = ref<'throughput' | 'bugRatio'>('throughput')
+  const bugRatio = ref<BugRatioResponse | null>(null)
+  const bugRatioLoading = ref(false)
+  const bugRatioError = ref<string | null>(null)
 
   async function initialize() {
     initializing.value = true
@@ -41,6 +46,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     selectedSprintId.value = sprintId
     selectedLast.value = null
     await fetchThroughput()
+    if (activeTab.value === 'bugRatio') {
+      await fetchBugRatio()
+    }
   }
 
   async function selectLastN(n: number | null) {
@@ -48,11 +56,24 @@ export const useDevelopersStore = defineStore('developers', () => {
     selectedLast.value = n
     selectedSprintId.value = null
     await fetchThroughput()
+    if (activeTab.value === 'bugRatio') {
+      await fetchBugRatio()
+    }
   }
 
   async function selectSubTeam(subTeam: string | null) {
     selectedSubTeam.value = subTeam
     await fetchThroughput()
+    if (activeTab.value === 'bugRatio') {
+      await fetchBugRatio()
+    }
+  }
+
+  async function switchTab(tab: 'throughput' | 'bugRatio') {
+    activeTab.value = tab
+    if (tab === 'bugRatio') {
+      await fetchBugRatio()
+    }
   }
 
   async function fetchThroughput() {
@@ -79,8 +100,31 @@ export const useDevelopersStore = defineStore('developers', () => {
     }
   }
 
+  async function fetchBugRatio() {
+    bugRatioLoading.value = true
+    bugRatioError.value = null
+    try {
+      if (sprintMode.value === 'single') {
+        bugRatio.value = await getBugRatio(
+          selectedSprintId.value ?? undefined,
+          undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      } else {
+        bugRatio.value = await getBugRatio(
+          undefined,
+          selectedLast.value ?? undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      }
+    } catch (e) {
+      bugRatioError.value = e instanceof Error ? e.message : 'Failed to load bug ratio data'
+    } finally {
+      bugRatioLoading.value = false
+    }
+  }
+
   async function updateCapacity(accountId: string, sprintId: number, capacityPercent: number) {
-    // Optimistic update: find developer entry and update capacity in local state
     if (throughput.value) {
       const devEntry = throughput.value.developers.find(d => d.accountId === accountId)
       const breakdown = devEntry?.sprintBreakdowns.find(b => b.sprintId === sprintId)
@@ -92,10 +136,8 @@ export const useDevelopersStore = defineStore('developers', () => {
 
       try {
         await setDeveloperCapacity(accountId, sprintId, capacityPercent)
-        // Re-fetch to get updated rolling averages
         await fetchThroughput()
       } catch (e) {
-        // Revert on error
         if (breakdown) {
           breakdown.capacityPercent = previousCapacity
         }
@@ -122,11 +164,17 @@ export const useDevelopersStore = defineStore('developers', () => {
     loading,
     initializing,
     error,
+    activeTab,
+    bugRatio,
+    bugRatioLoading,
+    bugRatioError,
     initialize,
     selectSprint,
     selectLastN,
     selectSubTeam,
+    switchTab,
     fetchThroughput,
+    fetchBugRatio,
     updateCapacity
   }
 })

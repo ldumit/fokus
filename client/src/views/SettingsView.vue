@@ -37,7 +37,9 @@ const form = reactive<AppSettings>({
     completion: 40,
     disruption: 30,
     carryOver: 30
-  }
+  },
+  bugRatioAlertThreshold: 50,
+  bugRatioConsecutiveSprintCount: 2
 })
 
 function syncFromStore() {
@@ -47,6 +49,8 @@ function syncFromStore() {
   form.workflowStages = [...s.workflowStages]
   form.healthThresholds = { ...s.healthThresholds }
   form.healthWeights = { ...s.healthWeights }
+  form.bugRatioAlertThreshold = s.bugRatioAlertThreshold
+  form.bugRatioConsecutiveSprintCount = s.bugRatioConsecutiveSprintCount
 }
 
 // Statuses available to add (not already in doneStatuses), done category first
@@ -473,6 +477,36 @@ async function syncAll() {
           </div>
           <div class="text-sm" :class="weightsSum() === 100 ? 'text-green-400' : 'text-red-400'">
             Sum: {{ weightsSum() }} / 100
+          </div>
+        </section>
+
+        <!-- Bug Ratio Alerts -->
+        <section class="bg-gray-900 rounded-lg p-6 space-y-4">
+          <h2 class="text-lg font-semibold text-gray-200">Bug Ratio Alerts</h2>
+          <p class="text-sm text-gray-400">Alert thresholds for flagging developers with consistently high bug ratios.</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-300 mb-1">Alert Threshold (%)</label>
+              <input
+                v-model.number="form.bugRatioAlertThreshold"
+                type="number"
+                min="0"
+                max="100"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Bug ratio percentage above which a sprint counts toward the alert (0–100).</p>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-300 mb-1">Consecutive Sprint Count</label>
+              <input
+                v-model.number="form.bugRatioConsecutiveSprintCount"
+                type="number"
+                min="1"
+                max="10"
+                class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Number of consecutive sprints above threshold before alert fires (1–10).</p>
+            </div>
           </div>
         </section>
 

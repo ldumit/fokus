@@ -20,7 +20,9 @@ export const useSettingsStore = defineStore('settings', () => {
       completion: 40,
       disruption: 30,
       carryOver: 30
-    }
+    },
+    bugRatioAlertThreshold: 50,
+    bugRatioConsecutiveSprintCount: 2
   })
 
   const loading = ref(false)

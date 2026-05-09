@@ -6,6 +6,7 @@ import PageLayout from '../components/PageLayout.vue'
 import PageToolbar from '../components/PageToolbar.vue'
 import BaseCard from '../components/BaseCard.vue'
 import EmptyState from '../components/EmptyState.vue'
+import BugRatioTab from '../components/developers/BugRatioTab.vue'
 import type { DeveloperThroughputEntry, SprintBreakdown } from '../types'
 
 const route = useRoute()
@@ -16,6 +17,7 @@ onMounted(async () => {
   // Seed state from URL before initialize
   const sprintParam = route.query.sprint
   const lastParam = route.query.last
+  const tabParam = route.query.tab
 
   if (lastParam) {
     const n = lastParam === 'all' ? null : Number(lastParam)
@@ -26,22 +28,35 @@ onMounted(async () => {
     store.selectedSprintId = Number(sprintParam)
   }
 
+  if (tabParam === 'bug-ratio' || tabParam === 'bugRatio') {
+    store.activeTab = 'bugRatio'
+  }
+
   await store.initialize()
+
+  // If bug-ratio tab was requested and store initialized, load bug ratio data
+  if (store.activeTab === 'bugRatio' && store.bugRatio === null) {
+    await store.fetchBugRatio()
+  }
 })
 
 // URL sync
 watch(
-  () => [store.sprintMode, store.selectedSprintId, store.selectedLast] as const,
-  ([mode, sprintId, last]) => {
+  () => [store.sprintMode, store.selectedSprintId, store.selectedLast, store.activeTab] as const,
+  ([mode, sprintId, last, tab]) => {
+    const query: Record<string, string> = {}
+
     if (mode === 'single' && sprintId !== null) {
-      router.replace({ query: { sprint: String(sprintId) } })
+      query.sprint = String(sprintId)
     } else if (mode === 'multi') {
-      if (last === null) {
-        router.replace({ query: { last: 'all' } })
-      } else {
-        router.replace({ query: { last: String(last) } })
-      }
+      query.last = last === null ? 'all' : String(last)
     }
+
+    if (tab === 'bugRatio') {
+      query.tab = 'bug-ratio'
+    }
+
+    router.replace({ query })
   }
 )
 
@@ -57,18 +72,18 @@ function onSubTeamChange(subTeam: string | null) {
   store.selectSubTeam(subTeam)
 }
 
-// Whether we're in multi-sprint mode
+function onTabSwitch(tab: 'throughput' | 'bugRatio') {
+  store.switchTab(tab)
+}
+
 const isMultiSprint = computed(() => store.sprintMode === 'multi')
 
-// Single sprint data — the one target sprint breakdown per developer
 const singleSprintId = computed(() => {
   if (!isMultiSprint.value && store.throughput?.sprints.length === 1) {
     return store.throughput.sprints[0].id
   }
   return null
 })
-
-// Note: getBreakdown was removed — row pre-computation via singleSprintRows replaces template narrowing
 
 interface SingleSprintRow {
   dev: DeveloperThroughputEntry
@@ -83,7 +98,6 @@ const singleSprintRows = computed<SingleSprintRow[]>(() => {
   }))
 })
 
-// Delta icon helper
 function deltaIcon(direction: string | null): string {
   if (direction === 'up') return '▲'
   if (direction === 'down') return '▼'
@@ -97,7 +111,6 @@ function deltaClass(polarity: string | null, direction: string | null): string {
   return 'text-text-secondary'
 }
 
-// Multi-sprint averaged values
 function avgSpAssigned(dev: DeveloperThroughputEntry): string {
   const vals = dev.sprintBreakdowns.map(b => b.spAssigned)
   if (vals.length === 0) return '0'
@@ -128,13 +141,11 @@ function avgTicketsCarriedOver(dev: DeveloperThroughputEntry): string {
   return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
 }
 
-// Most recent sprint capacity for multi-sprint mode
 function latestCapacity(dev: DeveloperThroughputEntry): number {
   if (dev.sprintBreakdowns.length === 0) return 100
   return dev.sprintBreakdowns[dev.sprintBreakdowns.length - 1].capacityPercent
 }
 
-// Trend chart data
 const chartSeries = computed(() => {
   if (!store.throughput) return []
   return store.throughput.developers.map(dev => ({
@@ -213,176 +224,208 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
       </EmptyState>
     </template>
 
-    <!-- Throughput content -->
     <template v-else>
-      <div class="flex flex-col gap-6">
-
-        <!-- Loading indicator -->
-        <div v-if="store.loading" class="text-xs text-text-muted">Updating...</div>
-
-        <!-- Single-sprint throughput table -->
-        <BaseCard v-if="!isMultiSprint && singleSprintId !== null && store.throughput">
-          <div class="text-sm font-medium text-text-primary mb-4">
-            {{ store.throughput.sprints[0]?.name }}
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-text-muted text-left border-b border-border-default">
-                  <th class="pb-2 pr-4 font-medium">Developer</th>
-                  <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                  <th class="pb-2 pr-4 font-medium text-right">SP Assigned</th>
-                  <th class="pb-2 pr-4 font-medium text-right">SP Completed</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Completion %</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Tickets Done</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Carried Over</th>
-                  <th class="pb-2 font-medium text-right">Capacity %</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="row in singleSprintRows"
-                  :key="row.dev.accountId"
-                  class="border-b border-border-default last:border-0"
-                >
-                  <td class="py-2 pr-4">
-                    <div class="flex items-center gap-2">
-                      <img
-                        v-if="row.dev.avatarUrl"
-                        :src="row.dev.avatarUrl"
-                        :alt="row.dev.displayName"
-                        class="w-6 h-6 rounded-full shrink-0"
-                      />
-                      <div v-else class="w-6 h-6 rounded-full bg-surface-elevated shrink-0 flex items-center justify-center text-xs text-text-muted">
-                        {{ row.dev.displayName.charAt(0).toUpperCase() }}
-                      </div>
-                      <span class="text-text-primary truncate">{{ row.dev.displayName }}</span>
-                    </div>
-                  </td>
-                  <td class="py-2 pr-4 text-text-secondary">
-                    <span v-if="row.dev.subTeam" class="text-xs bg-surface-elevated rounded px-2 py-0.5">{{ row.dev.subTeam }}</span>
-                    <span v-else class="text-text-muted">—</span>
-                  </td>
-                  <template v-if="row.bd">
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
-                      <span>{{ row.bd.spAssigned }}</span>
-                      <span v-if="row.bd.spAssignedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spAssignedDeltaPolarity, row.bd.spAssignedDeltaDirection)]">
-                        {{ deltaIcon(row.bd.spAssignedDeltaDirection) }} {{ Math.abs(row.bd.spAssignedDelta).toFixed(1) }}
-                      </span>
-                    </td>
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
-                      <span>{{ row.bd.spCompleted }}</span>
-                      <span v-if="row.bd.spCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spCompletedDeltaPolarity, row.bd.spCompletedDeltaDirection)]">
-                        {{ deltaIcon(row.bd.spCompletedDeltaDirection) }} {{ Math.abs(row.bd.spCompletedDelta).toFixed(1) }}
-                      </span>
-                    </td>
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
-                      <span>{{ row.bd.completionPercent }}%</span>
-                      <span v-if="row.bd.completionPercentDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.completionPercentDeltaPolarity, row.bd.completionPercentDeltaDirection)]">
-                        {{ deltaIcon(row.bd.completionPercentDeltaDirection) }} {{ Math.abs(row.bd.completionPercentDelta).toFixed(1) }}
-                      </span>
-                    </td>
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
-                      <span>{{ row.bd.ticketsDone }}</span>
-                      <span v-if="row.bd.ticketsDoneDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsDoneDeltaPolarity, row.bd.ticketsDoneDeltaDirection)]">
-                        {{ deltaIcon(row.bd.ticketsDoneDeltaDirection) }} {{ Math.abs(row.bd.ticketsDoneDelta) }}
-                      </span>
-                    </td>
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
-                      <span>{{ row.bd.ticketsCarriedOver }}</span>
-                      <span v-if="row.bd.ticketsCarriedOverDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsCarriedOverDeltaPolarity, row.bd.ticketsCarriedOverDeltaDirection)]">
-                        {{ deltaIcon(row.bd.ticketsCarriedOverDeltaDirection) }} {{ Math.abs(row.bd.ticketsCarriedOverDelta) }}
-                      </span>
-                    </td>
-                    <td class="py-2 text-right">
-                      <input
-                        type="number"
-                        :value="row.bd.capacityPercent"
-                        min="0"
-                        max="100"
-                        class="w-16 text-right bg-surface-elevated border border-border-default rounded px-1 py-0.5 text-text-primary tabular-nums outline-none focus:border-accent-default"
-                        @change="onCapacityChange(row.dev, singleSprintId!, $event)"
-                      />
-                    </td>
-                  </template>
-                  <template v-else>
-                    <td class="py-2 pr-4 text-right text-text-muted" colspan="6">—</td>
-                  </template>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </BaseCard>
-
-        <!-- Multi-sprint throughput table -->
-        <BaseCard v-if="isMultiSprint && store.throughput">
-          <div class="text-sm font-medium text-text-primary mb-4">
-            <span v-if="store.selectedLast">Last {{ store.selectedLast }} Sprints</span>
-            <span v-else>All Sprints</span>
-            — Averaged Values
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-text-muted text-left border-b border-border-default">
-                  <th class="pb-2 pr-4 font-medium">Developer</th>
-                  <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Avg SP Assigned</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Avg SP Completed</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Avg Completion %</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Avg Tickets Done</th>
-                  <th class="pb-2 pr-4 font-medium text-right">Avg Carried Over</th>
-                  <th class="pb-2 font-medium text-right">Capacity % (latest)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="dev in store.throughput.developers"
-                  :key="dev.accountId"
-                  class="border-b border-border-default last:border-0"
-                >
-                  <td class="py-2 pr-4">
-                    <div class="flex items-center gap-2">
-                      <img
-                        v-if="dev.avatarUrl"
-                        :src="dev.avatarUrl"
-                        :alt="dev.displayName"
-                        class="w-6 h-6 rounded-full shrink-0"
-                      />
-                      <div v-else class="w-6 h-6 rounded-full bg-surface-elevated shrink-0 flex items-center justify-center text-xs text-text-muted">
-                        {{ dev.displayName.charAt(0).toUpperCase() }}
-                      </div>
-                      <span class="text-text-primary truncate">{{ dev.displayName }}</span>
-                    </div>
-                  </td>
-                  <td class="py-2 pr-4 text-text-secondary">
-                    <span v-if="dev.subTeam" class="text-xs bg-surface-elevated rounded px-2 py-0.5">{{ dev.subTeam }}</span>
-                    <span v-else class="text-text-muted">—</span>
-                  </td>
-                  <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpAssigned(dev) }}</td>
-                  <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpCompleted(dev) }}</td>
-                  <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgCompletionPercent(dev) }}%</td>
-                  <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsDone(dev) }}</td>
-                  <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsCarriedOver(dev) }}</td>
-                  <td class="py-2 text-right tabular-nums text-text-secondary">{{ latestCapacity(dev) }}%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </BaseCard>
-
-        <!-- Trend chart (multi-sprint mode only) -->
-        <BaseCard v-if="isMultiSprint && store.throughput && store.throughput.developers.length > 0">
-          <div class="text-sm font-medium text-text-primary mb-4">SP Completed Trend (3-Sprint Rolling Avg)</div>
-          <apexchart
-            type="line"
-            height="300"
-            :options="chartOptions"
-            :series="chartSeries"
-          />
-        </BaseCard>
-
+      <!-- Tab bar -->
+      <div class="flex gap-1 border-b border-border-default mb-6">
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            store.activeTab === 'throughput'
+              ? 'border-accent-default text-accent-default'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          ]"
+          @click="onTabSwitch('throughput')"
+        >
+          Throughput
+        </button>
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            store.activeTab === 'bugRatio'
+              ? 'border-accent-default text-accent-default'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          ]"
+          @click="onTabSwitch('bugRatio')"
+        >
+          Bug Ratio
+        </button>
       </div>
+
+      <!-- Throughput tab -->
+      <template v-if="store.activeTab === 'throughput'">
+        <div class="flex flex-col gap-6">
+          <div v-if="store.loading" class="text-xs text-text-muted">Updating...</div>
+
+          <!-- Single-sprint throughput table -->
+          <BaseCard v-if="!isMultiSprint && singleSprintId !== null && store.throughput">
+            <div class="text-sm font-medium text-text-primary mb-4">
+              {{ store.throughput.sprints[0]?.name }}
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-text-muted text-left border-b border-border-default">
+                    <th class="pb-2 pr-4 font-medium">Developer</th>
+                    <th class="pb-2 pr-4 font-medium">Sub-Team</th>
+                    <th class="pb-2 pr-4 font-medium text-right">SP Assigned</th>
+                    <th class="pb-2 pr-4 font-medium text-right">SP Completed</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Completion %</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Tickets Done</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Carried Over</th>
+                    <th class="pb-2 font-medium text-right">Capacity %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="row in singleSprintRows"
+                    :key="row.dev.accountId"
+                    class="border-b border-border-default last:border-0"
+                  >
+                    <td class="py-2 pr-4">
+                      <div class="flex items-center gap-2">
+                        <img
+                          v-if="row.dev.avatarUrl"
+                          :src="row.dev.avatarUrl"
+                          :alt="row.dev.displayName"
+                          class="w-6 h-6 rounded-full shrink-0"
+                        />
+                        <div v-else class="w-6 h-6 rounded-full bg-surface-elevated shrink-0 flex items-center justify-center text-xs text-text-muted">
+                          {{ row.dev.displayName.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="text-text-primary truncate">{{ row.dev.displayName }}</span>
+                      </div>
+                    </td>
+                    <td class="py-2 pr-4 text-text-secondary">
+                      <span v-if="row.dev.subTeam" class="text-xs bg-surface-elevated rounded px-2 py-0.5">{{ row.dev.subTeam }}</span>
+                      <span v-else class="text-text-muted">—</span>
+                    </td>
+                    <template v-if="row.bd">
+                      <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                        <span>{{ row.bd.spAssigned }}</span>
+                        <span v-if="row.bd.spAssignedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spAssignedDeltaPolarity, row.bd.spAssignedDeltaDirection)]">
+                          {{ deltaIcon(row.bd.spAssignedDeltaDirection) }} {{ Math.abs(row.bd.spAssignedDelta).toFixed(1) }}
+                        </span>
+                      </td>
+                      <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                        <span>{{ row.bd.spCompleted }}</span>
+                        <span v-if="row.bd.spCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spCompletedDeltaPolarity, row.bd.spCompletedDeltaDirection)]">
+                          {{ deltaIcon(row.bd.spCompletedDeltaDirection) }} {{ Math.abs(row.bd.spCompletedDelta).toFixed(1) }}
+                        </span>
+                      </td>
+                      <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                        <span>{{ row.bd.completionPercent }}%</span>
+                        <span v-if="row.bd.completionPercentDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.completionPercentDeltaPolarity, row.bd.completionPercentDeltaDirection)]">
+                          {{ deltaIcon(row.bd.completionPercentDeltaDirection) }} {{ Math.abs(row.bd.completionPercentDelta).toFixed(1) }}
+                        </span>
+                      </td>
+                      <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                        <span>{{ row.bd.ticketsDone }}</span>
+                        <span v-if="row.bd.ticketsDoneDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsDoneDeltaPolarity, row.bd.ticketsDoneDeltaDirection)]">
+                          {{ deltaIcon(row.bd.ticketsDoneDeltaDirection) }} {{ Math.abs(row.bd.ticketsDoneDelta) }}
+                        </span>
+                      </td>
+                      <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                        <span>{{ row.bd.ticketsCarriedOver }}</span>
+                        <span v-if="row.bd.ticketsCarriedOverDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsCarriedOverDeltaPolarity, row.bd.ticketsCarriedOverDeltaDirection)]">
+                          {{ deltaIcon(row.bd.ticketsCarriedOverDeltaDirection) }} {{ Math.abs(row.bd.ticketsCarriedOverDelta) }}
+                        </span>
+                      </td>
+                      <td class="py-2 text-right">
+                        <input
+                          type="number"
+                          :value="row.bd.capacityPercent"
+                          min="0"
+                          max="100"
+                          class="w-16 text-right bg-surface-elevated border border-border-default rounded px-1 py-0.5 text-text-primary tabular-nums outline-none focus:border-accent-default"
+                          @change="onCapacityChange(row.dev, singleSprintId!, $event)"
+                        />
+                      </td>
+                    </template>
+                    <template v-else>
+                      <td class="py-2 pr-4 text-right text-text-muted" colspan="6">—</td>
+                    </template>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </BaseCard>
+
+          <!-- Multi-sprint throughput table -->
+          <BaseCard v-if="isMultiSprint && store.throughput">
+            <div class="text-sm font-medium text-text-primary mb-4">
+              <span v-if="store.selectedLast">Last {{ store.selectedLast }} Sprints</span>
+              <span v-else>All Sprints</span>
+              — Averaged Values
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-text-muted text-left border-b border-border-default">
+                    <th class="pb-2 pr-4 font-medium">Developer</th>
+                    <th class="pb-2 pr-4 font-medium">Sub-Team</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Avg SP Assigned</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Avg SP Completed</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Avg Completion %</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Avg Tickets Done</th>
+                    <th class="pb-2 pr-4 font-medium text-right">Avg Carried Over</th>
+                    <th class="pb-2 font-medium text-right">Capacity % (latest)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="dev in store.throughput.developers"
+                    :key="dev.accountId"
+                    class="border-b border-border-default last:border-0"
+                  >
+                    <td class="py-2 pr-4">
+                      <div class="flex items-center gap-2">
+                        <img
+                          v-if="dev.avatarUrl"
+                          :src="dev.avatarUrl"
+                          :alt="dev.displayName"
+                          class="w-6 h-6 rounded-full shrink-0"
+                        />
+                        <div v-else class="w-6 h-6 rounded-full bg-surface-elevated shrink-0 flex items-center justify-center text-xs text-text-muted">
+                          {{ dev.displayName.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="text-text-primary truncate">{{ dev.displayName }}</span>
+                      </div>
+                    </td>
+                    <td class="py-2 pr-4 text-text-secondary">
+                      <span v-if="dev.subTeam" class="text-xs bg-surface-elevated rounded px-2 py-0.5">{{ dev.subTeam }}</span>
+                      <span v-else class="text-text-muted">—</span>
+                    </td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpAssigned(dev) }}</td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpCompleted(dev) }}</td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgCompletionPercent(dev) }}%</td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsDone(dev) }}</td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsCarriedOver(dev) }}</td>
+                    <td class="py-2 text-right tabular-nums text-text-secondary">{{ latestCapacity(dev) }}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </BaseCard>
+
+          <!-- Trend chart (multi-sprint mode only) -->
+          <BaseCard v-if="isMultiSprint && store.throughput && store.throughput.developers.length > 0">
+            <div class="text-sm font-medium text-text-primary mb-4">SP Completed Trend (3-Sprint Rolling Avg)</div>
+            <apexchart
+              type="line"
+              height="300"
+              :options="chartOptions"
+              :series="chartSeries"
+            />
+          </BaseCard>
+        </div>
+      </template>
+
+      <!-- Bug Ratio tab -->
+      <template v-else-if="store.activeTab === 'bugRatio'">
+        <div v-if="store.bugRatioLoading" class="text-xs text-text-muted">Loading bug ratio data...</div>
+        <div v-else-if="store.bugRatioError" class="text-sm text-status-danger">{{ store.bugRatioError }}</div>
+        <BugRatioTab v-else-if="store.bugRatio" :data="store.bugRatio" />
+      </template>
     </template>
   </PageLayout>
 </template>

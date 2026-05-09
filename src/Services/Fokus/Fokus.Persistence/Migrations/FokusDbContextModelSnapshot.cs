@@ -25,6 +25,12 @@ namespace Fokus.Persistence.Migrations
                     b.Property<int?>("BoardId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("BugRatioAlertThreshold")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BugRatioConsecutiveSprintCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("DoneStatuses")
                         .IsRequired()
                         .HasColumnType("TEXT");

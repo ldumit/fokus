@@ -7,4 +7,6 @@ public class GetSettingsResponse
     public List<string> WorkflowStages { get; set; } = [];
     public HealthThresholdConfig HealthThresholds { get; set; } = new();
     public HealthWeightConfig HealthWeights { get; set; } = new();
+    public int BugRatioAlertThreshold { get; set; }
+    public int BugRatioConsecutiveSprintCount { get; set; }
 }

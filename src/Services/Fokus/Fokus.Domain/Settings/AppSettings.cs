@@ -9,6 +9,8 @@ public class AppSettings
     public List<string> ExcludedFromScopeStatuses { get; set; } = [];
     public HealthThresholdConfig HealthThresholds { get; set; } = new();
     public HealthWeightConfig HealthWeights { get; set; } = new();
+    public int BugRatioAlertThreshold { get; set; } = 50;
+    public int BugRatioConsecutiveSprintCount { get; set; } = 2;
 
     public static AppSettings CreateDefault() => new()
     {
@@ -18,6 +20,8 @@ public class AppSettings
         WorkflowStages = [],
         ExcludedFromScopeStatuses = [],
         HealthThresholds = new HealthThresholdConfig(),
-        HealthWeights = new HealthWeightConfig()
+        HealthWeights = new HealthWeightConfig(),
+        BugRatioAlertThreshold = 50,
+        BugRatioConsecutiveSprintCount = 2
     };
 }

@@ -23,6 +23,8 @@ public static class DependencyInjection
         services.AddScoped<SprintSummaryService>();
         services.AddScoped<DeveloperThroughputService>();
         services.AddScoped<ScopeChangeService>();
+        services.AddScoped<CarryOverService>();
+        services.AddScoped<BugRatioService>();
 
         return services;
     }

@@ -11,6 +11,15 @@ import ScopeChangeChart from '../components/sprints/ScopeChangeChart.vue'
 import BurnupChart from '../components/sprints/BurnupChart.vue'
 import EventTable from '../components/sprints/EventTable.vue'
 import BugTimeTable from '../components/sprints/BugTimeTable.vue'
+import CarryOverMetricCards from '../components/sprints/CarryOverMetricCards.vue'
+import CarryOverRateChart from '../components/sprints/CarryOverRateChart.vue'
+import CarryOverStackedChart from '../components/sprints/CarryOverStackedChart.vue'
+import IssueTypeBreakdown from '../components/sprints/IssueTypeBreakdown.vue'
+import ZombieSummaryTable from '../components/sprints/ZombieSummaryTable.vue'
+import StatusDistributionChart from '../components/sprints/StatusDistributionChart.vue'
+import CarryOverDestinationSection from '../components/sprints/CarryOverDestination.vue'
+import CarryOverTicketTable from '../components/sprints/CarryOverTicketTable.vue'
+import ZombieTrajectorySection from '../components/sprints/ZombieTrajectorySection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -153,6 +162,75 @@ function onSprintBarClick(sprintId: number) {
             :bugs="store.scopeChange.singleSprint.bugTimeInProgress"
           />
         </template>
+
+        <!-- Carry-Over Analysis section separator -->
+        <div v-if="store.carryOver" class="pt-2">
+          <div class="text-base font-semibold text-text-primary mb-4 border-t border-border-default pt-6">
+            Carry-Over Analysis
+          </div>
+
+          <!-- Multi-sprint carry-over -->
+          <template v-if="store.carryOver.mode === 'multi' && store.carryOver.multiSprint">
+            <div class="flex flex-col gap-6">
+              <CarryOverMetricCards
+                mode="multi"
+                :summary-metrics="store.carryOver.multiSprint.summaryMetrics"
+              />
+
+              <CarryOverRateChart
+                v-if="store.carryOver.multiSprint.perSprintData.length > 0"
+                :sprints="store.carryOver.multiSprint.sprints"
+                :per-sprint-data="store.carryOver.multiSprint.perSprintData"
+                @sprint-click="onSprintBarClick"
+              />
+
+              <CarryOverStackedChart
+                v-if="store.carryOver.multiSprint.perSprintData.length > 0"
+                :sprints="store.carryOver.multiSprint.sprints"
+                :per-sprint-data="store.carryOver.multiSprint.perSprintData"
+                @sprint-click="onSprintBarClick"
+              />
+
+              <IssueTypeBreakdown
+                :entries="store.carryOver.multiSprint.issueTypeBreakdown"
+              />
+
+              <ZombieSummaryTable
+                :zombies="store.carryOver.multiSprint.zombieTickets"
+              />
+            </div>
+          </template>
+
+          <!-- Single-sprint carry-over -->
+          <template v-else-if="store.carryOver.mode === 'single' && store.carryOver.singleSprint">
+            <div class="flex flex-col gap-6">
+              <CarryOverMetricCards
+                mode="single"
+                :single-metrics="store.carryOver.singleSprint.metrics"
+              />
+
+              <StatusDistributionChart
+                :distribution="store.carryOver.singleSprint.statusDistribution"
+              />
+
+              <IssueTypeBreakdown
+                :entries="store.carryOver.singleSprint.issueTypeBreakdown"
+              />
+
+              <CarryOverDestinationSection
+                :destination="store.carryOver.singleSprint.carryOverDestination"
+              />
+
+              <CarryOverTicketTable
+                :tickets="store.carryOver.singleSprint.tickets"
+              />
+
+              <ZombieTrajectorySection
+                :trajectories="store.carryOver.singleSprint.zombieTrajectories"
+              />
+            </div>
+          </template>
+        </div>
 
       </div>
     </template>

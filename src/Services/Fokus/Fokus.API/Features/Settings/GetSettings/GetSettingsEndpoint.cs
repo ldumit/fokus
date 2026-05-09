@@ -16,7 +16,9 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             DoneStatuses = settings.DoneStatuses,
             WorkflowStages = settings.WorkflowStages,
             HealthThresholds = settings.HealthThresholds,
-            HealthWeights = settings.HealthWeights
+            HealthWeights = settings.HealthWeights,
+            BugRatioAlertThreshold = settings.BugRatioAlertThreshold,
+            BugRatioConsecutiveSprintCount = settings.BugRatioConsecutiveSprintCount
         }, ct);
     }
 }

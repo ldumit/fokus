@@ -15,7 +15,9 @@ public class SaveSettingsEndpoint(AppSettingsRepository repository)
             DoneStatuses = command.DoneStatuses,
             WorkflowStages = command.WorkflowStages,
             HealthThresholds = command.HealthThresholds,
-            HealthWeights = command.HealthWeights
+            HealthWeights = command.HealthWeights,
+            BugRatioAlertThreshold = command.BugRatioAlertThreshold,
+            BugRatioConsecutiveSprintCount = command.BugRatioConsecutiveSprintCount
         };
 
         await repository.SaveAsync(settings, ct);

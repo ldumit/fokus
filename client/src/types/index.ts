@@ -113,6 +113,8 @@ export interface AppSettings {
   workflowStages: string[]
   healthThresholds: HealthThresholdConfig
   healthWeights: HealthWeightConfig
+  bugRatioAlertThreshold: number
+  bugRatioConsecutiveSprintCount: number
 }
 
 export type SprintState = 'Active' | 'Closed'
@@ -305,6 +307,255 @@ export interface ScopeChangeResponse {
   mode: 'multi' | 'single'
   multiSprint: ScopeChangeMultiSprintResponse | null
   singleSprint: ScopeChangeSingleSprintResponse | null
+}
+
+// Carry-over types
+export interface CarryOverSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface CarryOverSummaryMetrics {
+  averageCarryOverRate: number
+  averageCarryOverSp: number
+  totalZombieTickets: number
+}
+
+export interface CarryOverStatusDistributionEntry {
+  stageName: string
+  ticketCount: number
+  spTotal: number
+  percentage: number
+}
+
+export interface CarryOverPerSprintData {
+  sprintId: number
+  carryOverSp: number
+  carryOverTicketCount: number
+  carryOverRate: number
+  totalScopeSp: number
+  statusDistribution: CarryOverStatusDistributionEntry[]
+}
+
+export interface CarryOverIssueTypeEntry {
+  issueType: string
+  ticketCount: number
+  spTotal: number
+  percentage: number
+}
+
+export interface CarryOverZombieSummary {
+  ticketKey: string
+  summary: string
+  issueType: string
+  currentStatus: string
+  storyPoints: number | null
+  sprintCount: number
+}
+
+export interface CarryOverMultiSprintResponse {
+  sprints: CarryOverSprintInfo[]
+  summaryMetrics: CarryOverSummaryMetrics
+  perSprintData: CarryOverPerSprintData[]
+  issueTypeBreakdown: CarryOverIssueTypeEntry[]
+  zombieTickets: CarryOverZombieSummary[]
+}
+
+export interface CarryOverSingleSprintMetrics {
+  carryOverRate: ScopeMetricCard
+  carryOverSp: ScopeMetricCard
+  carryOverTicketCount: ScopeMetricCard
+}
+
+export interface CarryOverDestinationBucket {
+  count: number
+  sp: number
+}
+
+export interface CarryOverDestination {
+  priorSprintId: number
+  priorSprintName: string
+  priorCarryOverCount: number
+  priorCarryOverSp: number
+  completed: CarryOverDestinationBucket
+  carriedAgain: CarryOverDestinationBucket
+  removed: CarryOverDestinationBucket
+  dropped: CarryOverDestinationBucket
+}
+
+export interface CarryOverTicketEntry {
+  ticketKey: string
+  summary: string
+  issueType: string
+  storyPoints: number | null
+  finalStatus: string
+  workflowStage: string
+  sprintCount: number
+  isZombie: boolean
+  isExcluded: boolean
+}
+
+export interface ZombieTrajectorySprintEntry {
+  sprintId: number
+  sprintName: string
+  finalStatus: string
+}
+
+export interface ZombieTrajectoryEntry {
+  ticketKey: string
+  summary: string
+  issueType: string
+  storyPoints: number | null
+  currentStatus: string
+  sprintCount: number
+  sprints: ZombieTrajectorySprintEntry[]
+}
+
+export interface CarryOverSingleSprintResponse {
+  sprint: CarryOverSprintInfo
+  metrics: CarryOverSingleSprintMetrics
+  statusDistribution: CarryOverStatusDistributionEntry[]
+  issueTypeBreakdown: CarryOverIssueTypeEntry[]
+  carryOverDestination: CarryOverDestination | null
+  tickets: CarryOverTicketEntry[]
+  zombieTrajectories: ZombieTrajectoryEntry[]
+}
+
+export interface CarryOverResponse {
+  mode: 'multi' | 'single'
+  multiSprint: CarryOverMultiSprintResponse | null
+  singleSprint: CarryOverSingleSprintResponse | null
+}
+
+// Bug Ratio types
+export interface BugRatioSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface BugRatioTeamTrendEntry {
+  sprintId: number
+  bugRatioPercent: number
+  bugSp: number
+  nonBugSp: number
+  completedSp: number
+}
+
+export interface BugRatioTeamMetrics {
+  bugRatioPercent: number
+  totalBugSp: number
+  totalNonBugSp: number
+  totalCompletedSp: number
+  perSprintTrend: BugRatioTeamTrendEntry[]
+}
+
+export interface BugRatioIssueTypeEntry {
+  issueType: string
+  ticketCount: number
+  spTotal: number
+}
+
+export interface BugRatioAlertStatus {
+  isActive: boolean
+  consecutiveSprintCount: number
+  thresholdPercent: number
+}
+
+export interface BugRatioDeveloperSprintBreakdown {
+  sprintId: number
+  bugSp: number
+  nonBugSp: number
+  completedSp: number
+  bugRatioPercent: number
+  bugTicketCount: number
+  nonBugTicketCount: number
+}
+
+export interface BugRatioDeveloperEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  bugSp: number
+  nonBugSp: number
+  completedSp: number
+  bugRatioPercent: number
+  bugTicketCount: number
+  nonBugTicketCount: number
+  sprintBreakdowns: BugRatioDeveloperSprintBreakdown[]
+  alert: BugRatioAlertStatus
+}
+
+export interface BugRatioMultiSprintResponse {
+  sprints: BugRatioSprintInfo[]
+  teamMetrics: BugRatioTeamMetrics
+  issueTypeBreakdown: BugRatioIssueTypeEntry[]
+  developers: BugRatioDeveloperEntry[]
+}
+
+export interface BugRatioMetricCard {
+  name: string
+  value: number
+  displayValue: string
+  delta: number | null
+  deltaDirection: string | null
+  deltaPolarity: string | null
+}
+
+export interface BugRatioTeamSingleMetrics {
+  bugRatioPercent: BugRatioMetricCard
+  bugSp: BugRatioMetricCard
+  nonBugSp: BugRatioMetricCard
+}
+
+export interface BugRatioDeveloperDelta {
+  bugSpDelta: number
+  bugSpDeltaDirection: string
+  bugSpDeltaPolarity: string
+  nonBugSpDelta: number
+  nonBugSpDeltaDirection: string
+  nonBugSpDeltaPolarity: string
+  bugRatioPercentDelta: number
+  bugRatioPercentDeltaDirection: string
+  bugRatioPercentDeltaPolarity: string
+  bugTicketCountDelta: number
+  bugTicketCountDeltaDirection: string
+  bugTicketCountDeltaPolarity: string
+  nonBugTicketCountDelta: number
+  nonBugTicketCountDeltaDirection: string
+  nonBugTicketCountDeltaPolarity: string
+}
+
+export interface BugRatioDeveloperSingleEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  bugSp: number
+  nonBugSp: number
+  completedSp: number
+  bugRatioPercent: number
+  bugTicketCount: number
+  nonBugTicketCount: number
+  delta: BugRatioDeveloperDelta | null
+  alert: BugRatioAlertStatus
+}
+
+export interface BugRatioSingleSprintResponse {
+  sprint: BugRatioSprintInfo
+  teamMetrics: BugRatioTeamSingleMetrics
+  issueTypeBreakdown: BugRatioIssueTypeEntry[]
+  developers: BugRatioDeveloperSingleEntry[]
+}
+
+export interface BugRatioResponse {
+  mode: 'multi' | 'single'
+  multiSprint: BugRatioMultiSprintResponse | null
+  singleSprint: BugRatioSingleSprintResponse | null
 }
 
 // Sync types
