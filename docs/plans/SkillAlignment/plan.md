@@ -1,5 +1,7 @@
 # Skill Alignment — BuildingBlocks & Entity Refactoring
 
+**Feature Spec:** None
+
 ## Context
 
 The Fokus codebase was implemented without following the skills in `.claude/skills/`. Entities are plain classes (no base classes), there are no BuildingBlocks packages, no domain event infrastructure, no global error middleware, and no Guard utilities. The architecture doc v2 identifies 8 referenced skills — this plan builds the missing infrastructure and refactors existing code to follow those skills.

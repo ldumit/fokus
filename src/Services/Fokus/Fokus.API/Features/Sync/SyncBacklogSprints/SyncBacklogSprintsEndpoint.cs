@@ -1,8 +1,8 @@
 namespace Fokus.API.Features.Sync.SyncBacklogSprints;
 
-[AllowAnonymous]
 [HttpPost("/api/sync/backlog")]
 [Tags("Sync")]
+[Authorize(Roles = "Admin")]
 public class SyncBacklogSprintsEndpoint(
     IJiraClient jiraClient,
     AppSettingsRepository settingsRepository,

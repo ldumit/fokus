@@ -24,6 +24,19 @@ public class JiraIssueFields
     public JiraStatus? Status { get; set; }
     public DateTime? Created { get; set; }
     public DateTime? Resolutiondate { get; set; }
+    public JiraParent? Parent { get; set; }
+}
+
+public class JiraParent
+{
+    public string Key { get; set; } = string.Empty;
+    public JiraParentFields Fields { get; set; } = new();
+}
+
+public class JiraParentFields
+{
+    public string Summary { get; set; } = string.Empty;
+    public JiraIssueType? Issuetype { get; set; }
 }
 
 public class JiraIssueType

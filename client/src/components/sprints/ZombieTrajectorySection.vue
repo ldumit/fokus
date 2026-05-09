@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <BaseCard v-if="trajectories.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Zombie Trajectories</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Sprint-by-sprint status history showing how a zombie ticket moved (or didn't) through workflow stages.">Zombie Trajectories</div>
     <p class="text-xs text-text-muted mb-4">Tickets persisting across 3+ sprints, ordered by longevity.</p>
     <div class="flex flex-col gap-6">
       <div v-for="z in trajectories" :key="z.ticketKey">

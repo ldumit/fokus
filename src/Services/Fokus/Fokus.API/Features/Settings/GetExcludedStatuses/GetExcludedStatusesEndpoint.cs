@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Settings.GetExcludedStatuses;
 
-[AllowAnonymous]
 [HttpGet("/api/settings/excluded-statuses")]
 [Tags("Settings")]
 public class GetExcludedStatusesEndpoint(AppSettingsRepository repository)

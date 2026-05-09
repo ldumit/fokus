@@ -39,7 +39,7 @@ const options = computed(() => ({
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Status Distribution</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Proportional breakdown of where carry-over tickets are stuck by workflow phase.">Status Distribution</div>
     <div v-if="distribution.length === 0" class="text-sm text-text-muted">No carry-over tickets.</div>
     <apexchart
       v-else

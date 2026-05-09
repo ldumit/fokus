@@ -11,6 +11,12 @@ public class AppSettings
     public HealthWeightConfig HealthWeights { get; set; } = new();
     public int BugRatioAlertThreshold { get; set; } = 50;
     public int BugRatioConsecutiveSprintCount { get; set; } = 2;
+    public string? CycleTimeStartStage { get; set; } = null;
+    public string? CycleTimeEndStage { get; set; } = null;
+    public int SyncBackSprintCount { get; set; } = 20;
+    public int PlanningWindowDays { get; set; } = 2;
+    public int DefaultSpPerBug { get; set; } = 3;
+    public string? CompanyDomain { get; set; } = null;
 
     public static AppSettings CreateDefault() => new()
     {
@@ -22,6 +28,12 @@ public class AppSettings
         HealthThresholds = new HealthThresholdConfig(),
         HealthWeights = new HealthWeightConfig(),
         BugRatioAlertThreshold = 50,
-        BugRatioConsecutiveSprintCount = 2
+        BugRatioConsecutiveSprintCount = 2,
+        CycleTimeStartStage = null,
+        CycleTimeEndStage = null,
+        SyncBackSprintCount = 20,
+        PlanningWindowDays = 2,
+        DefaultSpPerBug = 3,
+        CompanyDomain = null
     };
 }

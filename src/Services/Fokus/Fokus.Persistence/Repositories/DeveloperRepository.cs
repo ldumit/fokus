@@ -27,7 +27,8 @@ public class DeveloperRepository(FokusDbContext db)
 
     public new async Task UpsertAsync(Developer developer, CancellationToken ct = default)
     {
-        var existing = await Entity.SingleOrDefaultAsync(d => d.Id == developer.Id, ct);
+        var existing = Entity.Local.SingleOrDefault(d => d.Id == developer.Id)
+            ?? await Entity.SingleOrDefaultAsync(d => d.Id == developer.Id, ct);
         if (existing is null)
         {
             Entity.Add(developer);
@@ -79,5 +80,23 @@ public class DeveloperRepository(FokusDbContext db)
         await db.DeveloperSprintCapacities
             .Where(c => sprintIds.Contains(c.SprintId))
             .ToListAsync(ct);
+
+    public async Task<Developer?> UpdateTeamConfigAsync(
+        string accountId,
+        string? role,
+        int? defaultCapacityPercent,
+        string? subTeam,
+        bool subTeamProvided,
+        bool? isActive,
+        CancellationToken ct = default)
+    {
+        var developer = await Entity.SingleOrDefaultAsync(d => d.Id == accountId, ct);
+        if (developer is null) return null;
+        if (role is not null) developer.Role = role;
+        if (defaultCapacityPercent.HasValue) developer.DefaultCapacityPercent = defaultCapacityPercent.Value;
+        if (subTeamProvided) developer.SubTeam = subTeam;
+        if (isActive.HasValue) developer.IsActive = isActive.Value;
+        return developer;
+    }
 
 }

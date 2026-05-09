@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
+
+const authStore = useAuthStore()
 
 const route = useRoute()
 const collapsed = ref(false)
@@ -36,6 +39,14 @@ const navItems = [
     </svg>`
   },
   {
+    path: '/team',
+    label: 'Team',
+    exact: false,
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z" />
+    </svg>`
+  },
+  {
     path: '/sprints',
     label: 'Sprints',
     exact: false,
@@ -49,6 +60,14 @@ const navItems = [
     exact: false,
     icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
       <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+    </svg>`
+  },
+  {
+    path: '/cycle-time',
+    label: 'Cycle Time',
+    exact: false,
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
     </svg>`
   },
   {
@@ -105,5 +124,43 @@ function isActive(item: { path: string; exact: boolean }) {
         </RouterLink>
       </li>
     </ul>
+
+    <!-- User profile + logout -->
+    <div v-if="authStore.user" class="p-2 border-t border-border-default">
+      <div
+        class="flex items-center gap-2 px-3 py-2 rounded-md"
+        :class="collapsed ? 'justify-center' : ''"
+      >
+        <img
+          v-if="authStore.user.avatarUrl"
+          :src="authStore.user.avatarUrl"
+          :alt="authStore.user.displayName"
+          class="w-7 h-7 rounded-full shrink-0"
+          :title="collapsed ? authStore.user.displayName : undefined"
+        />
+        <div
+          v-else
+          class="w-7 h-7 rounded-full bg-accent-default flex items-center justify-center text-white text-xs font-bold shrink-0"
+          :title="collapsed ? authStore.user.displayName : undefined"
+        >
+          {{ authStore.user.displayName.charAt(0).toUpperCase() }}
+        </div>
+        <div v-if="!collapsed" class="flex-1 min-w-0">
+          <p class="text-xs font-medium text-text-primary truncate">{{ authStore.user.displayName }}</p>
+          <p class="text-xs text-text-secondary truncate">{{ authStore.user.role }}</p>
+        </div>
+        <button
+          v-if="!collapsed"
+          @click="authStore.logout()"
+          class="shrink-0 text-text-secondary hover:text-text-primary transition-colors"
+          title="Sign out"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+            <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-.943a.75.75 0 10-1.004-1.114l-2.5 2.25a.75.75 0 000 1.114l2.5 2.25a.75.75 0 101.004-1.114l-1.048-.943h9.546A.75.75 0 0019 10z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
   </nav>
 </template>

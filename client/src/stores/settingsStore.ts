@@ -22,7 +22,10 @@ export const useSettingsStore = defineStore('settings', () => {
       carryOver: 30
     },
     bugRatioAlertThreshold: 50,
-    bugRatioConsecutiveSprintCount: 2
+    bugRatioConsecutiveSprintCount: 2,
+    syncBackSprintCount: 20,
+    planningWindowDays: 2,
+    defaultSpPerBug: 3
   })
 
   const loading = ref(false)

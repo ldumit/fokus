@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §3 (Data Source), §3.3 (Sync Model)
 **Covers:** F4 (Jira Integration), F5 (Sprint Sync)
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/JiraSync/plan.md`
 
 ---
 

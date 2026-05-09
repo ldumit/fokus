@@ -1,5 +1,7 @@
 using FastEndpoints.Swagger;
+using Fokus.API.Auth;
 using Fokus.API.Features.Analytics;
+using Fokus.API.Features.Auth.Login;
 using Fokus.API.Features.Settings;
 using Fokus.API.Features.Sync;
 using Fokus.Persistence;
@@ -12,6 +14,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddFokusServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddFokusAuth(configuration);
+
         services.AddFastEndpoints();
         services.SwaggerDocument();
         services.AddOpenApi();
@@ -25,13 +29,23 @@ public static class DependencyInjection
         services.AddScoped<ScopeChangeService>();
         services.AddScoped<CarryOverService>();
         services.AddScoped<BugRatioService>();
+        services.AddScoped<EpicProgressService>();
+        services.AddScoped<CycleTimeService>();
 
         return services;
     }
 
     public static WebApplication UseFokusMiddleware(this WebApplication app)
     {
-        app.UseFastEndpoints();
+        app.MapLoginEndpoint();
+
+        app.UseFastEndpoints(c =>
+        {
+            c.Endpoints.Configurator = ep =>
+            {
+                ep.PreProcessor<ActiveUserPreProcessor>(Order.Before);
+            };
+        });
 
         if (app.Environment.IsDevelopment())
         {

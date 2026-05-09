@@ -1,5 +1,7 @@
 # Bug Ratio (F13)
 
+**Feature Spec:** `docs/features/BugRatio/spec.md`
+
 ## Context
 
 Scrum Masters need visibility into how much developer capacity goes to bug fixing vs. planned feature work. The Developers page currently shows only throughput data (F9). This feature adds a Bug Ratio tab alongside Throughput, showing per-developer and team-level bug ratio metrics with trend charts, alert badges, and issue type breakdowns. It also extends AppSettings with two new alert threshold properties.

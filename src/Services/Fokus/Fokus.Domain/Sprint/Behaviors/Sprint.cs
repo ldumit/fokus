@@ -21,7 +21,8 @@ public partial class Sprint
             BoardId = dto.OriginBoardId,
             BoardName = boardName,
             State = state,
-            SyncedAt = DateTime.UtcNow
+            SyncedAt = DateTime.UtcNow,
+            Goal = dto.Goal
         };
     }
 }

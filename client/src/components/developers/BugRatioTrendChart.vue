@@ -48,7 +48,7 @@ const options = computed(() => ({
 
 <template>
   <BaseCard v-if="multi.teamMetrics.perSprintTrend.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Bug Ratio Trend</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Bug ratio percentage per sprint over time. Spot sustained increases before they become the norm.">Bug Ratio Trend</div>
     <apexchart type="line" height="260" :options="options" :series="series" />
   </BaseCard>
 </template>

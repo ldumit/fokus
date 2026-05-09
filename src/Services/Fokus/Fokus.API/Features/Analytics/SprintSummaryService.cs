@@ -34,7 +34,8 @@ public record MetricCard(
 public record MetricsResult(
     MetricCard SpCompleted,
     MetricCard CompletionRate,
-    MetricCard DisruptionRate,
+    MetricCard ScopeDisruptionRate,
+    MetricCard BugDisruptionRate,
     MetricCard CarryOverRate);
 
 public record EpicProgress(
@@ -77,15 +78,18 @@ public class SprintSummaryService
         List<Sprint> windowSprints,
         List<Developer> activeDevelopers,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        List<Ticket> allEpicTickets,
+        HashSet<string>? excludedDeveloperIds = null)
     {
-        // C2: sub-team filtering
-        var selectedMemberships = FilterMemberships(selectedSprint.Memberships, subTeam);
+        // C2: sub-team filtering + cross-cutting exclusion
+        var selectedMemberships = FilterMemberships(selectedSprint.Memberships, subTeam, excludedDeveloperIds);
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
 
         var doneStatuses = settings.DoneStatuses;
         var thresholds = settings.HealthThresholds;
         var weights = settings.HealthWeights;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
         // Identify the prior sprint from sorted window (ascending by StartDate)
         var sortedWindow = windowSprints
@@ -95,18 +99,18 @@ public class SprintSummaryService
         var selectedIndex = sortedWindow.FindIndex(s => s.Id == selectedSprint.Id);
         var priorSprint = selectedIndex > 0 ? sortedWindow[selectedIndex - 1] : null;
         var priorMemberships = priorSprint is not null
-            ? FilterMemberships(priorSprint.Memberships, subTeam)
+            ? FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds)
             : null;
 
         // Core metrics for selected sprint
-        var selected = ComputeMetrics(selectedMemberships, doneStatuses);
+        var selected = ComputeMetrics(selectedMemberships, doneStatuses, defaultSpPerBug);
 
         // Delta metrics (C1 pattern)
         SprintMetrics? prior = priorMemberships is not null
-            ? ComputeMetrics(priorMemberships, doneStatuses)
+            ? ComputeMetrics(priorMemberships, doneStatuses, defaultSpPerBug)
             : null;
 
-        // Health score
+        // Health score — uses combined DisruptionRate (scope + bug) for continuity
         var healthScore = ComputeHealthScore(selected, thresholds, weights);
 
         // Sparklines — window of up to 4 sprints ending at selected
@@ -115,10 +119,11 @@ public class SprintSummaryService
             .TakeLast(4)
             .ToList();
 
-        var completionSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeCompletionRate(m, doneStatuses));
-        var spCompletedSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeSpCompleted(m, doneStatuses));
-        var disruptionSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeDisruptionRate(m));
-        var carryOverSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeCarryOverRate(m, doneStatuses));
+        var completionSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeCompletionRate(m, doneStatuses, defaultSpPerBug), excludedDeveloperIds);
+        var spCompletedSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeSpCompleted(m, doneStatuses, defaultSpPerBug), excludedDeveloperIds);
+        var scopeDisruptionSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeScopeDisruptionRate(m, defaultSpPerBug), excludedDeveloperIds);
+        var bugDisruptionSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeBugDisruptionRate(m, defaultSpPerBug), excludedDeveloperIds);
+        var carryOverSparkline = BuildSparkline(sparklineWindow, windowSprints, subTeam, doneStatuses, m => ComputeCarryOverRate(m, doneStatuses, defaultSpPerBug), excludedDeveloperIds);
 
         // Build metric cards
         var metrics = new MetricsResult(
@@ -136,13 +141,20 @@ public class SprintSummaryService
                 prior is not null ? selected.CompletionRate - prior.CompletionRate : null,
                 "positive-up",
                 completionSparkline),
-            DisruptionRate: BuildMetricCard(
-                "Disruption Rate",
-                selected.DisruptionRate,
-                $"{selected.DisruptionRate:0.#}%",
-                prior is not null ? selected.DisruptionRate - prior.DisruptionRate : null,
+            ScopeDisruptionRate: BuildMetricCard(
+                "Scope Disruption Rate",
+                selected.ScopeDisruptionRate,
+                $"{selected.ScopeDisruptionRate:0.#}%",
+                prior is not null ? selected.ScopeDisruptionRate - prior.ScopeDisruptionRate : null,
                 "positive-down",
-                disruptionSparkline),
+                scopeDisruptionSparkline),
+            BugDisruptionRate: BuildMetricCard(
+                "Bug Disruption Rate",
+                selected.BugDisruptionRate,
+                $"{selected.BugDisruptionRate:0.#}%",
+                prior is not null ? selected.BugDisruptionRate - prior.BugDisruptionRate : null,
+                "positive-down",
+                bugDisruptionSparkline),
             CarryOverRate: BuildMetricCard(
                 "Carry-Over Rate",
                 selected.CarryOverRate,
@@ -152,13 +164,13 @@ public class SprintSummaryService
                 carryOverSparkline));
 
         // Top epics
-        var topEpics = ComputeTopEpics(selectedMemberships, windowSprints, subTeam, doneStatuses);
+        var topEpics = ComputeTopEpics(selectedMemberships, windowSprints, subTeam, doneStatuses, allEpicTickets, defaultSpPerBug);
 
         // Leaderboard
-        var leaderboard = ComputeLeaderboard(filteredDevelopers, selectedMemberships, doneStatuses);
+        var leaderboard = ComputeLeaderboard(filteredDevelopers, selectedMemberships, doneStatuses, defaultSpPerBug);
 
         // Flags
-        var flags = ComputeFlags(selectedSprint, selectedMemberships, windowSprints, subTeam, filteredDevelopers, doneStatuses);
+        var flags = ComputeFlags(selectedSprint, selectedMemberships, windowSprints, subTeam, filteredDevelopers, doneStatuses, defaultSpPerBug, excludedDeveloperIds);
 
         var sprintInfo = new SprintInfo(
             selectedSprint.Id,
@@ -175,14 +187,18 @@ public class SprintSummaryService
 
     private static List<SprintMembership> FilterMemberships(
         IReadOnlyList<SprintMembership> memberships,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
-        if (string.IsNullOrWhiteSpace(subTeam))
-            return memberships.ToList();
+        var result = memberships.AsEnumerable();
 
-        return memberships
-            .Where(m => m.Ticket?.Assignee?.SubTeam == subTeam)
-            .ToList();
+        if (!string.IsNullOrWhiteSpace(subTeam))
+            result = result.Where(m => m.Ticket?.Assignee?.SubTeam == subTeam);
+
+        if (excludedDeveloperIds is { Count: > 0 })
+            result = result.Where(m => m.Ticket?.AssigneeId == null || !excludedDeveloperIds.Contains(m.Ticket.AssigneeId));
+
+        return result.ToList();
     }
 
     private static List<Developer> FilterDevelopers(List<Developer> developers, string? subTeam)
@@ -202,59 +218,85 @@ public class SprintSummaryService
         decimal SpCarryOver,
         decimal CompletionRate,
         decimal DisruptionRate,
+        decimal ScopeDisruptionRate,
+        decimal BugDisruptionRate,
         decimal CarryOverRate);
+
+    private static bool IsBug(SprintMembership m) =>
+        m.Ticket?.IssueType == "Bug";
 
     private static SprintMetrics ComputeMetrics(
         List<SprintMembership> memberships,
-        List<string> doneStatuses)
+        List<string> doneStatuses,
+        int defaultSpPerBug)
     {
         var committed = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
-        var completed = ComputeSpCompleted(memberships, doneStatuses);
+        var completed = ComputeSpCompleted(memberships, doneStatuses, defaultSpPerBug);
 
-        var added = memberships
-            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
+        // Total added (scope + bug)
+        var spAddedScope = memberships
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && !IsBug(m) && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+        var spAddedBug = memberships
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && IsBug(m) && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+        var added = spAddedScope + spAddedBug;
 
         var carryOver = memberships
-            .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue && !doneStatuses.Contains(m.FinalStatus))
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue && !doneStatuses.Contains(m.FinalStatus))
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var completionRate = committed > 0 ? completed / committed * 100 : 0;
-        var disruptionRate = committed > 0 ? added / committed * 100 : 0;
+        var scopeDisruptionRate = committed > 0 ? spAddedScope / committed * 100 : 0;
+        var bugDisruptionRate = committed > 0 ? spAddedBug / committed * 100 : 0;
+        var disruptionRate = scopeDisruptionRate + bugDisruptionRate; // combined total for health score
         var denominator = committed + added;
         var carryOverRate = denominator > 0 ? carryOver / denominator * 100 : 0;
 
-        return new SprintMetrics(committed, completed, added, carryOver, completionRate, disruptionRate, carryOverRate);
+        return new SprintMetrics(committed, completed, added, carryOver, completionRate, disruptionRate, scopeDisruptionRate, bugDisruptionRate, carryOverRate);
     }
 
-    private static decimal ComputeSpCompleted(List<SprintMembership> memberships, List<string> doneStatuses) =>
+    private static decimal ComputeSpCompleted(List<SprintMembership> memberships, List<string> doneStatuses, int defaultSpPerBug) =>
         memberships
-            .Where(m => doneStatuses.Contains(m.FinalStatus) && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => doneStatuses.Contains(m.FinalStatus) && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
-    private static decimal ComputeCompletionRate(List<SprintMembership> memberships, List<string> doneStatuses)
+    private static decimal ComputeCompletionRate(List<SprintMembership> memberships, List<string> doneStatuses, int defaultSpPerBug)
     {
-        var metrics = ComputeMetrics(memberships, doneStatuses);
+        var metrics = ComputeMetrics(memberships, doneStatuses, defaultSpPerBug);
         return metrics.CompletionRate;
     }
 
-    private static decimal ComputeDisruptionRate(List<SprintMembership> memberships)
+    private static decimal ComputeScopeDisruptionRate(List<SprintMembership> memberships, int defaultSpPerBug)
     {
         var committed = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
-        var added = memberships
-            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
-        return committed > 0 ? added / committed * 100 : 0;
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+        var spAddedScope = memberships
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && !IsBug(m) && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+        return committed > 0 ? spAddedScope / committed * 100 : 0;
     }
 
-    private static decimal ComputeCarryOverRate(List<SprintMembership> memberships, List<string> doneStatuses)
+    private static decimal ComputeBugDisruptionRate(List<SprintMembership> memberships, int defaultSpPerBug)
     {
-        var metrics = ComputeMetrics(memberships, doneStatuses);
+        var committed = memberships
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+        var spAddedBug = memberships
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && IsBug(m) && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+        return committed > 0 ? spAddedBug / committed * 100 : 0;
+    }
+
+    private static decimal ComputeCarryOverRate(List<SprintMembership> memberships, List<string> doneStatuses, int defaultSpPerBug)
+    {
+        var metrics = ComputeMetrics(memberships, doneStatuses, defaultSpPerBug);
         return metrics.CarryOverRate;
     }
 
@@ -335,12 +377,13 @@ public class SprintSummaryService
         List<Sprint> allWindowSprints,
         string? subTeam,
         List<string> doneStatuses,
-        Func<List<SprintMembership>, decimal> valueSelector)
+        Func<List<SprintMembership>, decimal> valueSelector,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         return window.Select(s =>
         {
             var sprintData = allWindowSprints.First(ws => ws.Id == s.Id);
-            var memberships = FilterMemberships(sprintData.Memberships, subTeam);
+            var memberships = FilterMemberships(sprintData.Memberships, subTeam, excludedDeveloperIds);
             return new SparklinePoint(s.Name, Math.Round(valueSelector(memberships), 1));
         }).ToList();
     }
@@ -373,44 +416,58 @@ public class SprintSummaryService
         return new MetricCard(name, Math.Round(value, 1), displayValue, delta.HasValue ? Math.Round(delta.Value, 1) : null, direction, deltaPolarity, sparkline);
     }
 
+    // --- Effective SP for Ticket entities (mirrors EpicProgressService.GetEffectiveTicketSp) ---
+
+    private static decimal? GetEffectiveTicketSp(Ticket t, int defaultSpPerBug)
+    {
+        if (t.StoryPoints.HasValue && t.StoryPoints.Value > 0)
+            return t.StoryPoints;
+        if (t.IssueType == "Bug" && defaultSpPerBug > 0)
+            return (decimal)defaultSpPerBug;
+        return null;
+    }
+
     // --- Top epics ---
 
     private static List<EpicProgress> ComputeTopEpics(
         List<SprintMembership> selectedMemberships,
         List<Sprint> allSprints,
         string? subTeam,
-        List<string> doneStatuses)
+        List<string> doneStatuses,
+        List<Ticket> allEpicTickets,
+        int defaultSpPerBug)
     {
-        // Group by EpicKey in selected sprint, sum completed SP
+        // Step 1: Group by EpicKey in selected sprint, sum completed SP — top 3 selection unchanged
         var thisSprintByEpic = selectedMemberships
-            .Where(m => m.Ticket?.EpicKey != null && m.RemovedAt == null && m.StoryPoints.HasValue && doneStatuses.Contains(m.FinalStatus))
+            .Where(m => m.Ticket?.EpicKey != null && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue && doneStatuses.Contains(m.FinalStatus))
             .GroupBy(m => m.Ticket.EpicKey!)
             .Select(g => new
             {
                 EpicKey = g.Key,
                 EpicName = g.First().Ticket.EpicName ?? g.Key,
-                SpCompletedThisSprint = g.Sum(m => m.StoryPoints!.Value)
+                SpCompletedThisSprint = g.Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value)
             })
             .OrderByDescending(e => e.SpCompletedThisSprint)
             .Take(3)
             .ToList();
 
-        // For each epic, compute overall progress across all provided sprints
-        var allMembershipsFlat = allSprints
-            .SelectMany(s => FilterMemberships(s.Memberships, subTeam))
-            .ToList();
+        // Step 2 (BR20): for each top epic, compute completion from ALL tickets with that epic key
+        // using ticket current status — not from sprint memberships
+        var filteredEpicTickets = string.IsNullOrWhiteSpace(subTeam)
+            ? allEpicTickets
+            : allEpicTickets.Where(t => t.Assignee?.SubTeam == subTeam).ToList();
 
         return thisSprintByEpic.Select(e =>
         {
-            var epicMemberships = allMembershipsFlat
-                .Where(m => m.Ticket?.EpicKey == e.EpicKey && m.RemovedAt == null && m.StoryPoints.HasValue)
+            var epicTickets = filteredEpicTickets
+                .Where(t => t.EpicKey == e.EpicKey && GetEffectiveTicketSp(t, defaultSpPerBug) != null)
                 .ToList();
 
-            var doneSp = epicMemberships
-                .Where(m => doneStatuses.Contains(m.FinalStatus))
-                .Sum(m => m.StoryPoints!.Value);
+            var doneSp = epicTickets
+                .Where(t => doneStatuses.Contains(t.CurrentStatus))
+                .Sum(t => GetEffectiveTicketSp(t, defaultSpPerBug) ?? 0m);
 
-            var totalSp = epicMemberships.Sum(m => m.StoryPoints!.Value);
+            var totalSp = epicTickets.Sum(t => GetEffectiveTicketSp(t, defaultSpPerBug) ?? 0m);
             var completionPct = totalSp > 0 ? Math.Round(doneSp / totalSp * 100, 1) : 0;
 
             return new EpicProgress(
@@ -427,12 +484,13 @@ public class SprintSummaryService
     private static List<DeveloperSummary> ComputeLeaderboard(
         List<Developer> developers,
         List<SprintMembership> memberships,
-        List<string> doneStatuses)
+        List<string> doneStatuses,
+        int defaultSpPerBug)
     {
         var completedByDev = memberships
-            .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue && doneStatuses.Contains(m.FinalStatus) && m.Ticket?.AssigneeId != null)
+            .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue && doneStatuses.Contains(m.FinalStatus) && m.Ticket?.AssigneeId != null)
             .GroupBy(m => m.Ticket.AssigneeId!)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.StoryPoints!.Value));
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value));
 
         return developers
             .Select(d => new DeveloperSummary(
@@ -453,11 +511,13 @@ public class SprintSummaryService
         List<Sprint> allSprints,
         string? subTeam,
         List<Developer> filteredDevelopers,
-        List<string> doneStatuses)
+        List<string> doneStatuses,
+        int defaultSpPerBug,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         // Zombie tickets (BR16): tickets appearing in 3+ sprints
         var allMembershipsFlat = allSprints
-            .SelectMany(s => FilterMemberships(s.Memberships, subTeam))
+            .SelectMany(s => FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds))
             .ToList();
 
         var zombies = allMembershipsFlat
@@ -482,15 +542,15 @@ public class SprintSummaryService
 
         MidSprintDisruption? midSprintDisruption = disruptedMemberships.Count > 0
             ? new MidSprintDisruption(
-                Math.Round(disruptedMemberships.Where(m => m.StoryPoints.HasValue).Sum(m => m.StoryPoints!.Value), 1),
+                Math.Round(disruptedMemberships.Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue).Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value), 1),
                 disruptedMemberships.Count)
             : null;
 
         // Zero-SP developers (BR18): active devs who had work assigned but completed 0 SP
         var completedByDev = selectedMemberships
-            .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue && doneStatuses.Contains(m.FinalStatus) && m.Ticket?.AssigneeId != null)
+            .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue && doneStatuses.Contains(m.FinalStatus) && m.Ticket?.AssigneeId != null)
             .GroupBy(m => m.Ticket.AssigneeId!)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.StoryPoints!.Value));
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value));
 
         var assigneesInSprint = selectedMemberships
             .Where(m => m.RemovedAt == null && m.Ticket?.AssigneeId != null)

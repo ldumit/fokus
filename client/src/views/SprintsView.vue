@@ -73,6 +73,11 @@ function onSubTeamChange(subTeam: string | null) {
 function onSprintBarClick(sprintId: number) {
   store.selectSprint(sprintId)
 }
+
+async function onSprintUpdated() {
+  await store.refreshSprints()
+  await store.fetchAllData()
+}
 </script>
 
 <template>
@@ -87,9 +92,11 @@ function onSprintBarClick(sprintId: number) {
         :show-aggregate-options="true"
         :sprint-mode="store.sprintMode"
         :selected-last="store.selectedLast"
+        :show-edit-button="true"
         @update:selected-sprint-id="(id) => store.selectSprint(id)"
         @update:selected-sub-team="onSubTeamChange"
         @update:sprint-mode="onSprintModeChange"
+        @sprint-updated="onSprintUpdated"
       />
     </template>
 

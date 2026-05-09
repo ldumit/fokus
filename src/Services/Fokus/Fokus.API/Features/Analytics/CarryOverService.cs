@@ -111,12 +111,14 @@ public class CarryOverService
         List<Sprint> selectedSprints,
         List<Sprint> allSyncedSprints,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var sortedSelected = selectedSprints.OrderBy(s => s.StartDate).ToList();
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var workflowStages = settings.WorkflowStages;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
         var sprintInfos = sortedSelected
             .Select(s => new CarryOverSprintInfo(s.Id, s.Name, s.StartDate, s.EndDate))
@@ -125,8 +127,8 @@ public class CarryOverService
         var perSprintData = sortedSelected
             .Select(s =>
             {
-                var memberships = FilterMemberships(s.Memberships, subTeam);
-                return ComputePerSprintData(s, memberships, doneStatuses, excludedStatuses, workflowStages);
+                var memberships = FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds);
+                return ComputePerSprintData(s, memberships, doneStatuses, excludedStatuses, workflowStages, defaultSpPerBug);
             })
             .ToList();
 
@@ -140,11 +142,11 @@ public class CarryOverService
 
         // Issue type breakdown across all selected sprints
         var allCarryOverMemberships = sortedSelected
-            .SelectMany(s => FilterMemberships(s.Memberships, subTeam)
+            .SelectMany(s => FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds)
                 .Where(m => IsCarryOver(m, doneStatuses)))
             .ToList();
 
-        var issueTypeBreakdown = BuildIssueTypeBreakdown(allCarryOverMemberships, excludedStatuses);
+        var issueTypeBreakdown = BuildIssueTypeBreakdown(allCarryOverMemberships, excludedStatuses, defaultSpPerBug);
 
         // Zombie detection: tickets with 3+ distinct sprint appearances across ALL synced sprints
         var selectedSprintIds = new HashSet<int>(sortedSelected.Select(s => s.Id));
@@ -156,7 +158,7 @@ public class CarryOverService
 
         foreach (var sprint in sortedSelected)
         {
-            var memberships = FilterMemberships(sprint.Memberships, subTeam);
+            var memberships = FilterMemberships(sprint.Memberships, subTeam, excludedDeveloperIds);
             foreach (var m in memberships.Where(m => IsCarryOver(m, doneStatuses)))
             {
                 if (!zombieTicketKeys.TryGetValue(m.TicketId, out var sprintCount)) continue;
@@ -167,7 +169,7 @@ public class CarryOverService
                     m.Ticket?.Summary ?? m.TicketId,
                     m.Ticket?.IssueType ?? "Unknown",
                     m.FinalStatus,
-                    m.StoryPoints,
+                    m.GetEffectiveSp(defaultSpPerBug),
                     sprintCount));
             }
         }
@@ -190,15 +192,17 @@ public class CarryOverService
         Sprint? priorSprint,
         List<Sprint> allSyncedSprints,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var workflowStages = settings.WorkflowStages;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
-        var memberships = FilterMemberships(targetSprint.Memberships, subTeam);
+        var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var priorMemberships = priorSprint is not null
-            ? FilterMemberships(priorSprint.Memberships, subTeam)
+            ? FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds)
             : null;
 
         var sprintInfo = new CarryOverSprintInfo(
@@ -207,9 +211,9 @@ public class CarryOverService
         var zombieTicketKeys = GetZombieTicketKeys(allSyncedSprints);
 
         // Core carry-over metrics
-        var current = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses);
+        var current = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug);
         CarryOverMetrics? prior = priorMemberships is not null
-            ? ComputeCarryOverMetrics(priorMemberships, doneStatuses, excludedStatuses)
+            ? ComputeCarryOverMetrics(priorMemberships, doneStatuses, excludedStatuses, defaultSpPerBug)
             : null;
 
         var metrics = new CarryOverSingleSprintMetrics(
@@ -229,14 +233,16 @@ public class CarryOverService
         var statusDistribution = BuildStatusDistribution(
             memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList(),
             workflowStages,
-            excludedStatuses);
+            excludedStatuses,
+            defaultSpPerBug);
 
         var issueTypeBreakdown = BuildIssueTypeBreakdown(
             memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList(),
-            excludedStatuses);
+            excludedStatuses,
+            defaultSpPerBug);
 
         // Carry-over destination
-        var destination = BuildCarryOverDestination(priorSprint, priorMemberships, targetSprint, memberships, doneStatuses, excludedStatuses, subTeam);
+        var destination = BuildCarryOverDestination(priorSprint, priorMemberships, targetSprint, memberships, doneStatuses, excludedStatuses, subTeam, defaultSpPerBug);
 
         // Full carry-over ticket table
         var tickets = memberships
@@ -248,7 +254,7 @@ public class CarryOverService
                     m.TicketId,
                     m.Ticket?.Summary ?? m.TicketId,
                     m.Ticket?.IssueType ?? "Unknown",
-                    m.StoryPoints,
+                    m.GetEffectiveSp(defaultSpPerBug),
                     m.FinalStatus,
                     MapWorkflowStage(m.FinalStatus, workflowStages),
                     sprintCount,
@@ -274,14 +280,15 @@ public class CarryOverService
 
     private static List<SprintMembership> FilterMemberships(
         IReadOnlyList<SprintMembership> memberships,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
-        if (string.IsNullOrWhiteSpace(subTeam))
-            return memberships.ToList();
-
-        return memberships
-            .Where(m => m.Ticket?.Assignee?.SubTeam == subTeam)
-            .ToList();
+        var result = memberships.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subTeam))
+            result = result.Where(m => m.Ticket?.Assignee?.SubTeam == subTeam);
+        if (excludedDeveloperIds is { Count: > 0 })
+            result = result.Where(m => m.Ticket?.AssigneeId == null || !excludedDeveloperIds.Contains(m.Ticket.AssigneeId));
+        return result.ToList();
     }
 
     // --- Carry-over identification (BR1) ---
@@ -305,26 +312,27 @@ public class CarryOverService
     private static CarryOverMetrics ComputeCarryOverMetrics(
         List<SprintMembership> memberships,
         List<string> doneStatuses,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int defaultSpPerBug)
     {
         var carryOverTickets = memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList();
 
         var carryOverSp = carryOverTickets
-            .Where(m => m.StoryPoints.HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var carryOverTicketCount = carryOverTickets.Count;
 
         // Total scope SP: committed (active, not excluded) + added (not excluded)
         var committedSpActive = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var addedSp = memberships
-            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var totalScopeSp = committedSpActive + addedSp;
         var carryOverRate = totalScopeSp > 0 ? carryOverSp / totalScopeSp * 100 : 0;
@@ -343,11 +351,12 @@ public class CarryOverService
         List<SprintMembership> memberships,
         List<string> doneStatuses,
         List<string> excludedStatuses,
-        List<string> workflowStages)
+        List<string> workflowStages,
+        int defaultSpPerBug)
     {
-        var metrics = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses);
+        var metrics = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug);
         var carryOverMemberships = memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList();
-        var statusDistribution = BuildStatusDistribution(carryOverMemberships, workflowStages, excludedStatuses);
+        var statusDistribution = BuildStatusDistribution(carryOverMemberships, workflowStages, excludedStatuses, defaultSpPerBug);
 
         return new CarryOverPerSprintData(
             sprint.Id,
@@ -363,7 +372,8 @@ public class CarryOverService
     private static List<CarryOverStatusDistributionEntry> BuildStatusDistribution(
         List<SprintMembership> carryOverMemberships,
         List<string> workflowStages,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int defaultSpPerBug)
     {
         // Excluded-from-scope tickets are invisible in status distribution (not just excluded from SP)
         var visibleMemberships = carryOverMemberships
@@ -382,8 +392,8 @@ public class CarryOverService
             if (items.Count == 0) continue;
 
             var spTotal = items
-                .Where(m => m.StoryPoints.HasValue)
-                .Sum(m => m.StoryPoints!.Value);
+                .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue)
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
             var percentage = total > 0 ? Math.Round((decimal)items.Count / total * 100, 1) : 0;
 
             result.Add(new CarryOverStatusDistributionEntry(
@@ -399,8 +409,8 @@ public class CarryOverService
         if (otherItems.Count > 0)
         {
             var otherSp = otherItems
-                .Where(m => m.StoryPoints.HasValue)
-                .Sum(m => m.StoryPoints!.Value);
+                .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue)
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
             var otherPct = total > 0 ? Math.Round((decimal)otherItems.Count / total * 100, 1) : 0;
             result.Add(new CarryOverStatusDistributionEntry(
                 "Other", otherItems.Count, Math.Round(otherSp, 1), otherPct));
@@ -413,7 +423,8 @@ public class CarryOverService
 
     private static List<CarryOverIssueTypeEntry> BuildIssueTypeBreakdown(
         List<SprintMembership> carryOverMemberships,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int defaultSpPerBug)
     {
         // BR3: exclude tickets with excluded-from-scope statuses from issue type counts
         var includedMemberships = carryOverMemberships
@@ -427,8 +438,8 @@ public class CarryOverService
             .Select(g =>
             {
                 var spTotal = g
-                    .Where(m => m.StoryPoints.HasValue)
-                    .Sum(m => m.StoryPoints!.Value);
+                    .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue)
+                    .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
                 var percentage = total > 0 ? Math.Round((decimal)g.Count() / total * 100, 1) : 0;
                 return new CarryOverIssueTypeEntry(
                     g.Key, g.Count(), Math.Round(spTotal, 1), percentage);
@@ -467,7 +478,8 @@ public class CarryOverService
         List<SprintMembership> targetMemberships,
         List<string> doneStatuses,
         List<string> excludedStatuses,
-        string? subTeam)
+        string? subTeam,
+        int defaultSpPerBug)
     {
         if (priorSprint is null || priorMemberships is null)
             return null;
@@ -478,8 +490,8 @@ public class CarryOverService
 
         var priorCarryOverCount = priorCarryOverMemberships.Count;
         var priorCarryOverSp = priorCarryOverMemberships
-            .Where(m => m.StoryPoints.HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         if (priorCarryOverCount == 0)
         {
@@ -504,7 +516,7 @@ public class CarryOverService
 
         foreach (var pm in priorCarryOverMemberships)
         {
-            var sp = pm.StoryPoints ?? 0m;
+            var sp = pm.GetEffectiveSp(defaultSpPerBug) ?? 0m;
             if (!currentMembershipByTicket.TryGetValue(pm.TicketId, out var cm))
             {
                 droppedCount++;

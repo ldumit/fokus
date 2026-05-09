@@ -1,4 +1,4 @@
-import type { AppSettings, BoardOption, DetectionResult, StatusOption } from '../types'
+import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse } from '../types'
 import { apiFetch } from './client'
 
 export function getSettings(): Promise<AppSettings> {
@@ -32,5 +32,16 @@ export function saveExcludedStatuses(statuses: string[]): Promise<string[]> {
   return apiFetch<string[]>('/settings/excluded-statuses', {
     method: 'PUT',
     body: JSON.stringify({ statuses })
+  })
+}
+
+export function getCycleTimeBoundaries(): Promise<CycleTimeBoundariesResponse> {
+  return apiFetch<CycleTimeBoundariesResponse>('/settings/cycle-time-boundaries')
+}
+
+export function saveCycleTimeBoundaries(startStage: string, endStage: string): Promise<SaveCycleTimeBoundariesResponse> {
+  return apiFetch<SaveCycleTimeBoundariesResponse>('/settings/cycle-time-boundaries', {
+    method: 'PUT',
+    body: JSON.stringify({ startStage, endStage })
   })
 }

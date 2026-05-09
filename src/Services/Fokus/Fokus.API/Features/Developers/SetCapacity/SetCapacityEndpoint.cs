@@ -1,8 +1,8 @@
 namespace Fokus.API.Features.Developers.SetCapacity;
 
-[AllowAnonymous]
 [HttpPut("/api/developers/{accountId}/capacity")]
 [Tags("Developers")]
+[Authorize(Roles = "Admin")]
 public class SetCapacityEndpoint(DeveloperRepository developerRepository)
     : Endpoint<SetCapacityRequest, SetCapacityResponse>
 {

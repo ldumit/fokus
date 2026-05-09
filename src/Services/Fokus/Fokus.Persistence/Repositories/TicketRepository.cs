@@ -38,7 +38,8 @@ public class TicketRepository(FokusDbContext db)
 
     public new async Task UpsertAsync(Ticket ticket, CancellationToken ct = default)
     {
-        var existing = await Entity.SingleOrDefaultAsync(t => t.Id == ticket.Id, ct);
+        var existing = Entity.Local.SingleOrDefault(t => t.Id == ticket.Id)
+            ?? await Entity.SingleOrDefaultAsync(t => t.Id == ticket.Id, ct);
         if (existing is null)
         {
             Entity.Add(ticket);
@@ -71,6 +72,18 @@ public class TicketRepository(FokusDbContext db)
     public async Task<List<StatusTransition>> GetStatusTransitionsForTicketsAsync(List<string> ticketIds, CancellationToken ct = default) =>
         await DbContext.StatusTransitions
             .Where(st => ticketIds.Contains(st.TicketId))
+            .ToListAsync(ct);
+
+    public async Task<List<Ticket>> GetTicketsWithEpicAsync(CancellationToken ct = default) =>
+        await Entity
+            .Where(t => t.EpicKey != null)
+            .Include(t => t.Assignee)
+            .ToListAsync(ct);
+
+    public async Task<List<Ticket>> GetTicketsWithoutEpicInSprintsAsync(CancellationToken ct = default) =>
+        await Entity
+            .Where(t => t.EpicKey == null && DbContext.SprintMemberships.Any(sm => sm.TicketId == t.Id))
+            .Include(t => t.Assignee)
             .ToListAsync(ct);
 
     public async Task<TransitionEdgeData> GetTransitionEdgesForDetectionAsync(CancellationToken ct = default)

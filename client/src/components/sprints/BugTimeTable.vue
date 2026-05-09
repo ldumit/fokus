@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <BaseCard v-if="bugs.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Bug Time in Progress</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Calendar days each mid-sprint bug spent in active work statuses — measures capacity consumed.">Bug Time in Progress</div>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-text-muted text-left border-b border-border-default">

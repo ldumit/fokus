@@ -9,4 +9,7 @@ public class GetSettingsResponse
     public HealthWeightConfig HealthWeights { get; set; } = new();
     public int BugRatioAlertThreshold { get; set; }
     public int BugRatioConsecutiveSprintCount { get; set; }
+    public int SyncBackSprintCount { get; set; }
+    public int PlanningWindowDays { get; set; }
+    public int DefaultSpPerBug { get; set; }
 }

@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Developers.GetCapacity;
 
-[AllowAnonymous]
 [HttpGet("/api/developers/{accountId}/capacity")]
 [Tags("Developers")]
 public class GetCapacityEndpoint(DeveloperRepository developerRepository)

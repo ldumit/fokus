@@ -28,4 +28,7 @@ public interface IJiraApi
 
     [Get("/rest/api/3/issue/{issueIdOrKey}/changelog")]
     Task<IApiResponse<JiraPagedResult<JiraHistory>>> GetIssueChangelogPageAsync(string issueIdOrKey, [Query] int startAt, [Query] int maxResults, CancellationToken ct);
+
+    [Post("/rest/agile/1.0/sprint/{sprintId}")]
+    Task<IApiResponse<JiraSprint>> UpdateSprintAsync(int sprintId, [Body] UpdateJiraSprintRequest request, CancellationToken ct);
 }

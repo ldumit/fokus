@@ -1,5 +1,7 @@
 # TeamManagedSync
 
+**Feature Spec:** None
+
 ## Context
 
 Team-managed Jira projects use "simple" board type. Several Agile REST API endpoints (`/rest/agile/1.0/...`) return empty results for these boards. Currently, only `GetSprintIssuesAsync` has a JQL fallback — `GetEpicIssuesAsync` and `GetBoardBacklogIssuesAsync` are broken for team-managed boards (and `GetBoardBacklogIssuesAsync` is dead code with zero callers).

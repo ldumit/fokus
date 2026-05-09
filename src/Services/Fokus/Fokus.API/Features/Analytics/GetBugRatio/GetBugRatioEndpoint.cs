@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Analytics.GetBugRatio;
 
-[AllowAnonymous]
 [HttpGet("/api/analytics/bug-ratio")]
 [Tags("Analytics")]
 public class GetBugRatioEndpoint(
@@ -34,10 +33,14 @@ public class GetBugRatioEndpoint(
         var allLoadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(allClosedIds, ct);
         var allSprints = allLoadedSprints.OrderBy(s => s.StartDate).ToList();
 
-        // 6. Load active developers
+        // 6. Load active developers and all developers for capacity fallback
         var activeDevelopers = await developerRepository.GetActiveDevelopersAsync(ct);
+        var allDevelopers = await developerRepository.GetAllAsync(ct);
 
-        // 7. Determine mode
+        // 7. Load capacity records for all closed sprints
+        var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(allClosedIds, ct);
+
+        // 8. Determine mode
         if (req.SprintId.HasValue)
         {
             // Single-sprint mode
@@ -52,8 +55,12 @@ public class GetBugRatioEndpoint(
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
             var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
 
+            var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
+                target, allDevelopers, capacityRecords, settings.DoneStatuses);
+            var filteredActive = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
+
             var singleResult = bugRatioService.ComputeSingleSprint(
-                target, priorSprint, allSprints, activeDevelopers, settings, subTeam);
+                target, priorSprint, allSprints, filteredActive, settings, subTeam, excludedIds);
 
             await SendOkAsync(new BugRatioResponse("single", null, singleResult), ct);
         }
@@ -63,8 +70,17 @@ public class GetBugRatioEndpoint(
             var last = req.Last ?? 5;
             var selectedSprints = allSprints.TakeLast(last).ToList();
 
+            // For multi-sprint: exclude developers excluded in ALL selected sprints
+            var excludedInAll = activeDevelopers
+                .Where(dev => selectedSprints.All(sprint =>
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses)
+                        .Contains(dev.Id)))
+                .Select(dev => dev.Id)
+                .ToHashSet();
+            var filteredActive = activeDevelopers.Where(d => !excludedInAll.Contains(d.Id)).ToList();
+
             var multiResult = bugRatioService.ComputeMultiSprint(
-                selectedSprints, allSprints, activeDevelopers, settings, subTeam);
+                selectedSprints, allSprints, filteredActive, settings, subTeam, excludedInAll);
 
             await SendOkAsync(new BugRatioResponse("multi", multiResult, null), ct);
         }

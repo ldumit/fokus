@@ -56,6 +56,7 @@ function formatDate(dateStr: string): string {
         :selected-sub-team="store.selectedSubTeam"
         :show-sub-team-filter="true"
         :show-aggregate-options="false"
+        :show-sprint-info="false"
         @update:selected-sprint-id="onSprintChange"
         @update:selected-sub-team="onSubTeamChange"
       />
@@ -104,16 +105,27 @@ function formatDate(dateStr: string): string {
         </BaseCard>
 
         <!-- Metric cards row -->
-        <div v-if="store.summary.metrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-if="store.summary.metrics" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <MetricCardComponent :metric="store.summary.metrics.spCompleted" />
           <MetricCardComponent :metric="store.summary.metrics.completionRate" />
-          <MetricCardComponent :metric="store.summary.metrics.disruptionRate" />
+          <MetricCardComponent :metric="store.summary.metrics.scopeDisruptionRate" />
+          <MetricCardComponent :metric="store.summary.metrics.bugDisruptionRate" />
           <MetricCardComponent :metric="store.summary.metrics.carryOverRate" />
         </div>
 
         <!-- Top epics -->
         <BaseCard v-if="store.summary.topEpics.length > 0">
-          <div class="text-sm font-medium text-text-primary mb-3">Top Epics</div>
+          <div class="flex items-center gap-1 mb-3">
+            <div class="text-sm font-medium text-text-primary">Top Epics</div>
+            <span
+              class="text-text-muted cursor-help"
+              title="Up to 3 epics with the most story points completed in this sprint."
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
           <div class="flex flex-col gap-3">
             <div
               v-for="epic in store.summary.topEpics"
@@ -141,7 +153,17 @@ function formatDate(dateStr: string): string {
 
         <!-- Developer leaderboard -->
         <BaseCard v-if="store.summary.leaderboard.length > 0">
-          <div class="text-sm font-medium text-text-primary mb-3">Developer Leaderboard</div>
+          <div class="flex items-center gap-1 mb-3">
+            <div class="text-sm font-medium text-text-primary">Developer Leaderboard</div>
+            <span
+              class="text-text-muted cursor-help"
+              title="All active developers ranked by story points completed in this sprint."
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </div>
           <div class="flex flex-col gap-2">
             <div
               v-for="(dev, index) in store.summary.leaderboard"

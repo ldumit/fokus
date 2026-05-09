@@ -6,6 +6,9 @@
 # Secrets setup script
 setup-secrets.ps1
 
+# Google OAuth credentials
+client_secret*.json
+
 # User-specific files
 *.rsuser
 *.suo
@@ -432,7 +435,7 @@ web/reflekt-web/node_modules/
 web/reflekt-web/dist/
 
 # Claude Plugins
-/.omc
+.omc
 
 # Graphify
 graphify-out/cache/

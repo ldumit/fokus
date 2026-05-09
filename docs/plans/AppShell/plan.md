@@ -1,5 +1,7 @@
 # App Shell & Navigation
 
+**Feature Spec:** `docs/features/AppShell/spec.md`
+
 ## Context
 
 Every analytics feature (F8-F14) needs a navigation frame, a consistent visual language, and shared layout conventions before it can render content. The current frontend has five route-level views (Dashboard, Developers, Sprints, Epics, Settings) but no persistent shell — each view renders full-screen with no sidebar, header, or shared chrome. Settings has a complete form layout; the other four are placeholder stubs.

@@ -1,5 +1,7 @@
 # Workflow Auto-Detection
 
+**Feature Spec:** `docs/features/WorkflowAutoDetection/spec.md`
+
 ## Context
 
 F12 (Cycle Time) needs an ordered list of workflow stages to measure how long tickets spend in each phase. Manually configuring these stages requires the user to know their Jira workflow by heart. This feature analyzes the status transition history already collected during sprint sync and proposes an ordered workflow pipeline. The user reviews, edits, and confirms -- no guessing, no Jira admin access needed.

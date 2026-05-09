@@ -2,7 +2,6 @@ using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync.GetStatuses;
 
-[AllowAnonymous]
 [HttpGet("/api/jira/statuses")]
 [Tags("Sync")]
 public class GetStatusesEndpoint(IJiraClient jiraClient)

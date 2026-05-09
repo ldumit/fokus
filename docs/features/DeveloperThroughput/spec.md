@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.1 (Developer Throughput)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F5 (Sprint Sync)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/DeveloperThroughput/plan.md`
 
 ---
 

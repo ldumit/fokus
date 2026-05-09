@@ -1,5 +1,7 @@
 # Sprint Summary Card
 
+**Feature Spec:** `docs/features/SprintSummaryCard/spec.md`
+
 ## Context
 
 The Dashboard is the app's landing page but currently shows only an empty state. This feature fills it with a single-sprint summary view: health score, four metric cards with deltas and sparklines, top epics, developer leaderboard, and flags. It is the first analytics feature (F8) and establishes three cross-cutting patterns that all subsequent analytics features (F9-F14) inherit: the composite health score computation, the delta pattern (C1 -- comparing to the prior sprint), and the sub-team filter data-wiring (C2 -- filtering all content by developer sub-team). It also activates the sprint selector and sub-team filter that F7 left as visual stubs.

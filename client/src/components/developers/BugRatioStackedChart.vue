@@ -68,7 +68,7 @@ const options = computed(() => ({
 
 <template>
   <BaseCard v-if="multi.sprints.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Bug SP vs Non-Bug SP per Sprint</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Bug SP (red) vs. Non-Bug SP (blue) per sprint for each developer. Compare allocation patterns.">Bug SP vs Non-Bug SP per Sprint</div>
     <apexchart type="bar" height="260" :options="options" :series="series" />
   </BaseCard>
 </template>

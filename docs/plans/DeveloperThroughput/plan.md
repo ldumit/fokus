@@ -1,5 +1,7 @@
 # Developer Throughput
 
+**Feature Spec:** `docs/features/DeveloperThroughput/spec.md`
+
 ## Context
 
 The Developers page is currently an empty state stub. This feature fills it with per-developer sprint analytics: a throughput table showing SP assigned, SP completed, completion %, tickets done, tickets carried over -- with delta indicators for single-sprint view -- plus a multi-line trend chart showing 3-sprint rolling averages across sprints. It also introduces a new "Developer Sprint Capacity" concept (per-developer per-sprint percentage 0-100, default 100) that modulates rolling average calculations and is editable inline.

@@ -1,5 +1,7 @@
 # JiraModuleRefactor
 
+**Feature Spec:** None
+
 ## Context
 
 The previous `ExtractJiraModule` refactoring extracted the Jira HTTP client into `src/Modules/Jira/` but left `Fokus.JiraContracts` as a standalone BuildingBlock because a circular dependency blocked absorption. The circular dependency is:

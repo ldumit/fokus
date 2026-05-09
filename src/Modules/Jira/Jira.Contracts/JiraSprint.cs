@@ -8,4 +8,5 @@ public class JiraSprint
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public int OriginBoardId { get; set; }
+    public string? Goal { get; set; }
 }

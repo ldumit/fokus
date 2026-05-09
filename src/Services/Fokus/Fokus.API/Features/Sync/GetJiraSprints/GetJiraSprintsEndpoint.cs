@@ -2,7 +2,6 @@ using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync.GetJiraSprints;
 
-[AllowAnonymous]
 [HttpGet("/api/jira/sprints")]
 [Tags("Sync")]
 public class GetJiraSprintsEndpoint(IJiraClient jiraClient)

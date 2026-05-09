@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.5 (Bug Ratio Per Developer)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F7 (App Shell & Navigation), F8 (Sprint Summary Card — cross-cutting patterns), F9 (Developer Throughput — Developers page structure)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/BugRatio/plan.md`
 
 ---
 

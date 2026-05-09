@@ -1,13 +1,15 @@
 namespace Fokus.API.Features.Settings.SaveSettings;
 
-[AllowAnonymous]
 [HttpPut("/api/settings")]
 [Tags("Settings")]
+[Authorize(Roles = "Admin")]
 public class SaveSettingsEndpoint(AppSettingsRepository repository)
     : Endpoint<SaveSettingsCommand, SaveSettingsResponse>
 {
     public override async Task HandleAsync(SaveSettingsCommand command, CancellationToken ct)
     {
+        var existing = await repository.GetAsync(ct);
+
         var settings = new AppSettings
         {
             Id = 1,
@@ -17,7 +19,11 @@ public class SaveSettingsEndpoint(AppSettingsRepository repository)
             HealthThresholds = command.HealthThresholds,
             HealthWeights = command.HealthWeights,
             BugRatioAlertThreshold = command.BugRatioAlertThreshold,
-            BugRatioConsecutiveSprintCount = command.BugRatioConsecutiveSprintCount
+            BugRatioConsecutiveSprintCount = command.BugRatioConsecutiveSprintCount,
+            SyncBackSprintCount = command.SyncBackSprintCount,
+            PlanningWindowDays = command.PlanningWindowDays,
+            DefaultSpPerBug = command.DefaultSpPerBug,
+            ExcludedFromScopeStatuses = existing.ExcludedFromScopeStatuses
         };
 
         await repository.SaveAsync(settings, ct);

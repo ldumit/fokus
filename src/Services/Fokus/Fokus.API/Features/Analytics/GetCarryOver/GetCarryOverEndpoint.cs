@@ -1,11 +1,11 @@
 namespace Fokus.API.Features.Analytics.GetCarryOver;
 
-[AllowAnonymous]
 [HttpGet("/api/analytics/carry-over")]
 [Tags("Analytics")]
 public class GetCarryOverEndpoint(
     SprintRepository sprintRepository,
     AppSettingsRepository appSettingsRepository,
+    DeveloperRepository developerRepository,
     CarryOverService carryOverService)
     : Endpoint<GetCarryOverRequest, CarryOverResponse>
 {
@@ -25,11 +25,13 @@ public class GetCarryOverEndpoint(
         // 3. Normalize sub-team
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
-        // 4. Load app settings
+        // 4. Load app settings, all developers, and capacity records
         var settings = await appSettingsRepository.GetAsync(ct);
+        var allDevelopers = await developerRepository.GetAllAsync(ct);
+        var allClosedIds = ascending.Select(s => s.Id).ToList();
+        var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(allClosedIds, ct);
 
         // 5. Load ALL closed sprints with memberships — needed for accurate zombie sprint counting (BR7)
-        var allClosedIds = ascending.Select(s => s.Id).ToList();
         var allLoadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(allClosedIds, ct);
         var allSprints = allLoadedSprints.OrderBy(s => s.StartDate).ToList();
 
@@ -49,9 +51,13 @@ public class GetCarryOverEndpoint(
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
             var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
 
-            // 8b. Compute single-sprint response
+            // 8b. Compute excluded developer IDs for the target sprint
+            var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
+                target, allDevelopers, capacityRecords, settings.DoneStatuses);
+
+            // 9b. Compute single-sprint response
             var singleResult = carryOverService.ComputeSingleSprint(
-                target, priorSprint, allSprints, settings, subTeam);
+                target, priorSprint, allSprints, settings, subTeam, excludedIds);
 
             await SendOkAsync(new CarryOverResponse("single", null, singleResult), ct);
         }
@@ -64,9 +70,18 @@ public class GetCarryOverEndpoint(
             // 7a. Take last N sprints (0 = all)
             var selectedSprints = last == 0 ? allSprints : allSprints.TakeLast(last).ToList();
 
-            // 8a. Compute multi-sprint response
+            // 8a. Compute excluded developer IDs across selected sprints
+            var excludedInAll = selectedSprints
+                .SelectMany(sprint =>
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses))
+                .GroupBy(id => id)
+                .Where(g => g.Count() == selectedSprints.Count)
+                .Select(g => g.Key)
+                .ToHashSet();
+
+            // 9a. Compute multi-sprint response
             var multiResult = carryOverService.ComputeMultiSprint(
-                selectedSprints, allSprints, settings, subTeam);
+                selectedSprints, allSprints, settings, subTeam, excludedInAll);
 
             await SendOkAsync(new CarryOverResponse("multi", multiResult, null), ct);
         }

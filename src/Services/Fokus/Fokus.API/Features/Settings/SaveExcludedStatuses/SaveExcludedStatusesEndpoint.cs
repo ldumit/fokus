@@ -15,9 +15,9 @@ public class SaveExcludedStatusesRequestValidator : Validator<SaveExcludedStatus
     }
 }
 
-[AllowAnonymous]
 [HttpPut("/api/settings/excluded-statuses")]
 [Tags("Settings")]
+[Authorize(Roles = "Admin")]
 public class SaveExcludedStatusesEndpoint(AppSettingsRepository repository)
     : Endpoint<SaveExcludedStatusesRequest, List<string>>
 {

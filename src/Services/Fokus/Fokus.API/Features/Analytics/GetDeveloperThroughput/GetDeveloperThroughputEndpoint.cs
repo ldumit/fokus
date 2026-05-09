@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Analytics.GetDeveloperThroughput;
 
-[AllowAnonymous]
 [HttpGet("/api/analytics/developer-throughput")]
 [Tags("Analytics")]
 public class GetDeveloperThroughputEndpoint(
@@ -65,8 +64,9 @@ public class GetDeveloperThroughputEndpoint(
         // 5. Bulk load sprints with memberships (target + extra window)
         var loadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(allSprintIds, ct);
 
-        // 6. Load active developers
+        // 6. Load active developers for analytics display; load all for capacity fallback
         var activeDevelopers = await developerRepository.GetActiveDevelopersAsync(ct);
+        var allDevelopers = await developerRepository.GetAllAsync(ct);
 
         // 7. Bulk load capacity records for all loaded sprint IDs
         var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(allSprintIds, ct);
@@ -77,14 +77,27 @@ public class GetDeveloperThroughputEndpoint(
         // 9. Normalize sub-team
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
-        // 10. Compute throughput
+        // 10. Apply cross-cutting exclusion: remove developers excluded in ALL target sprints
+        var targetSprintsLoaded = loadedSprints.Where(s => targetSprintIds.Contains(s.Id)).ToList();
+        var excludedInAllTargets = activeDevelopers
+            .Where(dev => targetSprintsLoaded.All(sprint =>
+                ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses)
+                    .Contains(dev.Id)))
+            .Select(dev => dev.Id)
+            .ToHashSet();
+        var filteredActiveDevelopers = activeDevelopers
+            .Where(d => !excludedInAllTargets.Contains(d.Id))
+            .ToList();
+
+        // 11. Compute throughput
         var result = developerThroughputService.ComputeThroughput(
             loadedSprints,
             targetSprintIds,
-            activeDevelopers,
+            filteredActiveDevelopers,
             capacityRecords,
             settings,
-            subTeam);
+            subTeam,
+            allDevelopers);
 
         await SendOkAsync(result, ct);
     }

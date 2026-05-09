@@ -1,12 +1,12 @@
 namespace Fokus.API.Features.Analytics.GetSprintSummary;
 
-[AllowAnonymous]
 [HttpGet("/api/analytics/sprint-summary")]
 [Tags("Analytics")]
 public class GetSprintSummaryEndpoint(
     SprintRepository sprintRepository,
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
+    TicketRepository ticketRepository,
     SprintSummaryService sprintSummaryService)
     : Endpoint<GetSprintSummaryRequest, SprintSummaryResponse>
 {
@@ -54,14 +54,26 @@ public class GetSprintSummaryEndpoint(
 
         // 6. Load active developers and app settings
         var activeDevelopers = await developerRepository.GetActiveDevelopersAsync(ct);
+        var allDevelopers = await developerRepository.GetAllAsync(ct);
         var settings = await appSettingsRepository.GetAsync(ct);
 
         // 7. Normalize sub-team (empty string -> null)
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
-        // 8. Compute summary
+        // 8. Load capacity records for the window sprints
+        var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(windowIds, ct);
+
+        // 9. Apply cross-cutting exclusion for the selected sprint
         var selectedSprint = windowSprints.First(s => s.Id == selectedSprintInfo.Id);
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, activeDevelopers, settings, subTeam);
+        var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
+            selectedSprint, allDevelopers, capacityRecords, settings.DoneStatuses);
+        var filteredActiveDevelopers = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
+
+        // 10. Load all epic tickets for F8/F14 alignment (BR20)
+        var allEpicTickets = await ticketRepository.GetTicketsWithEpicAsync(ct);
+
+        // 11. Compute summary (exclusion applied internally via excludedIds)
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, excludedIds);
 
         await SendOkAsync(result, ct);
     }

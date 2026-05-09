@@ -51,6 +51,11 @@ export const useSprintsStore = defineStore('sprints', () => {
     await fetchAllData()
   }
 
+  async function refreshSprints() {
+    const sprints = await getClosedSprints()
+    closedSprints.value = sprints
+  }
+
   async function fetchAllData() {
     loading.value = true
     error.value = null
@@ -89,6 +94,7 @@ export const useSprintsStore = defineStore('sprints', () => {
     selectSprint,
     selectLastN,
     selectSubTeam,
+    refreshSprints,
     fetchAllData
   }
 })

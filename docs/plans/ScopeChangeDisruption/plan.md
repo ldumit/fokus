@@ -1,5 +1,7 @@
 # Scope Change & Disruption
 
+**Feature Spec:** `docs/features/ScopeChangeDisruption/spec.md`
+
 ## Context
 
 The Sprints page (`/sprints`) is currently an empty shell. This feature fills it with sprint-level scope change analytics: a multi-sprint trend view (default landing) showing disruption rates, scope change bars, and classification breakdowns across recent sprints, and a single-sprint detail view showing metric cards with deltas, a scope burnup chart, a chronological event table, and bug time-in-progress data.

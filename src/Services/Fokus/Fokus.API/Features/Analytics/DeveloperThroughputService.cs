@@ -50,11 +50,13 @@ public class DeveloperThroughputService
         List<Developer> activeDevelopers,
         List<DeveloperSprintCapacity> capacityRecords,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        List<Developer> allDevelopers)
     {
         var doneStatuses = settings.DoneStatuses;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
-        // C2: sub-team filtering
+        // C2: sub-team filtering (active developers only for display)
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
 
         // Sort all loaded sprints ascending by start date
@@ -93,15 +95,15 @@ public class DeveloperThroughputService
             var breakdowns = targetSprints.Select(sprint =>
             {
                 var memberships = GetDeveloperMemberships(sprint, developer.Id, subTeam);
-                var capacity = GetCapacity(capacityLookup, developer.Id, sprint.Id);
+                var capacity = GetCapacity(capacityLookup, developer.Id, sprint.Id, allDevelopers);
 
                 var spAssigned = memberships
-                    .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue)
-                    .Sum(m => m.StoryPoints!.Value);
+                    .Where(m => m.RemovedAt == null)
+                    .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                 var spCompleted = memberships
-                    .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue && doneStatuses.Contains(m.FinalStatus))
-                    .Sum(m => m.StoryPoints!.Value);
+                    .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus))
+                    .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                 var completionPercent = spAssigned > 0 ? spCompleted / spAssigned * 100 : 0;
 
@@ -112,7 +114,7 @@ public class DeveloperThroughputService
                     .Count(m => m.RemovedAt == null && !doneStatuses.Contains(m.FinalStatus));
 
                 var rollingAverage = ComputeRollingAverage(
-                    developer.Id, sprint.Id, sortedAllSprints, capacityLookup, doneStatuses, subTeam);
+                    developer.Id, sprint.Id, sortedAllSprints, capacityLookup, doneStatuses, subTeam, allDevelopers, defaultSpPerBug);
 
                 // Deltas (single-sprint only)
                 decimal? spAssignedDelta = null;
@@ -136,12 +138,12 @@ public class DeveloperThroughputService
                     var priorMemberships = GetDeveloperMemberships(priorSprint, developer.Id, subTeam);
 
                     var priorSpAssigned = priorMemberships
-                        .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue)
-                        .Sum(m => m.StoryPoints!.Value);
+                        .Where(m => m.RemovedAt == null)
+                        .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                     var priorSpCompleted = priorMemberships
-                        .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue && doneStatuses.Contains(m.FinalStatus))
-                        .Sum(m => m.StoryPoints!.Value);
+                        .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus))
+                        .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                     var priorCompletionPercent = priorSpAssigned > 0 ? priorSpCompleted / priorSpAssigned * 100 : 0;
 
@@ -223,14 +225,16 @@ public class DeveloperThroughputService
     private static int GetCapacity(
         Dictionary<string, Dictionary<int, int>> capacityLookup,
         string developerId,
-        int sprintId)
+        int sprintId,
+        List<Developer> developers)
     {
         if (capacityLookup.TryGetValue(developerId, out var sprintMap) &&
             sprintMap.TryGetValue(sprintId, out var percent))
         {
             return percent;
         }
-        return 100;
+        var developer = developers.FirstOrDefault(d => d.Id == developerId);
+        return developer?.DefaultCapacityPercent ?? 100;
     }
 
     // --- Rolling average (capacity-aware, 3-sprint window) ---
@@ -241,7 +245,9 @@ public class DeveloperThroughputService
         List<Sprint> sortedAllSprints,
         Dictionary<string, Dictionary<int, int>> capacityLookup,
         List<string> doneStatuses,
-        string? subTeam)
+        string? subTeam,
+        List<Developer> developers,
+        int defaultSpPerBug = 0)
     {
         var currentIndex = sortedAllSprints.FindIndex(s => s.Id == currentSprintId);
         if (currentIndex < 0) return null;
@@ -251,16 +257,15 @@ public class DeveloperThroughputService
         for (var i = currentIndex; i >= 0 && qualifyingSpCompleted.Count < 3; i--)
         {
             var sprint = sortedAllSprints[i];
-            var capacity = GetCapacity(capacityLookup, developerId, sprint.Id);
+            var capacity = GetCapacity(capacityLookup, developerId, sprint.Id, developers);
             if (capacity == 0) continue;
 
             var spCompleted = sprint.Memberships
                 .Where(m => m.Ticket?.AssigneeId == developerId &&
                             m.RemovedAt == null &&
-                            m.StoryPoints.HasValue &&
                             doneStatuses.Contains(m.FinalStatus) &&
                             (string.IsNullOrWhiteSpace(subTeam) || m.Ticket?.Assignee?.SubTeam == subTeam))
-                .Sum(m => m.StoryPoints!.Value);
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
             qualifyingSpCompleted.Add(spCompleted);
         }

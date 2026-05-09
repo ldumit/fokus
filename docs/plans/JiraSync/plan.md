@@ -1,5 +1,7 @@
 # Jira Sync
 
+**Feature Spec:** `docs/features/JiraSync/spec.md`
+
 ## Context
 
 Fokus needs sprint and backlog data from Jira before any analytics can run. This feature builds the single data ingress path: a typed HTTP client that talks to Jira's REST API, plus four endpoints that orchestrate sync flows. The domain model (Sprint, Ticket, Developer, SprintMembership, StatusTransition) and the Settings system (AppSettings with BoardId) already exist from F2/F3. This feature populates those entities from Jira data.

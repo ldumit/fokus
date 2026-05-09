@@ -2,7 +2,7 @@ using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync;
 
-public record SprintIssueSyncResult(int TicketsUpserted, int DevelopersDiscovered);
+public record SprintIssueSyncResult(int TicketsUpserted, HashSet<string> DeveloperIds);
 
 public record SprintBatchSyncResult(
     int SprintsSynced,
@@ -19,6 +19,7 @@ public class SprintIssueSyncService(
     SprintRepository sprintRepository,
     TicketRepository ticketRepository,
     DeveloperRepository developerRepository,
+    AppSettingsRepository appSettingsRepository,
     ILogger<SprintIssueSyncService> logger)
 {
     public async Task<SprintBatchSyncResult> SyncSprintsFromJiraAsync(
@@ -27,9 +28,10 @@ public class SprintIssueSyncService(
         bool forcedNotCommitted,
         CancellationToken ct)
     {
+        var settings = await appSettingsRepository.GetAsync(ct);
         var sprintsSynced = 0;
         var totalTickets = 0;
-        var totalDevelopers = 0;
+        var allDeveloperIds = new HashSet<string>();
         var failures = new List<SprintSyncFailure>();
 
         foreach (var jiraSprint in jiraSprints)
@@ -37,16 +39,18 @@ public class SprintIssueSyncService(
             try
             {
                 var issues = await jiraClient.GetSprintIssuesAsync(jiraSprint.Id, ct);
+                logger.LogWarning("Sprint {SprintId} ({SprintName}): {IssueCount} issues returned by {ClientType}",
+                    jiraSprint.Id, jiraSprint.Name, issues.Count, jiraClient.GetType().Name);
 
                 var sprint = Sprint.FromJira(jiraSprint, boardName);
                 await sprintRepository.UpsertAsync(sprint, ct);
                 await sprintRepository.SaveChangesAsync(ct);
 
-                var result = await SyncAsync(sprint, issues, forcedNotCommitted, ct);
+                var result = await SyncAsync(sprint, issues, forcedNotCommitted, settings.PlanningWindowDays, ct);
 
                 sprintsSynced++;
                 totalTickets += result.TicketsUpserted;
-                totalDevelopers += result.DevelopersDiscovered;
+                allDeveloperIds.UnionWith(result.DeveloperIds);
             }
             catch (Exception ex)
             {
@@ -54,7 +58,7 @@ public class SprintIssueSyncService(
             }
         }
 
-        return new SprintBatchSyncResult(sprintsSynced, totalTickets, totalDevelopers, failures);
+        return new SprintBatchSyncResult(sprintsSynced, totalTickets, allDeveloperIds.Count, failures);
     }
 
     public async Task<EpicDiscoveryResult> SyncEpicDiscoveryAsync(
@@ -102,10 +106,11 @@ public class SprintIssueSyncService(
         Sprint sprint,
         IReadOnlyList<JiraIssue> issues,
         bool forcedNotCommitted,
+        int planningWindowDays,
         CancellationToken ct)
     {
         var memberships = new List<SprintMembership>();
-        var developerCount = 0;
+        var uniqueDeveloperIds = new HashSet<string>();
 
         foreach (var issue in issues)
         {
@@ -116,13 +121,13 @@ public class SprintIssueSyncService(
             if (developer is not null)
             {
                 await developerRepository.UpsertAsync(developer, ct);
-                developerCount++;
+                uniqueDeveloperIds.Add(developer.Id);
             }
 
             var transitions = StatusTransition.ListFromJira(issue);
             await ticketRepository.ReplaceTransitionsAsync(issue.Key, transitions, ct);
 
-            var membership = SprintMembership.FromJira(issue, sprint, forcedNotCommitted);
+            var membership = SprintMembership.FromJira(issue, sprint, forcedNotCommitted, planningWindowDays);
             memberships.Add(membership);
         }
 
@@ -131,6 +136,6 @@ public class SprintIssueSyncService(
         await sprintRepository.UpsertMembershipsAsync(sprint.Id, memberships, ct);
         await sprintRepository.SaveChangesAsync(ct);
 
-        return new SprintIssueSyncResult(issues.Count, developerCount);
+        return new SprintIssueSyncResult(issues.Count, uniqueDeveloperIds);
     }
 }

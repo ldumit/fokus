@@ -56,7 +56,8 @@ public record BurnupDataPoint(
     DateTime Date,
     decimal TotalScopeSp,
     decimal CompletedSp,
-    string Phase);
+    string Phase,
+    decimal BugSp);
 
 public record ScopeChangeEvent(
     DateTime Date,
@@ -95,25 +96,27 @@ public class ScopeChangeService
     public ScopeChangeMultiSprintResponse ComputeMultiSprint(
         List<Sprint> sprints,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var sortedSprints = sprints.OrderBy(s => s.StartDate).ToList();
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
         var sprintInfos = sortedSprints
             .Select(s => new ScopeChangeSprintInfo(s.Id, s.Name, s.StartDate, s.EndDate))
             .ToList();
 
         var perSprintData = sortedSprints
-            .Select(s => ComputePerSprintData(s, FilterMemberships(s.Memberships, subTeam), doneStatuses, excludedStatuses))
+            .Select(s => ComputePerSprintData(s, FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds), doneStatuses, excludedStatuses, defaultSpPerBug, settings.PlanningWindowDays))
             .ToList();
 
         var allClassificationEntries = sortedSprints
-            .SelectMany(s => GetMidSprintAdditions(FilterMemberships(s.Memberships, subTeam), s))
+            .SelectMany(s => GetMidSprintAdditions(FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds), s, settings.PlanningWindowDays))
             .ToList();
 
-        var classificationBreakdown = BuildClassificationBreakdown(allClassificationEntries);
+        var classificationBreakdown = BuildClassificationBreakdown(allClassificationEntries, defaultSpPerBug);
 
         var avgDisruptionRate = perSprintData.Count > 0
             ? Math.Round(perSprintData.Average(d => d.DisruptionRate), 1)
@@ -140,24 +143,26 @@ public class ScopeChangeService
         Sprint? priorSprint,
         List<StatusTransition> statusTransitions,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var workflowStages = settings.WorkflowStages;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
-        var memberships = FilterMemberships(targetSprint.Memberships, subTeam);
+        var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var priorMemberships = priorSprint is not null
-            ? FilterMemberships(priorSprint.Memberships, subTeam)
+            ? FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds)
             : null;
 
         var sprintInfo = new ScopeChangeSprintInfo(
             targetSprint.Id, targetSprint.Name, targetSprint.StartDate, targetSprint.EndDate);
 
         // Core metrics for target sprint
-        var current = ComputeSprintMetrics(memberships, doneStatuses, excludedStatuses);
+        var current = ComputeSprintMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug, targetSprint.StartDate, settings.PlanningWindowDays);
         ScopeSprintMetrics? prior = priorMemberships is not null
-            ? ComputeSprintMetrics(priorMemberships, doneStatuses, excludedStatuses)
+            ? ComputeSprintMetrics(priorMemberships, doneStatuses, excludedStatuses, defaultSpPerBug, priorSprint!.StartDate, settings.PlanningWindowDays)
             : null;
 
         // Build metric cards with deltas
@@ -178,14 +183,14 @@ public class ScopeChangeService
                 $"{current.BugCount}", prior is not null ? (decimal)(current.BugCount - prior.BugCount) : null, "positive-down"));
 
         // Classification breakdown for this sprint
-        var midSprintAdditions = GetMidSprintAdditions(memberships, targetSprint);
-        var classificationBreakdown = BuildClassificationBreakdown(midSprintAdditions);
+        var midSprintAdditions = GetMidSprintAdditions(memberships, targetSprint, settings.PlanningWindowDays);
+        var classificationBreakdown = BuildClassificationBreakdown(midSprintAdditions, defaultSpPerBug);
 
         // Event table
-        var events = BuildEventTable(memberships, targetSprint, excludedStatuses);
+        var events = BuildEventTable(memberships, targetSprint, excludedStatuses, settings.PlanningWindowDays, defaultSpPerBug);
 
         // Burnup chart
-        var burnupData = BuildBurnupData(memberships, targetSprint, doneStatuses, excludedStatuses, statusTransitions);
+        var burnupData = BuildBurnupData(memberships, targetSprint, doneStatuses, excludedStatuses, statusTransitions, settings.PlanningWindowDays, defaultSpPerBug);
 
         // Bug time-in-progress
         var bugTimeInProgress = ComputeBugTimeInProgress(memberships, statusTransitions, targetSprint, workflowStages);
@@ -198,14 +203,15 @@ public class ScopeChangeService
 
     private static List<SprintMembership> FilterMemberships(
         IReadOnlyList<SprintMembership> memberships,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
-        if (string.IsNullOrWhiteSpace(subTeam))
-            return memberships.ToList();
-
-        return memberships
-            .Where(m => m.Ticket?.Assignee?.SubTeam == subTeam)
-            .ToList();
+        var result = memberships.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subTeam))
+            result = result.Where(m => m.Ticket?.Assignee?.SubTeam == subTeam);
+        if (excludedDeveloperIds is { Count: > 0 })
+            result = result.Where(m => m.Ticket?.AssigneeId == null || !excludedDeveloperIds.Contains(m.Ticket.AssigneeId));
+        return result.ToList();
     }
 
     // --- Per-sprint data computation ---
@@ -214,9 +220,11 @@ public class ScopeChangeService
         Sprint sprint,
         List<SprintMembership> memberships,
         List<string> doneStatuses,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int defaultSpPerBug,
+        int planningWindowDays)
     {
-        var metrics = ComputeSprintMetrics(memberships, doneStatuses, excludedStatuses);
+        var metrics = ComputeSprintMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug, sprint.StartDate, planningWindowDays);
         return new ScopeChangePerSprintData(
             sprint.Id,
             Math.Round(metrics.CommittedSpActive, 1),
@@ -242,30 +250,35 @@ public class ScopeChangeService
     private static ScopeSprintMetrics ComputeSprintMetrics(
         List<SprintMembership> memberships,
         List<string> doneStatuses,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int defaultSpPerBug,
+        DateTime sprintStartDate,
+        int planningWindowDays)
     {
-        var committedSpActive = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
-                        && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+        var planningCutoff = sprintStartDate.AddDays(planningWindowDays);
 
         var committedSpTotal = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.WasCommitted && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+        var committedSpActive = memberships
+            .Where(m => m.WasCommitted && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                        && (m.RemovedAt == null || m.RemovedAt > planningCutoff))
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var addedSp = memberships
-            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
+            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var removedSp = memberships
-            .Where(m => m.RemovedAt != null && m.StoryPoints.HasValue)
-            .Sum(m => m.StoryPoints!.Value);
+            .Where(m => m.RemovedAt != null && m.GetEffectiveSp(defaultSpPerBug).HasValue)
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var completedSp = memberships
-            .Where(m => doneStatuses.Contains(m.FinalStatus) && m.RemovedAt == null && m.StoryPoints.HasValue
+            .Where(m => doneStatuses.Contains(m.FinalStatus) && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var netScopeChange = addedSp - removedSp;
         var disruptionRate = committedSpActive > 0 ? addedSp / committedSpActive * 100 : 0;
@@ -289,9 +302,10 @@ public class ScopeChangeService
 
     private static List<MidSprintAddition> GetMidSprintAdditions(
         List<SprintMembership> memberships,
-        Sprint sprint)
+        Sprint sprint,
+        int planningWindowDays)
     {
-        var planningCutoff = sprint.StartDate.AddDays(2);
+        var planningCutoff = sprint.StartDate.AddDays(planningWindowDays);
         return memberships
             .Where(m => !m.WasCommitted && m.RemovedAt == null)
             .Select(m => new MidSprintAddition(m, ClassifyAddition(m, sprint, planningCutoff)))
@@ -313,7 +327,8 @@ public class ScopeChangeService
     }
 
     private static List<ClassificationEntry> BuildClassificationBreakdown(
-        List<MidSprintAddition> additions)
+        List<MidSprintAddition> additions,
+        int defaultSpPerBug)
     {
         var total = additions.Count;
 
@@ -323,8 +338,8 @@ public class ScopeChangeService
         {
             var items = additions.Where(a => a.Category == category).ToList();
             var count = items.Count;
-            var spItems = items.Where(a => a.Membership.StoryPoints.HasValue).ToList();
-            decimal? spTotal = spItems.Count > 0 ? spItems.Sum(a => a.Membership.StoryPoints!.Value) : null;
+            var spItems = items.Where(a => a.Membership.GetEffectiveSp(defaultSpPerBug).HasValue).ToList();
+            decimal? spTotal = spItems.Count > 0 ? spItems.Sum(a => a.Membership.GetEffectiveSp(defaultSpPerBug)!.Value) : null;
             var percentage = total > 0 ? Math.Round((decimal)count / total * 100, 1) : 0;
             return new ClassificationEntry(category, count, spTotal.HasValue ? Math.Round(spTotal.Value, 1) : null, percentage);
         }).ToList();
@@ -335,9 +350,11 @@ public class ScopeChangeService
     private static List<ScopeChangeEvent> BuildEventTable(
         List<SprintMembership> memberships,
         Sprint sprint,
-        List<string> excludedStatuses)
+        List<string> excludedStatuses,
+        int planningWindowDays,
+        int defaultSpPerBug)
     {
-        var planningCutoff = sprint.StartDate.AddDays(2);
+        var planningCutoff = sprint.StartDate.AddDays(planningWindowDays);
         var events = new List<ScopeChangeEvent>();
 
         foreach (var m in memberships)
@@ -346,6 +363,7 @@ public class ScopeChangeService
             var ticketKey = m.TicketId;
             var ticketSummary = m.Ticket?.Summary ?? m.TicketId;
             var issueType = m.Ticket?.IssueType ?? "Unknown";
+            var effectiveSp = m.GetEffectiveSp(defaultSpPerBug);
 
             // Added event (mid-sprint additions)
             if (!m.WasCommitted)
@@ -354,7 +372,7 @@ public class ScopeChangeService
                 var category = ClassifyAddition(m, sprint, planningCutoff);
                 events.Add(new ScopeChangeEvent(
                     m.AddedAt, dayNumber, ticketKey, ticketSummary,
-                    m.StoryPoints, issueType, "added", category, isExcluded));
+                    effectiveSp, issueType, "added", category, isExcluded));
             }
 
             // Removed event
@@ -363,7 +381,7 @@ public class ScopeChangeService
                 var removeDayNumber = (int)(m.RemovedAt.Value - sprint.StartDate).TotalDays + 1;
                 events.Add(new ScopeChangeEvent(
                     m.RemovedAt.Value, removeDayNumber, ticketKey, ticketSummary,
-                    m.StoryPoints, issueType, "removed", null, isExcluded));
+                    effectiveSp, issueType, "removed", null, isExcluded));
             }
         }
 
@@ -377,7 +395,9 @@ public class ScopeChangeService
         Sprint sprint,
         List<string> doneStatuses,
         List<string> excludedStatuses,
-        List<StatusTransition> statusTransitions)
+        List<StatusTransition> statusTransitions,
+        int planningWindowDays,
+        int defaultSpPerBug)
     {
         var sprintDays = (int)(sprint.EndDate - sprint.StartDate).TotalDays + 1;
         if (sprintDays <= 0) sprintDays = 1;
@@ -390,13 +410,21 @@ public class ScopeChangeService
 
         // Starting committed SP (active, not excluded)
         var startingCommitted = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.StoryPoints!.Value);
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+        // Starting committed bug SP (bugs present at sprint start)
+        var startingBugSp = memberships
+            .Where(m => m.WasCommitted && m.RemovedAt == null && m.Ticket?.IssueType == "Bug"
+                        && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                        && !IsExcluded(m.FinalStatus, excludedStatuses))
+            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
         var result = new List<BurnupDataPoint>();
         var cumulativeTotalScope = startingCommitted;
         var cumulativeCompleted = 0m;
+        var cumulativeBugSp = startingBugSp;
 
         for (var i = 0; i < sprintDays; i++)
         {
@@ -405,37 +433,64 @@ public class ScopeChangeService
 
             // Scope additions on this day
             var addedToday = memberships
-                .Where(m => !m.WasCommitted && m.RemovedAt == null && m.StoryPoints.HasValue
+                .Where(m => !m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
                             && !IsExcluded(m.FinalStatus, excludedStatuses)
                             && m.AddedAt.Date == day.Date)
-                .Sum(m => m.StoryPoints!.Value);
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
             // Scope removals on this day
             var removedToday = memberships
-                .Where(m => m.RemovedAt.HasValue && m.StoryPoints.HasValue
+                .Where(m => m.RemovedAt.HasValue && m.GetEffectiveSp(defaultSpPerBug).HasValue
                             && m.RemovedAt.Value.Date == day.Date)
-                .Sum(m => m.StoryPoints!.Value);
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
             cumulativeTotalScope += addedToday - removedToday;
 
-            // Completions on this day (first done transition on this day)
-            var completedToday = memberships
-                .Where(m => m.RemovedAt == null && m.StoryPoints.HasValue
+            // Bug SP additions on this day
+            var bugAddedToday = memberships
+                .Where(m => !m.WasCommitted && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && m.RemovedAt == null
+                            && m.AddedAt.Date == day.Date)
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+            // Bug SP removals on this day
+            var bugRemovedToday = memberships
+                .Where(m => m.RemovedAt.HasValue && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && m.RemovedAt.Value.Date == day.Date)
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+            var bugCompletedToday = memberships
+                .Where(m => m.RemovedAt == null && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
                             && !IsExcluded(m.FinalStatus, excludedStatuses)
                             && doneTransitionByTicket.TryGetValue(m.TicketId, out var ts)
                             && ts.Date == day.Date)
-                .Sum(m => m.StoryPoints!.Value);
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+
+            cumulativeBugSp += bugAddedToday - bugRemovedToday - bugCompletedToday;
+
+            // Completions on this day (first done transition on this day)
+            var completedToday = memberships
+                .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && doneTransitionByTicket.TryGetValue(m.TicketId, out var ts)
+                            && ts.Date == day.Date)
+                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
             cumulativeCompleted += completedToday;
 
-            var phase = dayNumber <= 2 ? "planning" : "execution";
+            var phase = dayNumber <= planningWindowDays ? "planning" : "execution";
 
             result.Add(new BurnupDataPoint(
                 dayNumber,
                 day,
                 Math.Round(cumulativeTotalScope, 1),
                 Math.Round(cumulativeCompleted, 1),
-                phase));
+                phase,
+                Math.Round(cumulativeBugSp, 1)));
         }
 
         return result;

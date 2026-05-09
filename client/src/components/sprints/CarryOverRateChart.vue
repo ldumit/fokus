@@ -59,7 +59,7 @@ const options = computed(() => ({
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Carry-Over Rate Trend</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="How carry-over rate changes across sprints — a rising line signals growing delivery problems.">Carry-Over Rate Trend</div>
     <p class="text-xs text-text-muted mb-3">Click a point to drill into a single sprint.</p>
     <apexchart
       type="line"

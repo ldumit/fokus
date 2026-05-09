@@ -1,5 +1,7 @@
 # F1–F3 Scaffolding
 
+**Feature Spec:** None
+
 ## Context
 
 Fokus is a greenfield project — no `src/` directory, no solution file, no frontend exists yet. This plan scaffolds the full foundation: .NET solution with the three-project split (API/Domain/Persistence), Vue 3 SPA with Vite + Tailwind + ApexCharts + Pinia, all 5 domain entities, EF Core persistence with SQLite, and the Settings system (AppSettings entity + CRUD endpoints + Settings UI).

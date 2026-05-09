@@ -1,5 +1,7 @@
 # ExtractJiraModule
 
+**Feature Spec:** None
+
 ## Context
 
 The Jira HTTP client infrastructure currently lives inside `Fokus.API/Infrastructure/Jira/` — a raw namespace folder in the host project. This couples the Jira integration to the API host and prevents reuse by other services or modules.

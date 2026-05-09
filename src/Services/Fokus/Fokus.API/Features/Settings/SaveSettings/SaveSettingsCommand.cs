@@ -9,6 +9,9 @@ public class SaveSettingsCommand
     public HealthWeightConfig HealthWeights { get; set; } = new();
     public int BugRatioAlertThreshold { get; set; } = 50;
     public int BugRatioConsecutiveSprintCount { get; set; } = 2;
+    public int SyncBackSprintCount { get; set; } = 20;
+    public int PlanningWindowDays { get; set; } = 2;
+    public int DefaultSpPerBug { get; set; } = 3;
 }
 
 public class SaveSettingsResponse
@@ -64,5 +67,17 @@ public class SaveSettingsCommandValidator : Validator<SaveSettingsCommand>
         RuleFor(x => x.BugRatioConsecutiveSprintCount)
             .InclusiveBetween(1, 10)
             .WithMessage("Bug ratio consecutive sprint count must be between 1 and 10.");
+
+        RuleFor(x => x.SyncBackSprintCount)
+            .InclusiveBetween(1, 50)
+            .WithMessage("Sync back sprint count must be between 1 and 50.");
+
+        RuleFor(x => x.PlanningWindowDays)
+            .InclusiveBetween(0, 7)
+            .WithMessage("Planning window must be between 0 and 7 days.");
+
+        RuleFor(x => x.DefaultSpPerBug)
+            .InclusiveBetween(0, 13)
+            .WithMessage("Default SP per bug must be between 0 and 13.");
     }
 }

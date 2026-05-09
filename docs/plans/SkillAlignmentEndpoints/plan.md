@@ -1,5 +1,7 @@
 # Skill Alignment Phase 2 — Endpoints, Validation Extensions, Seed Infrastructure
 
+**Feature Spec:** None
+
 ## Context
 
 SkillAlignment Phase 1 built the BuildingBlocks and refactored entities/persistence/domain event infrastructure. But the existing endpoints were not restructured to match the `create-feature` skill, the FluentValidation extensions referenced by the `create-feature` validator workflow don't exist, and the `SeedFromJsonFile` extension from `persistence-patterns` was deferred. This phase completes the alignment.

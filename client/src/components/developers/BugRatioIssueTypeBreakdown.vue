@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <BaseCard v-if="issueTypeBreakdown.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Completed Tickets by Issue Type</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Completed ticket counts grouped by raw Jira issue type. See composition beyond the bug/non-bug split.">Completed Tickets by Issue Type</div>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-text-muted text-left border-b border-border-default">

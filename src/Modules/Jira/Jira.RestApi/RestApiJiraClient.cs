@@ -8,7 +8,7 @@ namespace Jira.RestApi;
 
 public class RestApiJiraClient(IJiraApi api) : IJiraClient
 {
-    private const string IssueFields = "summary,issuetype,customfield_10016,customfield_10014,customfield_10008,assignee,priority,status,created,resolutiondate";
+    private const string IssueFields = "summary,issuetype,customfield_10016,customfield_10014,customfield_10008,assignee,priority,status,created,resolutiondate,parent";
     private const string IssueExpand = "changelog";
 
     protected IJiraApi Api { get; } = api;
@@ -58,6 +58,18 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         return result;
     }
 
+    public async Task<JiraSprint> UpdateSprintAsync(int sprintId, string name, DateTime startDate, DateTime endDate, string? goal, CancellationToken ct)
+    {
+        var request = new UpdateJiraSprintRequest
+        {
+            Name = name,
+            StartDate = startDate,
+            EndDate = endDate,
+            Goal = goal
+        };
+        return await RequestAsync(() => Api.UpdateSprintAsync(sprintId, request, ct), ct);
+    }
+
     public virtual Task<List<JiraIssue>> GetSprintIssuesAsync(int sprintId, CancellationToken ct) =>
         GetAllIssuesAsync((s, m) => Api.GetSprintIssuesPageAsync(sprintId, s, m, IssueExpand, IssueFields, ct), ct);
 
@@ -75,6 +87,7 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         while (true)
         {
             var page = await RequestAsync(() => Api.SearchIssuesAsync(jql, 100, IssueExpand, IssueFields, nextPageToken, ct), ct);
+            System.Console.WriteLine($"[JIRA DEBUG] JQL='{jql}' | page null={page is null} | issues null={page?.Issues is null} | count={page?.Issues?.Count} | total={page?.Total}");
             if (page?.Issues is null || page.Issues.Count == 0) break;
             result.AddRange(page.Issues);
             nextPageToken = page.NextPageToken;
@@ -139,7 +152,11 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
             var response = await call();
 
             if (response.IsSuccessStatusCode)
+            {
+                if (response.Content is null)
+                    System.Console.WriteLine($"[JIRA DEBUG] 200 OK but Content is NULL. Raw: {response.Error?.Content?[..Math.Min(500, response.Error?.Content?.Length ?? 0)]}");
                 return response.Content!;
+            }
 
             if (response.StatusCode == HttpStatusCode.TooManyRequests && attempt < 3)
             {

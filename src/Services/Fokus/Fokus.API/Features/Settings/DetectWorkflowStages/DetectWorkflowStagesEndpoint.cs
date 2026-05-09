@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Settings.DetectWorkflowStages;
 
-[AllowAnonymous]
 [HttpGet("/api/settings/workflow-stages/detect")]
 [Tags("Settings")]
 public class DetectWorkflowStagesEndpoint(

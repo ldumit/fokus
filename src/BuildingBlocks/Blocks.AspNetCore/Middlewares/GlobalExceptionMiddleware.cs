@@ -42,7 +42,9 @@ public class GlobalExceptionMiddleware(
     private static (int StatusCode, string Message) MapStatusCode(Exception ex) => ex switch
     {
         BadRequestException e => (400, e.Message),
+        ForbiddenException e => (403, e.Message),
         NotFoundException e => (404, e.Message),
+        ConflictException e => (409, e.Message),
         UnauthorizedException e => (401, e.Message),
         BadGatewayException e => (502, e.Message),
         DomainException e => (400, e.Message),

@@ -2,7 +2,6 @@ using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync.GetBoards;
 
-[AllowAnonymous]
 [HttpGet("/api/boards")]
 [Tags("Sync")]
 public class GetBoardsEndpoint(IJiraClient jiraClient)

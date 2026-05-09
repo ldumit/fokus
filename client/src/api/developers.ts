@@ -1,5 +1,9 @@
-import type { CapacityEntry, SetCapacityResponse } from '../types'
+import type { CapacityEntry, Developer, SetCapacityResponse } from '../types'
 import { apiFetch } from './client'
+
+export function getDevelopers(): Promise<Developer[]> {
+  return apiFetch<Developer[]>('/developers')
+}
 
 export function setDeveloperCapacity(accountId: string, sprintId: number, capacityPercent: number): Promise<SetCapacityResponse> {
   return apiFetch<SetCapacityResponse>(`/developers/${encodeURIComponent(accountId)}/capacity`, {

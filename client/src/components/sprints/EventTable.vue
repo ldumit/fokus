@@ -13,7 +13,7 @@ function formatDate(dateStr: string): string {
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Scope Change Events</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Chronological log of every ticket added to or removed from the sprint after it started.">Scope Change Events</div>
     <div v-if="events.length === 0" class="text-sm text-text-muted">No scope change events in this sprint.</div>
     <div v-else class="overflow-x-auto">
       <table class="w-full text-sm">

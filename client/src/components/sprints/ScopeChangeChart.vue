@@ -106,7 +106,7 @@ const lineOptions = computed(() => ({
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Scope Change by Sprint</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Per-sprint bars showing committed, added, removed, and completed SP side by side.">Scope Change by Sprint</div>
     <p class="text-xs text-text-muted mb-3">Click a bar to drill into a single sprint.</p>
     <apexchart
       type="bar"
@@ -114,7 +114,7 @@ const lineOptions = computed(() => ({
       :options="barOptions"
       :series="barSeries"
     />
-    <div class="text-sm font-medium text-text-primary mt-6 mb-4">Disruption Rate Trend</div>
+    <div class="text-sm font-medium text-text-primary mt-6 mb-4 cursor-help" title="Disruption rate percentage per sprint over time. Spot sustained increases early.">Disruption Rate Trend</div>
     <apexchart
       type="line"
       height="180"

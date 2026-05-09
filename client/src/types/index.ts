@@ -1,3 +1,50 @@
+// Auth types
+export interface AuthUser {
+  id: number
+  email: string
+  displayName: string
+  avatarUrl: string | null
+  role: 'Admin' | 'Manager'
+}
+
+export interface UserEntry {
+  id: number
+  email: string
+  displayName: string
+  avatarUrl: string | null
+  role: string
+  lastLoginAt: string | null
+  isActive: boolean
+}
+
+export interface InvitationEntry {
+  id: number
+  email: string
+  role: string
+  status: string
+  createdAt: string
+  expiresAt: string
+}
+
+export interface CreateInvitationRequest {
+  email: string
+  role?: string
+}
+
+export interface CreateInvitationResponse {
+  id: number
+  email: string
+  role: string
+  inviteLink: string
+  expiresAt: string
+}
+
+export interface InviteValidation {
+  valid: boolean
+  email?: string
+  error?: string
+}
+
 // Sprint summary types
 export interface SprintInfo {
   id: number
@@ -37,7 +84,8 @@ export interface MetricCard {
 export interface MetricsResult {
   spCompleted: MetricCard
   completionRate: MetricCard
-  disruptionRate: MetricCard
+  scopeDisruptionRate: MetricCard
+  bugDisruptionRate: MetricCard
   carryOverRate: MetricCard
 }
 
@@ -90,6 +138,7 @@ export interface ClosedSprintItem {
   startDate: string
   endDate: string
   state: string
+  goal?: string
 }
 
 export interface HealthThresholdConfig {
@@ -115,9 +164,20 @@ export interface AppSettings {
   healthWeights: HealthWeightConfig
   bugRatioAlertThreshold: number
   bugRatioConsecutiveSprintCount: number
+  syncBackSprintCount: number
+  planningWindowDays: number
+  defaultSpPerBug: number
 }
 
-export type SprintState = 'Active' | 'Closed'
+export type SprintState = 'Active' | 'Closed' | 'Future'
+
+export interface Developer {
+  accountId: string
+  displayName: string
+  avatarUrl: string | null
+  subTeam: string | null
+  isActive: boolean
+}
 
 export interface DetectionConfidence {
   transitionCount: number
@@ -273,6 +333,7 @@ export interface BurnupDataPoint {
   totalScopeSp: number
   completedSp: number
   phase: string
+  bugSp: number
 }
 
 export interface ScopeChangeEvent {
@@ -556,6 +617,205 @@ export interface BugRatioResponse {
   mode: 'multi' | 'single'
   multiSprint: BugRatioMultiSprintResponse | null
   singleSprint: BugRatioSingleSprintResponse | null
+}
+
+// Epic Progress types
+export interface EpicProgressSummaryMetrics {
+  activeEpicCount: number
+  completedEpicCount: number
+  averageCompletionPercentage: number
+}
+
+export interface EpicProgressTicketEntry {
+  ticketKey: string
+  summary: string
+  issueType: string
+  storyPoints: number | null
+  currentStatus: string
+  assigneeDisplayName: string | null
+  isDone: boolean
+}
+
+export interface EpicProgressEntry {
+  epicKey: string
+  epicName: string
+  totalTickets: number
+  doneTickets: number
+  remainingTickets: number
+  ticketCompletionPercentage: number
+  totalSp: number
+  doneSp: number
+  remainingSp: number
+  imputedSp: number | null
+  adjustedTotalSp: number | null
+  spCompletionPercentage: number | null
+  unestimatedTicketCount: number
+  velocity: number | null
+  projectedSprintsRemaining: number | null
+  projectionConfidence: string | null
+  activeSprintCount: number
+  isCompleted: boolean
+  tickets: EpicProgressTicketEntry[]
+}
+
+export interface EpicProgressUnlinkedWork {
+  ticketCount: number
+  totalSp: number
+}
+
+export interface EpicProgressResponse {
+  summaryMetrics: EpicProgressSummaryMetrics
+  epics: EpicProgressEntry[]
+  unlinkedWork: EpicProgressUnlinkedWork
+}
+
+// Cycle Time types
+export interface CycleTimeSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface CycleTimeMetricCard {
+  name: string
+  value: number
+  displayValue: string
+  delta: number | null
+  deltaDirection: string | null
+  deltaPolarity: string | null
+}
+
+export interface StageBreakdownEntry {
+  stageName: string
+  durationDays: number
+}
+
+export interface CycleTimeScatterPoint {
+  ticketKey: string
+  ticketSummary: string
+  issueType: string
+  cycleTimeDays: number
+  completionDate: string
+  stageBreakdown: StageBreakdownEntry[]
+  reworkCount: number
+}
+
+export interface StageFunnelEntry {
+  stageName: string
+  averageDurationDays: number
+  percentage: number
+}
+
+export interface CycleTimeIssueTypeEntry {
+  issueType: string
+  ticketCount: number
+  medianCycleTime: number
+  p85CycleTime: number
+}
+
+export interface CycleTimeDeveloperEntry {
+  displayName: string
+  avatarUrl: string | null
+  subTeam: string | null
+  ticketsCompleted: number
+  medianCycleTime: number
+  p85CycleTime: number
+  dominantStage: string
+}
+
+export interface CycleTimeOutlierEntry {
+  ticketKey: string
+  ticketSummary: string
+  issueType: string
+  cycleTimeDays: number
+  stageBreakdown: StageBreakdownEntry[]
+  reworkCount: number
+}
+
+export interface CycleTimeBoundaries {
+  startStage: string
+  endStage: string
+}
+
+export interface CycleTimeSingleSprintResponse {
+  sprint: CycleTimeSprintInfo | null
+  metricCards: CycleTimeMetricCard[] | null
+  scatterPlot: CycleTimeScatterPoint[]
+  stageFunnel: StageFunnelEntry[]
+  issueTypeBreakdown: CycleTimeIssueTypeEntry[]
+  developerBreakdown: CycleTimeDeveloperEntry[]
+  outliers: CycleTimeOutlierEntry[]
+  boundaries: CycleTimeBoundaries
+}
+
+export interface CycleTimeTrendEntry {
+  sprintId: number
+  sprintName: string
+  p85CycleTime: number
+  medianCycleTime: number
+  ticketsCompleted: number
+}
+
+export interface CycleTimeSprintSummaryEntry {
+  sprintId: number
+  sprintName: string
+  startDate: string
+  ticketsCompleted: number
+  medianCycleTime: number
+  p85CycleTime: number
+  outlierCount: number
+}
+
+export interface CycleTimeMultiSprintResponse {
+  sprints: CycleTimeSprintInfo[]
+  metricCards: CycleTimeMetricCard[] | null
+  trend: CycleTimeTrendEntry[]
+  stageFunnel: StageFunnelEntry[]
+  sprintSummaries: CycleTimeSprintSummaryEntry[]
+  boundaries: CycleTimeBoundaries
+}
+
+export interface CycleTimeResponse {
+  mode: 'single' | 'multi'
+  singleSprint: CycleTimeSingleSprintResponse | null
+  multiSprint: CycleTimeMultiSprintResponse | null
+}
+
+export interface CycleTimeBoundariesResponse {
+  startStage: string
+  endStage: string
+  availableStages: string[]
+  workflowStageCount: number
+}
+
+export interface SaveCycleTimeBoundariesResponse {
+  startStage: string
+  endStage: string
+}
+
+// Team types
+export interface TeamDeveloperDto {
+  accountId: string
+  displayName: string
+  avatarUrl: string | null
+  subTeam: string | null
+  role: string
+  defaultCapacityPercent: number
+  isActive: boolean
+}
+
+export interface TeamRosterResponse {
+  developers: TeamDeveloperDto[]
+  subTeams: string[]
+}
+
+export interface UpdateTeamConfigRequest {
+  role?: string | null
+  defaultCapacityPercent?: number | null
+  subTeam?: string | null
+  subTeamProvided?: boolean
+  isActive?: boolean | null
 }
 
 // Sync types

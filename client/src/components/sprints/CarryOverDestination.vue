@@ -26,7 +26,7 @@ const buckets = computed(() => {
 
 <template>
   <BaseCard v-if="destination !== null">
-    <div class="text-sm font-medium text-text-primary mb-1">Prior Sprint Carry-Over</div>
+    <div class="text-sm font-medium text-text-primary mb-1 cursor-help" title="What happened to the prior sprint's unfinished tickets — completed, carried again, removed, or dropped.">Prior Sprint Carry-Over</div>
     <div class="text-xs text-text-muted mb-4">
       Outcomes for {{ destination.priorCarryOverCount }} carry-over ticket(s) from {{ destination.priorSprintName }}
     </div>

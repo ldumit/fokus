@@ -1,1 +1,0 @@
-var e=`/api`;async function t(t,n){let r={...n?.headers};n?.body&&(r[`Content-Type`]=r[`Content-Type`]??`application/json`);let i=await fetch(`${e}${t}`,{...n,headers:r});if(!i.ok){let e=await i.text();throw Error(`API error ${i.status}: ${e}`)}return i.json()}export{t};

@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.6 (Epic Progress), §6.1 (Navigation — Epics page)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F7 (App Shell & Navigation), F8 (Sprint Summary Card — cross-cutting patterns)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/EpicProgress/plan.md`
 
 ---
 

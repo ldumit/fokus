@@ -7,4 +7,5 @@ public class ClosedSprintItem
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public string State { get; set; } = string.Empty;
+    public string? Goal { get; set; }
 }

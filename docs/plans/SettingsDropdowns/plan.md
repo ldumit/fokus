@@ -1,5 +1,7 @@
 # Settings Dropdowns
 
+**Feature Spec:** None
+
 ## Context
 
 The Settings page currently uses a numeric input for Board ID and a free-text input for Done Statuses. Both should be replaced with dropdowns populated from Jira, improving UX and reducing configuration errors. The Board selector backend already exists (`GET /api/boards`); only the frontend needs changing. The Done Statuses dropdown requires a new backend endpoint that fetches statuses from the Jira REST API.

@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <BaseCard v-if="zombies.length > 0">
-    <div class="text-sm font-medium text-text-primary mb-4">Zombie Tickets</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Tickets that have lived through 3 or more sprints without being completed.">Zombie Tickets</div>
     <p class="text-xs text-text-muted mb-3">Tickets appearing in 3 or more sprints.</p>
     <table class="w-full text-sm">
       <thead>

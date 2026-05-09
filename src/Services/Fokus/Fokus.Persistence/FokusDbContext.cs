@@ -12,6 +12,8 @@ public class FokusDbContext(DbContextOptions<FokusDbContext> options)
     public DbSet<StatusTransition> StatusTransitions => Set<StatusTransition>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<DeveloperSprintCapacity> DeveloperSprintCapacities => Set<DeveloperSprintCapacity>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

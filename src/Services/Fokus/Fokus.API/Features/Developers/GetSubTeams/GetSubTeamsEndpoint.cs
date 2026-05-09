@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Developers.GetSubTeams;
 
-[AllowAnonymous]
 [HttpGet("/api/developers/sub-teams")]
 [Tags("Developers")]
 public class GetSubTeamsEndpoint(DeveloperRepository developerRepository)

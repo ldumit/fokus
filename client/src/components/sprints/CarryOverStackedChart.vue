@@ -67,7 +67,7 @@ const options = computed(() => ({
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Carry-Over SP by Workflow Stage</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Where unfinished work is stuck — which workflow phase accumulates the most carry-over.">Carry-Over SP by Workflow Stage</div>
     <p class="text-xs text-text-muted mb-3">Click a bar to drill into a single sprint.</p>
     <apexchart
       type="bar"

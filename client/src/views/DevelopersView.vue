@@ -267,12 +267,12 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                   <tr class="text-text-muted text-left border-b border-border-default">
                     <th class="pb-2 pr-4 font-medium">Developer</th>
                     <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                    <th class="pb-2 pr-4 font-medium text-right">SP Assigned</th>
-                    <th class="pb-2 pr-4 font-medium text-right">SP Completed</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Completion %</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Tickets Done</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Carried Over</th>
-                    <th class="pb-2 font-medium text-right">Capacity %</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Total story points on non-removed tickets assigned to the developer in this sprint.">SP Assigned</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Story points on tickets the developer finished — those whose final status is in the done statuses list.">SP Completed</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned).">Completion %</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Number of tickets the developer completed — those with a final status in the done statuses list.">Tickets Done</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Non-removed tickets assigned to the developer that were not completed by sprint end.">Carried Over</th>
+                    <th class="pb-2 font-medium text-right" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available).">Capacity %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -302,31 +302,31 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                     <template v-if="row.bd">
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.spAssigned }}</span>
-                        <span v-if="row.bd.spAssignedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spAssignedDeltaPolarity, row.bd.spAssignedDeltaDirection)]">
+                        <span v-if="row.bd.spAssignedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spAssignedDeltaPolarity, row.bd.spAssignedDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.spAssignedDeltaDirection) }} {{ Math.abs(row.bd.spAssignedDelta).toFixed(1) }}
                         </span>
                       </td>
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.spCompleted }}</span>
-                        <span v-if="row.bd.spCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spCompletedDeltaPolarity, row.bd.spCompletedDeltaDirection)]">
+                        <span v-if="row.bd.spCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spCompletedDeltaPolarity, row.bd.spCompletedDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.spCompletedDeltaDirection) }} {{ Math.abs(row.bd.spCompletedDelta).toFixed(1) }}
                         </span>
                       </td>
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.completionPercent }}%</span>
-                        <span v-if="row.bd.completionPercentDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.completionPercentDeltaPolarity, row.bd.completionPercentDeltaDirection)]">
+                        <span v-if="row.bd.completionPercentDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.completionPercentDeltaPolarity, row.bd.completionPercentDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.completionPercentDeltaDirection) }} {{ Math.abs(row.bd.completionPercentDelta).toFixed(1) }}
                         </span>
                       </td>
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.ticketsDone }}</span>
-                        <span v-if="row.bd.ticketsDoneDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsDoneDeltaPolarity, row.bd.ticketsDoneDeltaDirection)]">
+                        <span v-if="row.bd.ticketsDoneDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsDoneDeltaPolarity, row.bd.ticketsDoneDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.ticketsDoneDeltaDirection) }} {{ Math.abs(row.bd.ticketsDoneDelta) }}
                         </span>
                       </td>
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.ticketsCarriedOver }}</span>
-                        <span v-if="row.bd.ticketsCarriedOverDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsCarriedOverDeltaPolarity, row.bd.ticketsCarriedOverDeltaDirection)]">
+                        <span v-if="row.bd.ticketsCarriedOverDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.ticketsCarriedOverDeltaPolarity, row.bd.ticketsCarriedOverDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.ticketsCarriedOverDeltaDirection) }} {{ Math.abs(row.bd.ticketsCarriedOverDelta) }}
                         </span>
                       </td>
@@ -363,12 +363,12 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                   <tr class="text-text-muted text-left border-b border-border-default">
                     <th class="pb-2 pr-4 font-medium">Developer</th>
                     <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Avg SP Assigned</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Avg SP Completed</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Avg Completion %</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Avg Tickets Done</th>
-                    <th class="pb-2 pr-4 font-medium text-right">Avg Carried Over</th>
-                    <th class="pb-2 font-medium text-right">Capacity % (latest)</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Total story points on non-removed tickets assigned to the developer in this sprint.">Avg SP Assigned</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Story points on tickets the developer finished — those whose final status is in the done statuses list.">Avg SP Completed</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned).">Avg Completion %</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Number of tickets the developer completed — those with a final status in the done statuses list.">Avg Tickets Done</th>
+                    <th class="pb-2 pr-4 font-medium text-right" title="Non-removed tickets assigned to the developer that were not completed by sprint end.">Avg Carried Over</th>
+                    <th class="pb-2 font-medium text-right" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available).">Capacity % (latest)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -409,7 +409,17 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
 
           <!-- Trend chart (multi-sprint mode only) -->
           <BaseCard v-if="isMultiSprint && store.throughput && store.throughput.developers.length > 0">
-            <div class="text-sm font-medium text-text-primary mb-4">SP Completed Trend (3-Sprint Rolling Avg)</div>
+            <div class="flex items-center gap-1 mb-4">
+              <div class="text-sm font-medium text-text-primary">SP Completed Trend (3-Sprint Rolling Avg)</div>
+              <span
+                class="text-text-muted cursor-help"
+                title="Multi-line chart of SP completed per developer across sprints, using 3-sprint rolling averages."
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
             <apexchart
               type="line"
               height="300"

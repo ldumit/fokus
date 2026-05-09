@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Settings.GetSettings;
 
-[AllowAnonymous]
 [HttpGet("/api/settings")]
 [Tags("Settings")]
 public class GetSettingsEndpoint(AppSettingsRepository repository)
@@ -18,7 +17,10 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             HealthThresholds = settings.HealthThresholds,
             HealthWeights = settings.HealthWeights,
             BugRatioAlertThreshold = settings.BugRatioAlertThreshold,
-            BugRatioConsecutiveSprintCount = settings.BugRatioConsecutiveSprintCount
+            BugRatioConsecutiveSprintCount = settings.BugRatioConsecutiveSprintCount,
+            SyncBackSprintCount = settings.SyncBackSprintCount,
+            PlanningWindowDays = settings.PlanningWindowDays,
+            DefaultSpPerBug = settings.DefaultSpPerBug
         }, ct);
     }
 }

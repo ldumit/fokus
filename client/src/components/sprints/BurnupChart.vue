@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import BaseCard from '../BaseCard.vue'
 import type { BurnupDataPoint } from '../../types'
+import { useSettingsStore } from '../../stores/settingsStore'
+
+const settingsStore = useSettingsStore()
 
 const props = defineProps<{
   burnupData: BurnupDataPoint[]
@@ -15,6 +18,11 @@ const xLabels = computed(() =>
 )
 
 const series = computed(() => [
+  {
+    name: 'Bug SP',
+    type: 'area',
+    data: props.burnupData.map(d => d.bugSp)
+  },
   {
     name: 'Total Scope SP',
     type: 'line',
@@ -39,9 +47,10 @@ const chartOptions = computed(() => ({
     toolbar: { show: false },
     animations: { enabled: false }
   },
-  stroke: { curve: 'smooth', width: [2, 1] },
+  stroke: { curve: 'smooth', width: [0, 2, 1] },
   fill: {
-    type: ['solid', 'gradient'],
+    type: ['solid', 'solid', 'gradient'],
+    opacity: [0.2, 1, 1],
     gradient: {
       shade: 'dark',
       type: 'vertical',
@@ -49,7 +58,7 @@ const chartOptions = computed(() => ({
       opacityTo: 0.05
     }
   },
-  colors: ['#f97316', '#22c55e'],
+  colors: ['#ef4444', '#f97316', '#22c55e'],
   xaxis: {
     categories: xLabels.value,
     labels: { style: { colors: '#9ca3af', fontSize: '11px' }, rotate: -30 }
@@ -80,8 +89,8 @@ const chartOptions = computed(() => ({
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-1">Scope Burnup</div>
-    <p class="text-xs text-text-muted mb-4">Days 1-2 are the planning phase. Day 3+ is execution.</p>
+    <div class="text-sm font-medium text-text-primary mb-1 cursor-help" title="Daily scope and completion lines showing when and how the sprint's total work changed.">Scope Burnup</div>
+    <p class="text-xs text-text-muted mb-4">Days 1-{{ settingsStore.settings.planningWindowDays }} are the planning phase. Day {{ settingsStore.settings.planningWindowDays + 1 }}+ is execution.</p>
     <apexchart
       type="line"
       height="280"

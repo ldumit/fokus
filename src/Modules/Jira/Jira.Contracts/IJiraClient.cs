@@ -8,4 +8,5 @@ public interface IJiraClient
     Task<List<JiraIssue>> GetSprintIssuesAsync(int sprintId, CancellationToken ct);
     Task<List<JiraIssue>> GetBoardBacklogIssuesAsync(int boardId, CancellationToken ct);
     Task<List<JiraIssue>> GetEpicIssuesAsync(string epicKey, CancellationToken ct);
+    Task<JiraSprint> UpdateSprintAsync(int sprintId, string name, DateTime startDate, DateTime endDate, string? goal, CancellationToken ct);
 }

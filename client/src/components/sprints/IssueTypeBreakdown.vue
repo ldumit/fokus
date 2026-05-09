@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <BaseCard>
-    <div class="text-sm font-medium text-text-primary mb-4">Issue Type Breakdown</div>
+    <div class="text-sm font-medium text-text-primary mb-4 cursor-help" title="Carry-over ticket counts by work type — stories, bugs, tasks, improvements, etc.">Issue Type Breakdown</div>
     <div v-if="entries.length === 0" class="text-sm text-text-muted">No carry-over tickets.</div>
     <table v-else class="w-full text-sm">
       <thead>

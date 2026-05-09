@@ -1,5 +1,7 @@
 # Carry-Over Tracker
 
+**Feature Spec:** `docs/features/CarryOverTracker/spec.md`
+
 ## Context
 
 The Sprint Summary Card (F8) shows a single carry-over rate number. The Sprints page (F10) shows scope change analytics. This feature (F11) adds the analytical depth for carry-over: which tickets didn't finish, where they're stuck, how long they've been stuck, and whether carry-over tickets from prior sprints eventually get completed. It answers "what keeps rolling from sprint to sprint and why isn't it getting done?"

@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.7 (Sprint Summary Card), §6.1 (Navigation), §6.2 (Design Direction)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F7 (App Shell & Navigation)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/SprintSummaryCard/plan.md`
 
 ---
 

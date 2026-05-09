@@ -31,6 +31,19 @@ namespace Fokus.Persistence.Migrations
                     b.Property<int>("BugRatioConsecutiveSprintCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CompanyDomain")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CycleTimeEndStage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CycleTimeStartStage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DefaultSpPerBug")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("DoneStatuses")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -39,6 +52,12 @@ namespace Fokus.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PlanningWindowDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SyncBackSprintCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("WorkflowStages")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -46,6 +65,118 @@ namespace Fokus.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AppSettings");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.Auth.AppUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GoogleId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Manager");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AppUsers_Email");
+
+                    b.HasIndex("GoogleId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AppUsers_GoogleId");
+
+                    b.ToTable("AppUsers");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.Auth.Invitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("InvitedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Manager");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .HasDatabaseName("IX_Invitations_Email");
+
+                    b.HasIndex("InvitedByUserId");
+
+                    b.HasIndex("Token")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Invitations_Token");
+
+                    b.ToTable("Invitations");
                 });
 
             modelBuilder.Entity("Fokus.Domain.Developer", b =>
@@ -58,6 +189,11 @@ namespace Fokus.Persistence.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("DefaultCapacityPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(100);
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -65,6 +201,13 @@ namespace Fokus.Persistence.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Developer");
 
                     b.Property<string>("SubTeam")
                         .HasMaxLength(128)
@@ -116,6 +259,10 @@ namespace Fokus.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Goal")
+                        .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LastModifiedById")
@@ -351,6 +498,15 @@ namespace Fokus.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("HealthWeights")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Fokus.Domain.Auth.Invitation", b =>
+                {
+                    b.HasOne("Fokus.Domain.Auth.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

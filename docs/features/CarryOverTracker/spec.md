@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.3 (Carry-Over Tracker)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F6 (Workflow Auto-Detection), F7 (App Shell & Navigation), F8 (Sprint Summary Card — cross-cutting patterns), F10 (Scope Change & Disruption — Sprints page structure, excluded-from-scope statuses)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/CarryOverTracker/plan.md`
 
 ---
 

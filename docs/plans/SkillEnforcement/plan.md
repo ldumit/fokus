@@ -1,5 +1,7 @@
 # Skill Enforcement — Architecture Doc & Implementation Plan Skills
 
+**Feature Spec:** None
+
 ## Context
 
 Phase 2 of the skill design proposal. Phase 1 (cleaning Reflekt-specific references from existing skills) is complete. This phase creates two new skills that structurally enforce skill awareness when writing architecture documents and implementation plans.

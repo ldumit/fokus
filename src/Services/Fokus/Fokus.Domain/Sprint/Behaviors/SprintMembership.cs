@@ -2,7 +2,24 @@ namespace Fokus.Domain;
 
 public partial class SprintMembership
 {
-    public static SprintMembership FromJira(JiraIssue dto, Sprint sprint, bool forcedNotCommitted = false)
+    /// <summary>
+    /// Returns the effective SP for this membership:
+    /// - If StoryPoints has a value and is > 0, returns StoryPoints.
+    /// - If ticket is a Bug and defaultSpPerBug > 0, returns defaultSpPerBug as decimal.
+    /// - Otherwise returns null.
+    /// </summary>
+    public decimal? GetEffectiveSp(int defaultSpPerBug)
+    {
+        if (StoryPoints.HasValue && StoryPoints.Value > 0)
+            return StoryPoints;
+
+        if (Ticket?.IssueType == "Bug" && defaultSpPerBug > 0)
+            return (decimal)defaultSpPerBug;
+
+        return null;
+    }
+
+    public static SprintMembership FromJira(JiraIssue dto, Sprint sprint, bool forcedNotCommitted = false, int planningWindowDays = 2)
     {
         var sprintIdStr = sprint.Id.ToString();
 
@@ -15,8 +32,8 @@ public partial class SprintMembership
         {
             foreach (var item in history.Items.Where(i => i.Field is "Sprint" or "sprint"))
             {
-                var toSprints = item.ToStringValue?.Split(',').Select(s => s.Trim()) ?? [];
-                var fromSprints = item.FromString?.Split(',').Select(s => s.Trim()) ?? [];
+                var toSprints = item.To?.Split(',').Select(s => s.Trim()) ?? [];
+                var fromSprints = item.From?.Split(',').Select(s => s.Trim()) ?? [];
 
                 var appearsInTo = toSprints.Any(s => s == sprintIdStr);
                 var appearsInFrom = fromSprints.Any(s => s == sprintIdStr);
@@ -30,7 +47,8 @@ public partial class SprintMembership
         }
 
         var effectiveAddedAt = addedAt ?? sprint.StartDate;
-        var wasCommitted = !forcedNotCommitted && effectiveAddedAt <= sprint.StartDate;
+        var planningCutoff = sprint.StartDate.AddDays(planningWindowDays);
+        var wasCommitted = !forcedNotCommitted && effectiveAddedAt <= planningCutoff;
 
         return new SprintMembership
         {

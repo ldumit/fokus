@@ -35,6 +35,14 @@ public class SprintRepository(FokusDbContext db)
                     .ThenInclude(t => t.Assignee)
             .ToListAsync(ct);
 
+    public async Task<List<SprintMembership>> GetAllClosedSprintMembershipsAsync(CancellationToken ct = default) =>
+        await DbContext.SprintMemberships
+            .Where(sm => sm.Sprint.State == SprintState.Closed)
+            .Include(sm => sm.Sprint)
+            .Include(sm => sm.Ticket)
+                .ThenInclude(t => t.Assignee)
+            .ToListAsync(ct);
+
     public new async Task UpsertAsync(Sprint sprint, CancellationToken ct = default)
     {
         var existing = await Entity.SingleOrDefaultAsync(s => s.Id == sprint.Id, ct);
@@ -51,6 +59,7 @@ public class SprintRepository(FokusDbContext db)
             existing.BoardName = sprint.BoardName;
             existing.State = sprint.State;
             existing.SyncedAt = sprint.SyncedAt;
+            existing.Goal = sprint.Goal;
         }
     }
 

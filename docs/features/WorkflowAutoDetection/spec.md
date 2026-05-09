@@ -3,7 +3,8 @@
 **Traces to:** `docs/specs/v1.md` §5.4 (Cycle Time — configurable workflow status mapping)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync)
-**Status:** Ready
+**Status:** Done
+**Plan:** `docs/plans/WorkflowAutoDetection/plan.md`
 
 ---
 

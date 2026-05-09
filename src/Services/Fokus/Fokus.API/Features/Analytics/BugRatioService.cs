@@ -124,10 +124,12 @@ public class BugRatioService
         List<Sprint> allClosedSprints,
         List<Developer> activeDevelopers,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
 
         var sortedTarget = targetSprints.OrderBy(s => s.StartDate).ToList();
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
@@ -139,10 +141,10 @@ public class BugRatioService
         // Team-level per-sprint trend
         var perSprintTrend = sortedTarget.Select(s =>
         {
-            var memberships = FilterMemberships(s.Memberships, subTeam);
+            var memberships = FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds);
             var completed = CompletedMemberships(memberships, doneStatuses, excludedStatuses);
-            var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
-            var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+            var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+            var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var completedSp = bugSp + nonBugSp;
             var ratioPercent = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
             return new BugRatioTeamTrendEntry(
@@ -168,9 +170,9 @@ public class BugRatioService
 
         // Issue type breakdown across all target sprints (BR18)
         var allCompletedMemberships = sortedTarget
-            .SelectMany(s => CompletedMemberships(FilterMemberships(s.Memberships, subTeam), doneStatuses, excludedStatuses))
+            .SelectMany(s => CompletedMemberships(FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds), doneStatuses, excludedStatuses))
             .ToList();
-        var issueTypeBreakdown = BuildIssueTypeBreakdown(allCompletedMemberships);
+        var issueTypeBreakdown = BuildIssueTypeBreakdown(allCompletedMemberships, defaultSpPerBug);
 
         // Per-developer entries
         var developerEntries = filteredDevelopers.Select(dev =>
@@ -179,8 +181,8 @@ public class BugRatioService
             {
                 var memberships = GetDeveloperMemberships(s, dev.Id, subTeam);
                 var completed = CompletedMemberships(memberships, doneStatuses, excludedStatuses);
-                var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
-                var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+                var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+                var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var completedSp = bugSp + nonBugSp;
                 var ratio = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
                 var bugCount = completed.Count(m => IsBug(m));
@@ -204,7 +206,7 @@ public class BugRatioService
 
             var alert = EvaluateAlert(
                 dev.Id, allClosedSprints, doneStatuses, excludedStatuses,
-                settings.BugRatioAlertThreshold, settings.BugRatioConsecutiveSprintCount, subTeam);
+                settings.BugRatioAlertThreshold, settings.BugRatioConsecutiveSprintCount, subTeam, defaultSpPerBug);
 
             return new BugRatioDeveloperEntry(
                 dev.Id, dev.DisplayName, dev.SubTeam, dev.AvatarUrl,
@@ -227,20 +229,22 @@ public class BugRatioService
         List<Sprint> allClosedSprints,
         List<Developer> activeDevelopers,
         AppSettings settings,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
         var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
+        var defaultSpPerBug = settings.DefaultSpPerBug;
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
 
         var sprintInfo = new BugRatioSprintInfo(
             targetSprint.Id, targetSprint.Name, targetSprint.StartDate, targetSprint.EndDate);
 
         // Team metrics for current sprint
-        var memberships = FilterMemberships(targetSprint.Memberships, subTeam);
+        var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var completed = CompletedMemberships(memberships, doneStatuses, excludedStatuses);
-        var bugSp = completed.Where(IsBug).Sum(m => m.StoryPoints ?? 0m);
-        var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+        var bugSp = completed.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+        var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
         var completedSp = bugSp + nonBugSp;
         var ratio = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
 
@@ -251,10 +255,10 @@ public class BugRatioService
         decimal? priorRatio = null;
         if (priorSprint is not null)
         {
-            var priorMemberships = FilterMemberships(priorSprint.Memberships, subTeam);
+            var priorMemberships = FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds);
             var priorCompleted = CompletedMemberships(priorMemberships, doneStatuses, excludedStatuses);
-            priorBugSp = priorCompleted.Where(IsBug).Sum(m => m.StoryPoints ?? 0m);
-            priorNonBugSp = priorCompleted.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+            priorBugSp = priorCompleted.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+            priorNonBugSp = priorCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             priorCompletedSp = priorBugSp + priorNonBugSp;
             priorRatio = priorCompletedSp > 0 ? priorBugSp / priorCompletedSp * 100 : 0m;
         }
@@ -268,15 +272,15 @@ public class BugRatioService
                 priorNonBugSp.HasValue ? nonBugSp - priorNonBugSp.Value : null, "positive-up"));
 
         // Issue type breakdown for current sprint completed tickets (BR18)
-        var issueTypeBreakdown = BuildIssueTypeBreakdown(completed);
+        var issueTypeBreakdown = BuildIssueTypeBreakdown(completed, defaultSpPerBug);
 
         // Per-developer entries
         var developerEntries = filteredDevelopers.Select(dev =>
         {
             var devMemberships = GetDeveloperMemberships(targetSprint, dev.Id, subTeam);
             var devCompleted = CompletedMemberships(devMemberships, doneStatuses, excludedStatuses);
-            var devBugSp = devCompleted.Where(IsBug).Sum(m => m.StoryPoints ?? 0m);
-            var devNonBugSp = devCompleted.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+            var devBugSp = devCompleted.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+            var devNonBugSp = devCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var devCompletedSp = devBugSp + devNonBugSp;
             var devRatio = devCompletedSp > 0 ? devBugSp / devCompletedSp * 100 : 0m;
             var devBugCount = devCompleted.Count(IsBug);
@@ -287,8 +291,8 @@ public class BugRatioService
             {
                 var priorDevMemberships = GetDeveloperMemberships(priorSprint, dev.Id, subTeam);
                 var priorDevCompleted = CompletedMemberships(priorDevMemberships, doneStatuses, excludedStatuses);
-                var priorDevBugSp = priorDevCompleted.Where(IsBug).Sum(m => m.StoryPoints ?? 0m);
-                var priorDevNonBugSp = priorDevCompleted.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+                var priorDevBugSp = priorDevCompleted.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+                var priorDevNonBugSp = priorDevCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var priorDevCompletedSp = priorDevBugSp + priorDevNonBugSp;
                 var priorDevRatio = priorDevCompletedSp > 0 ? priorDevBugSp / priorDevCompletedSp * 100 : 0m;
                 var priorDevBugCount = priorDevCompleted.Count(IsBug);
@@ -310,7 +314,7 @@ public class BugRatioService
 
             var alert = EvaluateAlert(
                 dev.Id, allClosedSprints, doneStatuses, excludedStatuses,
-                settings.BugRatioAlertThreshold, settings.BugRatioConsecutiveSprintCount, subTeam);
+                settings.BugRatioAlertThreshold, settings.BugRatioConsecutiveSprintCount, subTeam, defaultSpPerBug);
 
             return new BugRatioDeveloperSingleEntry(
                 dev.Id, dev.DisplayName, dev.SubTeam, dev.AvatarUrl,
@@ -336,7 +340,8 @@ public class BugRatioService
         List<string> excludedStatuses,
         int threshold,
         int consecutiveCount,
-        string? subTeam)
+        string? subTeam,
+        int defaultSpPerBug = 0)
     {
         // Evaluate sprints from most recent backward (BR9)
         var sortedDesc = allClosedSprints.OrderByDescending(s => s.StartDate).ToList();
@@ -346,8 +351,8 @@ public class BugRatioService
         {
             var memberships = GetDeveloperMemberships(sprint, developerId, subTeam);
             var completed = CompletedMemberships(memberships, doneStatuses, excludedStatuses);
-            var bugSp = completed.Where(IsBug).Sum(m => m.StoryPoints ?? 0m);
-            var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.StoryPoints ?? 0m);
+            var bugSp = completed.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+            var nonBugSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var completedSp = bugSp + nonBugSp;
 
             // BR11: zero SP sprint resets streak
@@ -398,13 +403,15 @@ public class BugRatioService
 
     private static List<SprintMembership> FilterMemberships(
         IReadOnlyList<SprintMembership> memberships,
-        string? subTeam)
+        string? subTeam,
+        HashSet<string>? excludedDeveloperIds = null)
     {
-        if (string.IsNullOrWhiteSpace(subTeam))
-            return memberships.ToList();
-        return memberships
-            .Where(m => m.Ticket?.Assignee?.SubTeam == subTeam)
-            .ToList();
+        var result = memberships.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(subTeam))
+            result = result.Where(m => m.Ticket?.Assignee?.SubTeam == subTeam);
+        if (excludedDeveloperIds is { Count: > 0 })
+            result = result.Where(m => m.Ticket?.AssigneeId == null || !excludedDeveloperIds.Contains(m.Ticket.AssigneeId));
+        return result.ToList();
     }
 
     private static List<SprintMembership> GetDeveloperMemberships(
@@ -421,13 +428,14 @@ public class BugRatioService
     // --- Issue type breakdown (BR18) ---
 
     private static List<BugRatioIssueTypeEntry> BuildIssueTypeBreakdown(
-        List<SprintMembership> completedMemberships)
+        List<SprintMembership> completedMemberships,
+        int defaultSpPerBug = 0)
     {
         return completedMemberships
             .GroupBy(m => m.Ticket?.IssueType ?? "Unknown")
             .Select(g =>
             {
-                var spTotal = g.Where(m => m.StoryPoints.HasValue).Sum(m => m.StoryPoints!.Value);
+                var spTotal = g.Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 return new BugRatioIssueTypeEntry(g.Key, g.Count(), Math.Round(spTotal, 1));
             })
             .OrderByDescending(e => e.TicketCount)

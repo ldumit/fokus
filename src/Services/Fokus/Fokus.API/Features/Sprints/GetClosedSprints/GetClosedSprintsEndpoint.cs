@@ -1,6 +1,5 @@
 namespace Fokus.API.Features.Sprints.GetClosedSprints;
 
-[AllowAnonymous]
 [HttpGet("/api/sprints/closed")]
 [Tags("Sprints")]
 public class GetClosedSprintsEndpoint(SprintRepository sprintRepository)
@@ -16,7 +15,8 @@ public class GetClosedSprintsEndpoint(SprintRepository sprintRepository)
             Name = s.Name,
             StartDate = s.StartDate,
             EndDate = s.EndDate,
-            State = s.State.ToString()
+            State = s.State.ToString(),
+            Goal = s.Goal
         }).ToList();
 
         await SendOkAsync(response, ct);

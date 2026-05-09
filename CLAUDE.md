@@ -153,6 +153,14 @@ Example — a service at index `1` with app prefix `44`:
 - **No bypassing domain rules** via EF configs or endpoints.
 - **Domain events** = within service boundary. **Integration events** = cross-service.
 - **No `.gitkeep` files** — don't track empty directories. Directories are created at runtime or when files are added.
+- **No Opus for general-purpose agents** — always set `model: "sonnet"`. General-purpose agents do research and summarization, not deep reasoning.
+- **Never override specialized agent models** — specialized agents (architect, developer, reviewer, etc.) have their model baked into their `.md` frontmatter. Never pass a `model` parameter that overrides it.
+
+## Knowledge Base
+
+Before reading source files for domain, analytics, or feature questions, check `docs/kb/index.md` first. Navigate to the relevant entry, get business rules and key files, then read only the specific source files you need.
+
+After implementing a feature that modifies domain logic, analytics computation, or data flow, update the relevant `docs/kb/` entry. The KB is a living artifact maintained by the pipeline.
 
 ## Codebase Graph
 
