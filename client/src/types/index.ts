@@ -204,6 +204,109 @@ export interface SetCapacityResponse {
   capacityPercent: number
 }
 
+// Scope change types
+export interface ScopeChangeSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface ScopeChangeSummaryMetrics {
+  averageDisruptionRate: number
+  averageDisruptionRateDelta: number | null
+  averageDisruptionRateDeltaDirection: string | null
+  averageNetScopeChange: number
+  totalBugsAdded: number
+}
+
+export interface ScopeChangePerSprintData {
+  sprintId: number
+  committedSpActive: number
+  committedSpTotal: number
+  addedSp: number
+  removedSp: number
+  netScopeChange: number
+  completedSp: number
+  disruptionRate: number
+  bugCount: number
+}
+
+export interface ClassificationEntry {
+  category: string
+  ticketCount: number
+  spTotal: number | null
+  percentage: number
+}
+
+export interface ScopeChangeMultiSprintResponse {
+  sprints: ScopeChangeSprintInfo[]
+  summaryMetrics: ScopeChangeSummaryMetrics
+  perSprintData: ScopeChangePerSprintData[]
+  classificationBreakdown: ClassificationEntry[]
+}
+
+export interface ScopeMetricCard {
+  name: string
+  value: number
+  displayValue: string
+  delta: number | null
+  deltaDirection: string | null
+  deltaPolarity: string | null
+}
+
+export interface ScopeChangeSingleSprintMetrics {
+  committedSpActive: ScopeMetricCard
+  committedSpTotal: ScopeMetricCard
+  addedSp: ScopeMetricCard
+  removedSp: ScopeMetricCard
+  netScopeChange: ScopeMetricCard
+  disruptionRate: ScopeMetricCard
+  bugCount: ScopeMetricCard
+}
+
+export interface BurnupDataPoint {
+  dayNumber: number
+  date: string
+  totalScopeSp: number
+  completedSp: number
+  phase: string
+}
+
+export interface ScopeChangeEvent {
+  date: string
+  sprintDayNumber: number
+  ticketKey: string
+  ticketSummary: string
+  storyPoints: number | null
+  issueType: string
+  action: string
+  category: string | null
+  isExcluded: boolean
+}
+
+export interface BugTimeInProgress {
+  ticketKey: string
+  ticketSummary: string
+  timeInActiveDays: number
+  currentStatus: string
+}
+
+export interface ScopeChangeSingleSprintResponse {
+  sprint: ScopeChangeSprintInfo
+  metrics: ScopeChangeSingleSprintMetrics
+  burnupData: BurnupDataPoint[]
+  classificationBreakdown: ClassificationEntry[]
+  events: ScopeChangeEvent[]
+  bugTimeInProgress: BugTimeInProgress[]
+}
+
+export interface ScopeChangeResponse {
+  mode: 'multi' | 'single'
+  multiSprint: ScopeChangeMultiSprintResponse | null
+  singleSprint: ScopeChangeSingleSprintResponse | null
+}
+
 // Sync types
 export interface JiraSprint {
   id: number

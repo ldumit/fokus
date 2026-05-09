@@ -23,3 +23,14 @@ export function getBoards(): Promise<{ boards: BoardOption[] }> {
 export function getStatuses(): Promise<{ statuses: StatusOption[] }> {
   return apiFetch<{ statuses: StatusOption[] }>('/jira/statuses')
 }
+
+export function getExcludedStatuses(): Promise<string[]> {
+  return apiFetch<string[]>('/settings/excluded-statuses')
+}
+
+export function saveExcludedStatuses(statuses: string[]): Promise<string[]> {
+  return apiFetch<string[]>('/settings/excluded-statuses', {
+    method: 'PUT',
+    body: JSON.stringify({ statuses })
+  })
+}

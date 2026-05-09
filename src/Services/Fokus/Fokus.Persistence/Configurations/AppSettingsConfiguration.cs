@@ -17,5 +17,9 @@ public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
         builder.Property(s => s.WorkflowStages).HasConversion(
             v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
             v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
+
+        builder.Property(s => s.ExcludedFromScopeStatuses).HasConversion(
+            v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+            v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
     }
 }

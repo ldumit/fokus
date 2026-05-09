@@ -6,6 +6,7 @@ public class AppSettings
     public int? BoardId { get; set; }
     public List<string> DoneStatuses { get; set; } = ["Done", "Closed"];
     public List<string> WorkflowStages { get; set; } = [];
+    public List<string> ExcludedFromScopeStatuses { get; set; } = [];
     public HealthThresholdConfig HealthThresholds { get; set; } = new();
     public HealthWeightConfig HealthWeights { get; set; } = new();
 
@@ -15,6 +16,7 @@ public class AppSettings
         BoardId = null,
         DoneStatuses = ["Done", "Closed"],
         WorkflowStages = [],
+        ExcludedFromScopeStatuses = [],
         HealthThresholds = new HealthThresholdConfig(),
         HealthWeights = new HealthWeightConfig()
     };

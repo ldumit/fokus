@@ -68,6 +68,11 @@ public class TicketRepository(FokusDbContext db)
         DbContext.StatusTransitions.AddRange(transitions);
     }
 
+    public async Task<List<StatusTransition>> GetStatusTransitionsForTicketsAsync(List<string> ticketIds, CancellationToken ct = default) =>
+        await DbContext.StatusTransitions
+            .Where(st => ticketIds.Contains(st.TicketId))
+            .ToListAsync(ct);
+
     public async Task<TransitionEdgeData> GetTransitionEdgesForDetectionAsync(CancellationToken ct = default)
     {
         var nonBugTicketIds = await Entity

@@ -86,8 +86,8 @@ SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for con
 | F6 | Workflow Auto-Detection | Done | [WorkflowAutoDetection](../features/WorkflowAutoDetection.md) |
 | F8 | Sprint Summary Card | Done | [SprintSummaryCard](../features/SprintSummaryCard.md) |
 | F9 | Developer Throughput | Done | [DeveloperThroughput](../features/DeveloperThroughput.md) |
-| F10 | Scope Change & Disruption | Not Started | — |
-| F11 | Carry-Over Tracker | Not Started | — |
+| F10 | Scope Change & Disruption | Done | [ScopeChangeDisruption](../features/ScopeChangeDisruption.md) |
+| F11 | Carry-Over Tracker | Spec Ready | [CarryOverTracker](../features/CarryOverTracker.md) |
 | F13 | Bug Ratio | Not Started | — |
 | F14 | Epic Progress | Not Started | — |
 

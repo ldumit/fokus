@@ -29,6 +29,7 @@ public class AppSettingsRepository(FokusDbContext db)
             existing.HealthWeights = settings.HealthWeights;
             existing.DoneStatuses = settings.DoneStatuses;
             existing.WorkflowStages = settings.WorkflowStages;
+            existing.ExcludedFromScopeStatuses = settings.ExcludedFromScopeStatuses;
         }
         await db.SaveChangesAsync(ct);
     }

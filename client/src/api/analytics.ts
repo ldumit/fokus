@@ -1,4 +1,4 @@
-import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse } from '../types'
+import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse } from '../types'
 import { apiFetch } from './client'
 
 export function getSprintSummary(sprintId?: number, subTeam?: string): Promise<SprintSummaryResponse> {
@@ -24,4 +24,13 @@ export function getDeveloperThroughput(sprintId?: number, last?: number, subTeam
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<DeveloperThroughputResponse>(`/analytics/developer-throughput${query ? `?${query}` : ''}`)
+}
+
+export function getScopeChange(sprintId?: number, last?: number, subTeam?: string): Promise<ScopeChangeResponse> {
+  const params = new URLSearchParams()
+  if (sprintId !== undefined) params.set('sprintId', String(sprintId))
+  if (last !== undefined) params.set('last', String(last))
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<ScopeChangeResponse>(`/analytics/scope-change${query ? `?${query}` : ''}`)
 }

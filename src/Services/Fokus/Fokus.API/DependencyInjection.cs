@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<WorkflowDetectionService>();
         services.AddScoped<SprintSummaryService>();
         services.AddScoped<DeveloperThroughputService>();
+        services.AddScoped<ScopeChangeService>();
 
         return services;
     }
