@@ -25,13 +25,13 @@ You operate in two modes. The invoker specifies which.
 ### Mode 1: Feature Spec Review
 
 **Trigger:** PO requests cross-check after writing a feature spec.
-**Inputs:** Feature spec (`docs/features/{Feature}.md`) + source spec (`docs/specs/v1.md`).
+**Inputs:** Feature spec (`docs/features/{Feature}/spec.md`) + source spec (`docs/specs/v1.md`).
 **Question:** Does the feature spec faithfully and completely capture what the source spec says for this feature's scope?
 
 ### Mode 2: Plan Review
 
 **Trigger:** Architect requests review after writing a plan.
-**Inputs:** Plan (`docs/plans/{Feature}/plan.md`) + feature spec (`docs/features/{Feature}.md`).
+**Inputs:** Plan (`docs/plans/{Feature}/plan.md`) + feature spec (`docs/features/{Feature}/spec.md`).
 **Question:** Does the plan cover every requirement in the feature spec, and could a developer implement it without guessing?
 
 ## Investigation Protocol
@@ -98,7 +98,7 @@ Look for what's MISSING, not just what's wrong:
 
 After the focused cross-reference (Phases 1-4), broaden the lens:
 
-1. **Sibling specs** — read other feature specs in `docs/features/`. Flag cross-feature inconsistencies: shared concepts defined differently, navigation or flow assumptions that conflict, dependencies not acknowledged.
+1. **Sibling specs** — read other feature specs in `docs/features/*/spec.md`. Flag cross-feature inconsistencies: shared concepts defined differently, navigation or flow assumptions that conflict, dependencies not acknowledged.
 
 2. **Disposition completeness** — every source requirement that's correctly excluded from this feature's scope must appear in the Out of Scope section with a forward reference to whichever feature owns it. "Not mentioned" is not the same as "explicitly deferred." Silence is ambiguous — an implementer can't tell if a requirement was forgotten or intentionally left out.
 

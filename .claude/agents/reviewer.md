@@ -179,7 +179,7 @@ Do not ask developer to make architecture calls.
 
 ## Codex Cross-Validation (when requested)
 
-Only when the launch instruction includes "enable Codex cross-validation":
+Only when the launch instruction includes "enable Codex cross-validation". **Run Codex only on the first review round** — fix-cycle re-reviews (cycles 2, 3) do not re-run Codex; verify fixes with your normal review only.
 
 1. Complete your normal Sonnet review first (Stages 1 and 2, write review.md).
 2. Invoke `/codex:rescue` asking Codex to independently review the implementation against the plan.

@@ -62,7 +62,7 @@ The Jira ticket gives you a head start — the discussion is shorter because som
 
 ### Internal research (do first)
 - Read `docs/specs/v1.md` for the relevant sections
-- Read existing feature specs in `docs/features/` for overlaps and dependencies
+- Read existing feature specs in `docs/features/*/spec.md` for overlaps and dependencies
 - Read `graphify-out/GRAPH_REPORT.md` for codebase structure
 - Read `docs/architecture/v1.md` when technical feasibility matters
 - Grep/Glob the codebase to verify what exists
@@ -92,15 +92,19 @@ Use the `create-feature-spec` skill. Follow its template and voice rules:
 - No class names, method signatures, or framework internals
 - Acceptance criteria are pass/fail, not subjective
 
-Output: `docs/features/{Feature}.md`
+Output: `docs/features/{Feature}/spec.md`
 
-After writing, offer the user **three choices together**:
+**Before writing, collect all decisions in one batch.** When you present your clarifying questions and offer research, also ask in the same batch:
 
 1. **Verification method:**
    - **Cross-check** (quick, same-context) — you re-read `docs/specs/v1.md` for the relevant sections, verify fields, rules, criteria, and flows yourself. Good for small or straightforward specs.
    - **Critic review** (thorough, independent) — you spawn the critic agent in Mode 1 (spec review). The critic independently cross-references the spec against v1.md and returns a structured verdict with a cross-reference matrix. Good for large or complex specs.
 
-2. **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}.help.md` — a sibling file with the same section structure as the spec. Each section has a **Short** variant (tooltip text, under 150 chars, shown on info icon hover) and a **Long** variant (guide page paragraph explaining interpretation and recommended actions). Write in user-facing language — this content will appear in the app.
+2. **Help content:** "Do you want a help content file for this feature?" If yes, you will produce `docs/features/{Feature}/help.md` alongside the spec.
+
+This way all choices are settled before you start writing. Do not ask about help content or verification after the spec is written.
+
+**When help content is requested**, write `docs/features/{Feature}/help.md` at the same time as the spec — a sibling file in the same folder. Each section has a **Short** variant (tooltip text, under 150 chars, shown on info icon hover) and a **Long** variant (guide page paragraph explaining interpretation and recommended actions). Write in user-facing language — this content will appear in the app. **After fixing critic findings, always sync-check the help file** against the revised spec and patch any affected sections.
 
 ### Managing the Critic
 
@@ -121,7 +125,7 @@ Always loaded:
 
 Read on-demand:
 - `docs/architecture/v1.md` — technical architecture
-- `docs/features/*.md` — existing feature specs
+- `docs/features/*/spec.md` — existing feature specs
 - `graphify-out/GRAPH_REPORT.md` — codebase structure
 - The codebase itself — via Glob, Grep, Read
 

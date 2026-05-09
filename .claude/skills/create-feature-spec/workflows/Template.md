@@ -1,6 +1,6 @@
 # Feature Spec Template
 
-Use this template for every `docs/features/{Feature}.md` file. Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
+Use this template for every `docs/features/{Feature}/spec.md` file. Omit sections marked "if applicable" when they don't apply. Do not add sections beyond this template.
 
 ---
 

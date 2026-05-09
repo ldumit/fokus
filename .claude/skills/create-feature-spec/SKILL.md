@@ -6,7 +6,7 @@ user-invocable: false
 
 # Create Feature Spec (Architect Reference)
 
-This skill is for the **PO agent** (primary owner) or **architect agent**. It produces `docs/features/{Feature}.md` — the product definition that the implementation plan is built against. The plan in `docs/plans/{Feature}/plan.md` references this spec but does not replace it.
+This skill is for the **PO agent** (primary owner) or **architect agent**. It produces `docs/features/{Feature}/spec.md` — the product definition that the implementation plan is built against. The plan in `docs/plans/{Feature}/plan.md` references this spec but does not replace it.
 
 ## Audience & voice
 
@@ -29,7 +29,7 @@ These belong in the implementation plan, not the feature spec:
 
 ## When to use
 
-Before writing an implementation plan. Every feature needs a spec in `docs/features/{Feature}.md` before `docs/plans/{Feature}/plan.md` is created.
+Before writing an implementation plan. Every feature needs a spec in `docs/features/{Feature}/spec.md` before `docs/plans/{Feature}/plan.md` is created.
 
 ## Reading protocol
 
@@ -37,7 +37,7 @@ Before writing, ensure you have:
 
 1. **Business spec** — read on-demand (project-specific path listed in the Architect agent's "What you know" section)
 2. **Architecture reference** — already loaded via the Architect agent's `@` directives
-3. **Existing feature specs** — read `docs/features/*.md` for format consistency, overlaps, dependencies
+3. **Existing feature specs** — read `docs/features/*/spec.md` for format consistency, overlaps, dependencies
 4. **Domain source files** — read current aggregates/entities to understand what already exists. Use this to inform your understanding, but do not carry class names or implementation patterns into the spec.
 
 ## Steps
@@ -48,7 +48,7 @@ Before writing, ensure you have:
 
 3. **Ask clarifying questions in one batch.** For anything ambiguous or unspecified in the business spec for this feature — ask once, all together. Do not write the file yet.
 
-4. **Write the spec** — follow `workflows/Template.md`. Output path: `docs/features/{Feature}.md`.
+4. **Write the spec** — follow `workflows/Template.md`. Output path: `docs/features/{Feature}/spec.md`.
 
 5. **Voice check.** Before telling the user, scan the draft for:
    - Code-formatted identifiers in backticks — for each one, ask: domain term or code artifact? Code artifacts move to the plan.
@@ -61,7 +61,7 @@ Before writing, ensure you have:
 
 6. **Offer final choices.** Ask the user two things together:
    - **Verification method:** cross-check (quick, same-context) or critic review (thorough, independent)?
-   - **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}.help.md` — a sibling file mirroring the spec's section headings. Each section has a **Short** variant (tooltip text, under 150 chars) and a **Long** variant (guide page paragraph). Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
+   - **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}/help.md` — a sibling file in the same folder, mirroring the spec's section headings. Each section has a **Short** variant (tooltip text, under 150 chars) and a **Long** variant (guide page paragraph). Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
 
 ## Arguments
 

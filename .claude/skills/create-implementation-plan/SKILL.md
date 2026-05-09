@@ -14,13 +14,13 @@ Generate `docs/plans/{Feature}/plan.md` with a structural guarantee that each st
 
 ## When to use
 
-After a feature spec exists (`docs/features/{Feature}.md` with `Status: Ready`). Replaces freeform plan writing.
+After a feature spec exists (`docs/features/{Feature}/spec.md` with `Status: Ready`). Replaces freeform plan writing.
 
 ## Reading protocol
 
 Before writing, ensure you have:
 
-1. **Feature spec** — read `docs/features/{Feature}.md`
+1. **Feature spec** — read `docs/features/{Feature}/spec.md`
 2. **Architecture doc** — read for system shape and existing decisions
 3. **Skill inventory** — scan `.claude/skills/` — read every `SKILL.md` frontmatter. If the architecture doc has a Skill Inventory section, use it; otherwise build one from scratch.
 4. **Existing plans** — read `docs/plans/*/plan.md` for format consistency

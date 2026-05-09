@@ -42,7 +42,7 @@ Always loaded:
 Read on-demand when needed:
 - `docs/architecture/v1.md` — technical architecture
 - `docs/specs/v1.md` — full product specification
-- `docs/features/{Feature}.md` — individual feature specs (check Status field)
+- `docs/features/{Feature}/spec.md` — individual feature specs (check Status field)
 - `docs/plans/{Feature}/` — implementation artifacts (plan.md, implementation.md, review.md, lessons.md, summary.md)
 
 ## Status Check
@@ -50,7 +50,7 @@ Read on-demand when needed:
 Only when the user asks "what's next?" or explicitly requests a status check, scan the feature pipeline:
 
 For each feature in the backlog sequence, check:
-1. Does `docs/features/{Feature}.md` exist? What is its `Status:`?
+1. Does `docs/features/{Feature}/spec.md` exist? What is its `Status:`?
 2. Does `docs/plans/{Feature}/plan.md` exist?
 3. Does `docs/plans/{Feature}/implementation.md` exist?
 4. Does `docs/plans/{Feature}/review.md` exist? What verdict?
@@ -142,7 +142,7 @@ Press Enter or "go" for Standard.
 How should agents run?
 
 1. Background (default) — agents are respawned per phase. Works unattended/overnight. Higher cost (re-reads context each spawn).
-2. Persistent — agents stay alive between phases via TeamCreate. Cheaper (one spawn per agent). Requires interactive session.
+2. Persistent (tmux) — agents stay alive between phases via TeamCreate. Cheaper (one spawn per agent). Requires interactive session + tmux.
 
 Press Enter for Background.
 ```
@@ -183,7 +183,7 @@ Press Enter for Background.
    Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
 
    Pipeline flow via `SendMessage`:
-   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/features/{Feature}.md. Save to docs/plans/{Feature}/plan.md.")`
+   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/features/{Feature}/spec.md. Save to docs/plans/{Feature}/plan.md.")`
    2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/plans/{Feature}/plan.md.")`
    3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md.")`
    4. When architect passes → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
@@ -191,6 +191,8 @@ Press Enter for Background.
    6. When approved → `SendMessage(to: "architect", message: "Close pipeline. Write summary.md and lessons.md.")`
 
    **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
+
+   **IMPORTANT: Use tmux backend, not in-process.** In-process persistent agents become unresponsive zombies after extended sessions — they send idle notifications but stop processing messages and ignore shutdown requests. Only the architect agent type was affected in testing, but the issue may apply to any agent. If tmux is unavailable (e.g., Windows without tmux installed), fall back to Background spawn mode instead of persistent.
 
 ### Team mode routing (both spawn modes)
 

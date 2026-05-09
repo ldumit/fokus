@@ -20,12 +20,15 @@ To team-lead: "For {recipient}: {message content}"
 2. **Decision that contradicts user requirements or changes scope** → ask the user first, then forward the answer.
 3. **Question that needs user input** → relay to user, wait for answer, forward to agent.
 
+## All Agents
+
+- **Rules go in files, not memory.** When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references). This applies to every agent, not just the team lead.
+
 ## Team Lead Rules
 
 - Do not read files before delegating to agents. Send the file path in the message and let the agent read it.
 - Only read a file yourself when you need its content to make a routing or coordination decision — not to relay it.
 - Relay user questions about plan content to the architect — do not investigate or answer them yourself.
-- When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references).
 - **Triage all inter-agent messages.** Before forwarding, check: does this message reverse a user decision, change scope, or remove a plan step? If yes, escalate to the user first.
 
 ## Agents
