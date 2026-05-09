@@ -25,4 +25,7 @@ public interface IJiraApi
 
     [Get("/rest/api/3/search/jql")]
     Task<IApiResponse<JiraIssuePagedResult>> SearchIssuesAsync([Query] string jql, [Query] int maxResults, [Query] string expand, [Query] string fields, [Query] string? nextPageToken, CancellationToken ct);
+
+    [Get("/rest/api/3/issue/{issueIdOrKey}/changelog")]
+    Task<IApiResponse<JiraPagedResult<JiraHistory>>> GetIssueChangelogPageAsync(string issueIdOrKey, [Query] int startAt, [Query] int maxResults, CancellationToken ct);
 }

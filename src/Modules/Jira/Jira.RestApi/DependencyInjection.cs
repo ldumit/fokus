@@ -4,6 +4,7 @@ using System.Text.Json;
 using Jira.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Refit;
 
@@ -34,7 +35,19 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         });
 
-        services.AddTransient<IJiraClient, RestApiJiraClient>();
+        services.AddTransient<IJiraClient>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
+            var api = sp.GetRequiredService<IJiraApi>();
+
+            if (options.IsTeamManaged)
+            {
+                var logger = sp.GetRequiredService<ILogger<TeamManagedJiraClient>>();
+                return new TeamManagedJiraClient(api, options.ProjectKey, logger);
+            }
+
+            return new RestApiJiraClient(api);
+        });
 
         return services;
     }

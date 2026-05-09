@@ -4,6 +4,9 @@ namespace Jira.Contracts;
 
 public class JiraChangelog
 {
+    public int MaxResults { get; set; }
+    public int Total { get; set; }
+    public int StartAt { get; set; }
     public List<JiraHistory> Histories { get; set; } = [];
 }
 

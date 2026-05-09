@@ -11,6 +11,8 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
     private const string IssueFields = "summary,issuetype,customfield_10016,customfield_10014,customfield_10008,assignee,priority,status,created,resolutiondate";
     private const string IssueExpand = "changelog";
 
+    protected IJiraApi Api { get; } = api;
+
     public async Task<List<JiraBoard>> GetBoardsAsync(CancellationToken ct)
     {
         var result = new List<JiraBoard>();
@@ -18,7 +20,7 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
 
         while (true)
         {
-            var page = await RequestAsync(() => api.GetBoardsPageAsync(startAt, 50, ct), ct);
+            var page = await RequestAsync(() => Api.GetBoardsPageAsync(startAt, 50, ct), ct);
             result.AddRange(page.Values);
             if (page.IsLast || page.Values.Count == 0) break;
             startAt += page.Values.Count;
@@ -29,7 +31,7 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
 
     public async Task<List<JiraStatus>> GetStatusesAsync(CancellationToken ct)
     {
-        var statuses = await RequestAsync(() => api.GetStatusesAsync(ct), ct);
+        var statuses = await RequestAsync(() => Api.GetStatusesAsync(ct), ct);
         return statuses
             .DistinctBy(s => s.Name)
             .OrderBy(s => s.Name)
@@ -47,7 +49,7 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
 
         while (true)
         {
-            var page = await RequestAsync(() => api.GetSprintsPageAsync(boardId, startAt, 50, stateParam, ct), ct);
+            var page = await RequestAsync(() => Api.GetSprintsPageAsync(boardId, startAt, 50, stateParam, ct), ct);
             result.AddRange(page.Values);
             if (page.IsLast || page.Values.Count == 0) break;
             startAt += page.Values.Count;
@@ -56,28 +58,23 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         return result;
     }
 
-    public async Task<List<JiraIssue>> GetSprintIssuesAsync(int sprintId, CancellationToken ct)
-    {
-        var issues = await GetAllIssuesAsync((s, m) => api.GetSprintIssuesPageAsync(sprintId, s, m, IssueExpand, IssueFields, ct), ct);
-        if (issues.Count > 0) return issues;
+    public virtual Task<List<JiraIssue>> GetSprintIssuesAsync(int sprintId, CancellationToken ct) =>
+        GetAllIssuesAsync((s, m) => Api.GetSprintIssuesPageAsync(sprintId, s, m, IssueExpand, IssueFields, ct), ct);
 
-        return await SearchAllIssuesAsync($"sprint = {sprintId}", ct);
-    }
+    public virtual Task<List<JiraIssue>> GetBoardBacklogIssuesAsync(int boardId, CancellationToken ct) =>
+        GetAllIssuesAsync((s, m) => Api.GetBoardBacklogIssuesPageAsync(boardId, s, m, IssueExpand, IssueFields, ct), ct);
 
-    public Task<List<JiraIssue>> GetBoardBacklogIssuesAsync(int boardId, CancellationToken ct) =>
-        GetAllIssuesAsync((s, m) => api.GetBoardBacklogIssuesPageAsync(boardId, s, m, IssueExpand, IssueFields, ct), ct);
+    public virtual Task<List<JiraIssue>> GetEpicIssuesAsync(string epicKey, CancellationToken ct) =>
+        GetAllIssuesAsync((s, m) => Api.GetEpicIssuesPageAsync(epicKey, s, m, IssueExpand, IssueFields, ct), ct);
 
-    public Task<List<JiraIssue>> GetEpicIssuesAsync(string epicKey, CancellationToken ct) =>
-        GetAllIssuesAsync((s, m) => api.GetEpicIssuesPageAsync(epicKey, s, m, IssueExpand, IssueFields, ct), ct);
-
-    private async Task<List<JiraIssue>> SearchAllIssuesAsync(string jql, CancellationToken ct)
+    protected async Task<List<JiraIssue>> SearchAllIssuesAsync(string jql, CancellationToken ct)
     {
         var result = new List<JiraIssue>();
         string? nextPageToken = null;
 
         while (true)
         {
-            var page = await RequestAsync(() => api.SearchIssuesAsync(jql, 100, IssueExpand, IssueFields, nextPageToken, ct), ct);
+            var page = await RequestAsync(() => Api.SearchIssuesAsync(jql, 100, IssueExpand, IssueFields, nextPageToken, ct), ct);
             if (page?.Issues is null || page.Issues.Count == 0) break;
             result.AddRange(page.Issues);
             nextPageToken = page.NextPageToken;
@@ -85,6 +82,33 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         }
 
         return result;
+    }
+
+    protected async Task<List<JiraHistory>> GetFullChangelogAsync(string issueKey, CancellationToken ct)
+    {
+        var result = new List<JiraHistory>();
+        var startAt = 0;
+
+        while (true)
+        {
+            var page = await RequestAsync(() => Api.GetIssueChangelogPageAsync(issueKey, startAt, 100, ct), ct);
+            result.AddRange(page.Values);
+            if (page.IsLast || page.Values.Count == 0) break;
+            startAt += page.Values.Count;
+        }
+
+        return result;
+    }
+
+    protected async Task EnrichChangelogsAsync(List<JiraIssue> issues, CancellationToken ct)
+    {
+        foreach (var issue in issues)
+        {
+            if (issue.Changelog.Total > issue.Changelog.Histories.Count)
+            {
+                issue.Changelog.Histories = await GetFullChangelogAsync(issue.Key, ct);
+            }
+        }
     }
 
     private async Task<List<JiraIssue>> GetAllIssuesAsync(
@@ -106,7 +130,7 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         return result;
     }
 
-    private async Task<T> RequestAsync<T>(Func<Task<IApiResponse<T>>> call, CancellationToken ct)
+    protected async Task<T> RequestAsync<T>(Func<Task<IApiResponse<T>>> call, CancellationToken ct)
     {
         var delay = 1000;
 

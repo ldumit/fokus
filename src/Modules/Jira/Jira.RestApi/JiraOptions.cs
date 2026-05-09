@@ -10,4 +10,6 @@ public class JiraOptions
     public string Email { get; set; } = string.Empty;
     [Required]
     public string ApiToken { get; set; } = string.Empty;
+    public bool IsTeamManaged { get; set; } = false;
+    public string? ProjectKey { get; set; }
 }
