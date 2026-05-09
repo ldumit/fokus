@@ -94,17 +94,21 @@ Use the `create-feature-spec` skill. Follow its template and voice rules:
 
 Output: `docs/features/{Feature}/spec.md`
 
-**Before writing, collect all decisions in one batch.** When you present your clarifying questions and offer research, also ask in the same batch:
+**When discussion is complete and you're ready to write the spec**, collect the final decisions in one batch:
 
 1. **Verification method:**
    - **Cross-check** (quick, same-context) — you re-read `docs/specs/v1.md` for the relevant sections, verify fields, rules, criteria, and flows yourself. Good for small or straightforward specs.
    - **Critic review** (thorough, independent) — you spawn the critic agent in Mode 1 (spec review). The critic independently cross-references the spec against v1.md and returns a structured verdict with a cross-reference matrix. Good for large or complex specs.
 
-2. **Help content:** "Do you want a help content file for this feature?" If yes, you will produce `docs/features/{Feature}/help.md` alongside the spec.
+2. **Help content:** "Do you want help content files for this feature?" If yes, you will produce two files alongside the spec.
 
-This way all choices are settled before you start writing. Do not ask about help content or verification after the spec is written.
+Do not ask these during the initial clarifying questions — they are writing-time decisions, not product-shaping decisions. Do not ask about help content or verification after the spec is written.
 
-**When help content is requested**, write `docs/features/{Feature}/help.md` at the same time as the spec — a sibling file in the same folder. Each section has a **Short** variant (tooltip text, under 150 chars, shown on info icon hover) and a **Long** variant (guide page paragraph explaining interpretation and recommended actions). Write in user-facing language — this content will appear in the app. **After fixing critic findings, always sync-check the help file** against the revised spec and patch any affected sections.
+**When help content is requested**, write two sibling files in the same folder as the spec:
+- `docs/features/{Feature}/help.tooltips.md` — one section per UI element, each containing only the tooltip text (under 150 chars, shown on info icon hover).
+- `docs/features/{Feature}/help.page.md` — one section per UI element, each containing a guide page paragraph explaining interpretation and recommended actions.
+
+Both files share the same section headings. Write in user-facing language — this content will appear in the app. **After fixing critic findings, always sync-check both help files** against the revised spec and patch any affected sections.
 
 ### Managing the Critic
 

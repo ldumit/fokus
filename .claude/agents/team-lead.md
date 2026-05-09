@@ -149,24 +149,30 @@ Press Enter for Background.
 
 6. **Spawn agents according to the chosen spawn mode.**
 
+7. **Create or update `docs/plans/{Feature}/communication-log.md` immediately** — before or alongside the first agent spawn. Log every message as it flows. Do not wait until shutdown.
+
 ### Spawn Mode: Background (default)
 
-   Spawn agents using the `Agent` tool with `run_in_background: true`. Each agent exits on completion and is respawned for the next phase.
+   Spawn the first agent of each type using the `Agent` tool with `run_in_background: true`. After that, **always resume agents via `SendMessage` using their agent ID** — even across pipeline phases. Only spawn a fresh instance if `SendMessage` fails (agent not addressable).
 
-   Spawn agents one at a time, in pipeline order. Start with the architect:
+   **Why resume-first:** Resumed agents retain their full transcript/context from prior work — cheaper, faster, and more consistent. Fresh spawns lose all prior context and re-read everything.
+
+   Start with the architect:
    ```
    Agent(subagent_type="architect", run_in_background=true, name="architect",
          prompt="You are the architect on team {Feature}. Read .claude/agents/architect.md. {task}")
    ```
 
-   Spawn the next agent only when the current one completes and you've triaged its output. The pipeline is sequential — architect → developer → architect (done check) → reviewer.
+   **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent.
+
+   Spawn the next agent type only when the current one completes and you've triaged its output. The pipeline is sequential — architect → developer → architect (done check) → reviewer.
 
    When an agent completes (you get the background notification), read its output, triage any messages it produced, then decide:
-   - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **continue the same agent** via `SendMessage(to: "agent-name")` with the answer — don't spawn a fresh one.
-   - If the agent wrote implementation.md → spawn the **next pipeline phase** (different agent type).
+   - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **resume the same agent** via `SendMessage(to: agentId)` with the answer.
+   - If the agent wrote implementation.md → **resume the next agent** via `SendMessage(to: agentId)` if it was already spawned, or spawn it for the first time if not.
    - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
 
-   **Key:** Use `SendMessage` to continue an existing agent within the same phase (questions, fixes). Only spawn a fresh agent when moving to a new pipeline phase (architect → developer → reviewer).
+   **Key:** Use `SendMessage` to resume agents across ALL phases (same phase and cross-phase). Only use `Agent` to spawn the first instance of each agent type. Fall back to a fresh `Agent` spawn only if `SendMessage` returns "not addressable."
 
 ### Spawn Mode: Persistent
 
@@ -192,7 +198,7 @@ Press Enter for Background.
 
    **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
 
-   **IMPORTANT: Use tmux backend, not in-process.** In-process persistent agents become unresponsive zombies after extended sessions — they send idle notifications but stop processing messages and ignore shutdown requests. Only the architect agent type was affected in testing, but the issue may apply to any agent. If tmux is unavailable (e.g., Windows without tmux installed), fall back to Background spawn mode instead of persistent.
+   **How to start:** Use `TeamCreate` directly — it spawns agents in-process. Do NOT pass tmux-related flags or attempt to use a tmux backend; in-process is the correct mode for persistent teams.
 
 ### Team mode routing (both spawn modes)
 

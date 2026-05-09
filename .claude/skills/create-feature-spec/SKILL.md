@@ -61,7 +61,10 @@ Before writing, ensure you have:
 
 6. **Offer final choices.** Ask the user two things together:
    - **Verification method:** cross-check (quick, same-context) or critic review (thorough, independent)?
-   - **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}/help.md` — a sibling file in the same folder, mirroring the spec's section headings. Each section has a **Short** variant (tooltip text, under 150 chars) and a **Long** variant (guide page paragraph). Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
+   - **Help content:** "Do you want help content files for this feature?" If yes, produce two sibling files in the same folder, both mirroring the spec's section headings:
+     - `docs/features/{Feature}/help.tooltips.md` — one section per UI element, each containing only the tooltip text (under 150 chars).
+     - `docs/features/{Feature}/help.page.md` — one section per UI element, each containing a guide page paragraph explaining interpretation and recommended actions.
+     Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
 
 ## Arguments
 
