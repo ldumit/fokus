@@ -94,9 +94,13 @@ Use the `create-feature-spec` skill. Follow its template and voice rules:
 
 Output: `docs/features/{Feature}.md`
 
-After writing, offer the user a choice:
-- **Cross-check** (quick, same-context) — you re-read `docs/specs/v1.md` for the relevant sections, verify fields, rules, criteria, and flows yourself. Good for small or straightforward specs.
-- **Critic review** (thorough, independent) — you spawn the critic agent in Mode 1 (spec review). The critic independently cross-references the spec against v1.md and returns a structured verdict with a cross-reference matrix. Good for large or complex specs.
+After writing, offer the user **three choices together**:
+
+1. **Verification method:**
+   - **Cross-check** (quick, same-context) — you re-read `docs/specs/v1.md` for the relevant sections, verify fields, rules, criteria, and flows yourself. Good for small or straightforward specs.
+   - **Critic review** (thorough, independent) — you spawn the critic agent in Mode 1 (spec review). The critic independently cross-references the spec against v1.md and returns a structured verdict with a cross-reference matrix. Good for large or complex specs.
+
+2. **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}.help.md` — a sibling file with the same section structure as the spec. Each section has a **Short** variant (tooltip text, under 150 chars, shown on info icon hover) and a **Long** variant (guide page paragraph explaining interpretation and recommended actions). Write in user-facing language — this content will appear in the app.
 
 ### Managing the Critic
 

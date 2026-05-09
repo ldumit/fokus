@@ -112,7 +112,9 @@ When the user describes work that isn't a backlog feature and no plan exists yet
 
 When unsure, default to Standard. Recommend the mode to the user but let them override.
 
-5. Present the launch options:
+5. Present the launch options (two questions):
+
+**Question 1 — Team mode:**
 
 **With Codex available:**
 ```
@@ -135,7 +137,21 @@ Launching {Feature}. Pick a mode:
 Press Enter or "go" for Standard.
 ```
 
-6. Spawn agents as **background agents** using the `Agent` tool with `run_in_background: true`. Do NOT use `TeamCreate` — it causes UI focus-stealing that blocks the pipeline.
+**Question 2 — Spawn mode:**
+```
+How should agents run?
+
+1. Background (default) — agents are respawned per phase. Works unattended/overnight. Higher cost (re-reads context each spawn).
+2. Persistent — agents stay alive between phases via TeamCreate. Cheaper (one spawn per agent). Requires interactive session.
+
+Press Enter for Background.
+```
+
+6. **Spawn agents according to the chosen spawn mode.**
+
+### Spawn Mode: Background (default)
+
+   Spawn agents using the `Agent` tool with `run_in_background: true`. Each agent exits on completion and is respawned for the next phase.
 
    Spawn agents one at a time, in pipeline order. Start with the architect:
    ```
@@ -145,18 +161,42 @@ Press Enter or "go" for Standard.
 
    Spawn the next agent only when the current one completes and you've triaged its output. The pipeline is sequential — architect → developer → architect (done check) → reviewer.
 
-   For each mode:
-   - **Standard:** architect → developer → reviewer (spawn each when the previous phase completes)
-   - **Standard + Codex:** Same as Standard, add to reviewer prompt: "Enable Codex cross-validation via /codex:rescue"
-   - **Fast:** architect → developer (add to developer prompt: "After implementation.md, run /review on the changes, then report back. No separate reviewer agent.")
-
-7. When an agent completes (you get the background notification), read its output, triage any messages it produced, then decide:
-
+   When an agent completes (you get the background notification), read its output, triage any messages it produced, then decide:
    - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **continue the same agent** via `SendMessage(to: "agent-name")` with the answer — don't spawn a fresh one.
    - If the agent wrote implementation.md → spawn the **next pipeline phase** (different agent type).
    - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
 
    **Key:** Use `SendMessage` to continue an existing agent within the same phase (questions, fixes). Only spawn a fresh agent when moving to a new pipeline phase (architect → developer → reviewer).
+
+### Spawn Mode: Persistent
+
+   Use `TeamCreate` to create a persistent team. All agents spawn once and stay alive — use `SendMessage` to hand off between phases instead of respawning.
+
+   Create the team with all required agents upfront:
+   ```
+   TeamCreate(name="{Feature}", teammates=[
+     { name: "architect", agentType: "architect", prompt: "You are the architect on team {Feature}. Read .claude/agents/architect.md. Wait for your task." },
+     { name: "developer", agentType: "developer", prompt: "You are the developer on team {Feature}. Read .claude/agents/developer.md. Wait for your task." },
+     { name: "reviewer", agentType: "reviewer", prompt: "You are the reviewer on team {Feature}. Read .claude/agents/reviewer.md. Wait for your task." }
+   ])
+   ```
+   Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
+
+   Pipeline flow via `SendMessage`:
+   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/features/{Feature}.md. Save to docs/plans/{Feature}/plan.md.")`
+   2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/plans/{Feature}/plan.md.")`
+   3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md.")`
+   4. When architect passes → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
+   5. Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
+   6. When approved → `SendMessage(to: "architect", message: "Close pipeline. Write summary.md and lessons.md.")`
+
+   **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
+
+### Team mode routing (both spawn modes)
+
+   - **Standard:** architect → developer → reviewer (spawn or message each when the previous phase completes)
+   - **Standard + Codex:** Same as Standard, add to reviewer prompt: "Enable Codex cross-validation via /codex:rescue"
+   - **Fast:** architect → developer (add to developer prompt: "After implementation.md, run /review on the changes, then report back. No separate reviewer agent.")
 
 The pipeline runs per `.claude/rules/agents-workflow.md`.
 
@@ -218,6 +258,7 @@ When the prompt contains `[UNATTENDED]`, you are running non-interactively (`cla
 
 Defaults:
 - **Team mode:** Standard (architect + developer + reviewer). Do not ask.
+- **Spawn mode:** Background. Do not ask. Persistent mode requires an interactive session.
 - **Plan approval:** Auto-approve regardless of step count. Do not wait for human.
 - **Plan review:** Architect self-review. No critic.
 - **Developer questions:** Architect answers directly. No human escalation.

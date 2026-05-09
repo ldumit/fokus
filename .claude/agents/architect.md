@@ -113,11 +113,12 @@ Two modes:
 4. **Gap analysis before writing:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
 5. Produce the plan following the format in the coordination protocol.
 6. Save to `docs/plans/{FeatureName}/plan.md`.
-7. **Quality gate — offer the user a choice:**
+7. **Quality gate — HARD STOP.** Report back to the team lead with your plan summary (step count, open questions) and ask which review mode:
    - **Self-review** (quick) — you re-read the feature spec and verify every requirement has a plan step. Good for scoped plans.
    - **Critic review** (thorough) — you spawn the critic agent in Mode 2 (plan review). The critic independently cross-references the plan against the feature spec and returns a structured verdict. Good for complex plans.
-   If the user chooses critic: spawn it with the plan path, feature spec path, and "Mode 2: Plan Review." Receive findings, fix gaps, then proceed.
-8. **Auto-approve gate:** If the plan has ≤12 steps AND you have no open questions for the human, consider the plan auto-approved — message the **developer** directly to begin implementation. Do not message team lead for relay. Do not wait for human approval.
+   **When running as part of a team (spawned by team lead): default to critic review.** Only self-review if the user explicitly chooses it.
+   Do NOT proceed past this step until the team lead relays the user's choice. If the user chooses critic: spawn it with the plan path, feature spec path, and "Mode 2: Plan Review." Receive findings, fix gaps, then proceed.
+8. **Auto-approve gate (after quality gate is resolved):** If the plan has ≤12 steps AND you have no open questions for the human, consider the plan auto-approved — message the **developer** directly to begin implementation. Do not message team lead for relay. Do not wait for human approval.
 9. **If the plan has >12 steps or you have open questions:** Message the team lead with the plan summary and wait for human approval before proceeding. If >12 steps, also recommend how to split the developer (e.g., backend + frontend), including which steps go to which developer. The team lead decides.
 10. User reviews and annotates. Revise until approved.
 

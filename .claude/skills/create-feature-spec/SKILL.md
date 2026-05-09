@@ -59,7 +59,9 @@ Before writing, ensure you have:
 
    Domain concepts that happen to share names with classes (e.g. "ScrumMaster policy" as a concept) can stay — the rule targets code references, not vocabulary overlap.
 
-6. **Tell the user:** "Spec ready at `docs/features/{Feature}.md`. Want me to proceed to the implementation plan?"
+6. **Offer final choices.** Ask the user two things together:
+   - **Verification method:** cross-check (quick, same-context) or critic review (thorough, independent)?
+   - **Help content:** "Do you want a help content file for this feature?" If yes, produce `docs/features/{Feature}.help.md` — a sibling file mirroring the spec's section headings. Each section has a **Short** variant (tooltip text, under 150 chars) and a **Long** variant (guide page paragraph). Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
 
 ## Arguments
 

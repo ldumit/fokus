@@ -16,18 +16,8 @@
       "WebSearch",
       "TodoWrite",
       "Task",
-      "Bash(mkdir -p \"C:/Users/Laurentiu/.claude/.omc\")",
-      "Bash(node -e \"const f=require\\('fs'\\),p='C:/Users/Laurentiu/.claude/.omc/hud-config.json';const cfg=f.existsSync\\(p\\)?JSON.parse\\(f.readFileSync\\(p,'utf8'\\)\\):{};cfg.preset='minimal';f.writeFileSync\\(p,JSON.stringify\\(cfg,null,2\\)\\);console.log\\('Written:',JSON.stringify\\(cfg\\)\\)\")",
-      "Skill(codex:rescue)",
-      "mcp__plugin_oh-my-claudecode_t__list_omc_skills",
-      "mcp__plugin_oh-my-claudecode_t__load_omc_skills_global",
-      "mcp__plugin_oh-my-claudecode_t__load_omc_skills_local",
-      "Bash(mkdir \"D:\\\\src\\\\fokus\\\\.claude\\\\skills\\\\improve-flow\")",
-      "Bash(mkdir \"D:\\\\src\\\\fokus\\\\.claude\\\\skills\\\\improve-skills\")",
-      "mcp__plugin_oh-my-claudecode_t__state_list_active",
-      "mcp__plugin_oh-my-claudecode_t__state_read",
-      "mcp__plugin_oh-my-claudecode_t__state_write",
-      "mcp__plugin_oh-my-claudecode_t__state_clear"
+      "Skill",
+      "mcp__plugin_oh-my-claudecode_t"
     ],
     "deny": [
       "Bash(rm -rf /*)",
