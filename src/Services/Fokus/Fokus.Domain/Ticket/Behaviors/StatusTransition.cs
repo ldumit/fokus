@@ -6,7 +6,10 @@ public partial class StatusTransition
     {
         var transitions = new List<StatusTransition>();
 
-        foreach (var history in dto.Changelog.Histories.OrderBy(h => h.Created))
+        var histories = dto.Changelog?.Histories;
+        if (histories is null || histories.Count == 0) return transitions;
+
+        foreach (var history in histories.OrderBy(h => h.Created))
         {
             foreach (var item in history.Items.Where(i => i.Field == "status"))
             {

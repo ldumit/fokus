@@ -3,12 +3,12 @@
 ## Architect Lessons
 - [APPLIED] When a refactoring plan requires amending a guardrail or convention, include the amendment as an explicit plan step with exact before/after text. This makes the convention change reviewable and prevents it from being treated as an afterthought.
 - [APPLIED] Specifying line-number ranges for extraction targets (e.g., "replace the inner foreach loop, lines 64-99") gives both developer and reviewer a concrete anchor for verifying behavioral parity. Worth the upfront effort of reading the source.
-- Auto-approve gate (plan had 8 steps, no open questions) worked correctly here — no human approval round-trip was needed, and the pipeline completed in a single pass with zero fix cycles.
+- [TRACKED] Auto-approve gate (plan had 8 steps, no open questions) worked correctly here — no human approval round-trip was needed, and the pipeline completed in a single pass with zero fix cycles.
 
 ## Developer Lessons
 
-- When a focused operation service lives in a parent namespace (e.g., `Fokus.API.Features.Sync`) and is consumed by endpoints in child namespaces (e.g., `Fokus.API.Features.Sync.SyncSprints`), an explicit `using` is required even though the namespaces are related — C# does not auto-import parent namespaces.
-- `SprintMembership.FromJira` uses a defaulted positional parameter (`bool forcedNotCommitted = false`), so passing a variable positionally is valid — no need to use the named form, though named form (`forcedNotCommitted: value`) is used in the service for clarity.
+- [APPLIED] When a focused operation service lives in a parent namespace (e.g., `Fokus.API.Features.Sync`) and is consumed by endpoints in child namespaces (e.g., `Fokus.API.Features.Sync.SyncSprints`), an explicit `using` is required even though the namespaces are related — C# does not auto-import parent namespaces.
+- [TRACKED] `SprintMembership.FromJira` uses a defaulted positional parameter (`bool forcedNotCommitted = false`), so passing a variable positionally is valid — no need to use the named form, though named form (`forcedNotCommitted: value`) is used in the service for clarity.
 
 ## Reviewer Lessons
 

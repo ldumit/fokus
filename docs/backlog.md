@@ -48,11 +48,11 @@ Tier 5: F12
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
 | F2 | Domain Model & Persistence | Done | — |
-| F7 | App Shell & Navigation | Not Started | — |
+| F7 | App Shell & Navigation | Spec Ready | [AppShell](../features/AppShell.md) |
 
 **F2:** All 5 entities (Sprint, Developer, Ticket, SprintMembership, StatusTransition), EF Core configs, composite keys, indexes, SQLite setup, initial migration.
 
-**F7:** Sidebar nav (Dashboard, Developers, Sprints, Epics, Settings), header with sprint selector + sub-team filter, dark/light theme toggle, responsive layout (1440px primary, 1024px laptop).
+**F7:** App shell (sidebar nav, theme toggle, design tokens, card-based layout convention), page-level toolbar with sprint selector and sub-team filter (visual only — data-wiring in F8), empty states, responsive layout (1440px primary, 1366px laptop floor, sidebar auto-collapse for split-screen).
 
 ---
 
@@ -83,9 +83,9 @@ SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for con
 
 | ID | Feature | Status | Spec |
 |----|---------|--------|------|
-| F6 | Workflow Auto-Detection | Not Started | — |
-| F8 | Sprint Summary Card | Not Started | — |
-| F9 | Developer Throughput | Not Started | — |
+| F6 | Workflow Auto-Detection | Done | [WorkflowAutoDetection](../features/WorkflowAutoDetection.md) |
+| F8 | Sprint Summary Card | Done | [SprintSummaryCard](../features/SprintSummaryCard.md) |
+| F9 | Developer Throughput | Done | [DeveloperThroughput](../features/DeveloperThroughput.md) |
 | F10 | Scope Change & Disruption | Not Started | — |
 | F11 | Carry-Over Tracker | Not Started | — |
 | F13 | Bug Ratio | Not Started | — |

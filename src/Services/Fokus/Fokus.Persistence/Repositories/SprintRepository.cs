@@ -14,6 +14,27 @@ public class SprintRepository(FokusDbContext db)
     public async Task<List<Sprint>> GetAllAsync(CancellationToken ct = default) =>
         await Entity.OrderByDescending(s => s.EndDate).ToListAsync(ct);
 
+    public async Task<List<Sprint>> GetClosedSprintsAsync(CancellationToken ct = default) =>
+        await Entity
+            .Where(s => s.State == SprintState.Closed)
+            .OrderByDescending(s => s.StartDate)
+            .ToListAsync(ct);
+
+    public async Task<Sprint?> GetSprintWithMembershipsAsync(int sprintId, CancellationToken ct = default) =>
+        await Entity
+            .Include(s => s.Memberships)
+                .ThenInclude(m => m.Ticket)
+                    .ThenInclude(t => t.Assignee)
+            .SingleOrDefaultAsync(s => s.Id == sprintId, ct);
+
+    public async Task<List<Sprint>> GetSprintsWithMembershipsAsync(List<int> sprintIds, CancellationToken ct = default) =>
+        await Entity
+            .Where(s => sprintIds.Contains(s.Id))
+            .Include(s => s.Memberships)
+                .ThenInclude(m => m.Ticket)
+                    .ThenInclude(t => t.Assignee)
+            .ToListAsync(ct);
+
     public new async Task UpsertAsync(Sprint sprint, CancellationToken ct = default)
     {
         var existing = await Entity.SingleOrDefaultAsync(s => s.Id == sprint.Id, ct);

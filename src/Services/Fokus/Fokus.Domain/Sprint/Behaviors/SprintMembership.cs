@@ -9,7 +9,9 @@ public partial class SprintMembership
         DateTime? addedAt = null;
         DateTime? removedAt = null;
 
-        foreach (var history in dto.Changelog.Histories.OrderBy(h => h.Created))
+        var histories = dto.Changelog?.Histories;
+        if (histories is not null)
+        foreach (var history in histories.OrderBy(h => h.Created))
         {
             foreach (var item in history.Items.Where(i => i.Field is "Sprint" or "sprint"))
             {

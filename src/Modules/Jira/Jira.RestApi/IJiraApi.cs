@@ -8,6 +8,9 @@ public interface IJiraApi
     [Get("/rest/agile/1.0/board")]
     Task<IApiResponse<JiraPagedResult<JiraBoard>>> GetBoardsPageAsync(int startAt, int maxResults, CancellationToken ct);
 
+    [Get("/rest/api/3/status")]
+    Task<IApiResponse<List<JiraStatus>>> GetStatusesAsync(CancellationToken ct);
+
     [Get("/rest/agile/1.0/board/{boardId}/sprint")]
     Task<IApiResponse<JiraPagedResult<JiraSprint>>> GetSprintsPageAsync(int boardId, int startAt, int maxResults, [Query] string? state, CancellationToken ct);
 
@@ -19,4 +22,7 @@ public interface IJiraApi
 
     [Get("/rest/agile/1.0/epic/{epicKey}/issue")]
     Task<IApiResponse<JiraIssuePagedResult>> GetEpicIssuesPageAsync(string epicKey, int startAt, int maxResults, string expand, string fields, CancellationToken ct);
+
+    [Get("/rest/api/3/search/jql")]
+    Task<IApiResponse<JiraIssuePagedResult>> SearchIssuesAsync([Query] string jql, [Query] int maxResults, [Query] string expand, [Query] string fields, [Query] string? nextPageToken, CancellationToken ct);
 }

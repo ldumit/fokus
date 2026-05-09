@@ -11,6 +11,7 @@ public class FokusDbContext(DbContextOptions<FokusDbContext> options)
     public DbSet<SprintMembership> SprintMemberships => Set<SprintMembership>();
     public DbSet<StatusTransition> StatusTransitions => Set<StatusTransition>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<DeveloperSprintCapacity> DeveloperSprintCapacities => Set<DeveloperSprintCapacity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

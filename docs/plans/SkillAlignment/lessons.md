@@ -4,9 +4,9 @@
 
 - [APPLIED] **`ref` parameters are illegal in async C# methods.** The `GetAllCached`/`GetByIdCached` pattern in `ApplicationDbContext` uses `ref List<T>?` cache parameters — this will not compile. Strip these helpers or rewrite with instance fields when needed.
 - [APPLIED] **`HasDefaultValueSql` and `GetTableName()` are relational EF extensions.** They live in `Microsoft.EntityFrameworkCore.Relational`, not in the base `Microsoft.EntityFrameworkCore` package. A `Blocks.EntityFrameworkCore` package that only references the base EF package cannot use these. Either add the relational package reference, or defer SQL defaults to the service-level configuration (which has the SQLite package and thus the relational extensions).
-- **`new` keyword is needed when a derived repo overrides a base method signature.** When domain repositories define `UpsertAsync` with entity-specific field-copy logic (instead of generic `CurrentValues.SetValues`), the compiler warns CS0108. Using `new` is correct and intentional.
-- **Solution file is `.slnx` format, not `.sln`.** The Fokus repo uses the newer XML-based `.slnx` format (`src/Fokus.slnx`). Adding projects means adding `<Project Path="...">` entries under the appropriate `<Folder>` element. Relative paths are from the `.slnx` file location.
-- **`dotnet ef migrations remove --force` works cleanly** when migration has not been applied to a DB. No need to delete files manually.
+- [APPLIED] **`new` keyword is needed when a derived repo overrides a base method signature.** When domain repositories define `UpsertAsync` with entity-specific field-copy logic (instead of generic `CurrentValues.SetValues`), the compiler warns CS0108. Using `new` is correct and intentional.
+- [APPLIED] **Solution file is `.slnx` format, not `.sln`.** The Fokus repo uses the newer XML-based `.slnx` format (`src/Fokus.slnx`). Adding projects means adding `<Project Path="...">` entries under the appropriate `<Folder>` element. Relative paths are from the `.slnx` file location.
+- [APPLIED] **`dotnet ef migrations remove --force` works cleanly** when migration has not been applied to a DB. No need to delete files manually.
 
 ## Skill Gaps
 

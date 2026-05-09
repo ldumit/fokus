@@ -2,6 +2,14 @@ using Blocks.EntityFrameworkCore.Repositories;
 
 namespace Fokus.Persistence.Repositories;
 
+public record TransitionEdge(string FromStatus, string ToStatus, int Count);
+
+public record TransitionEdgeData(
+    List<TransitionEdge> Edges,
+    int TransitionCount,
+    int TicketCount,
+    int SprintCount);
+
 public class TicketRepository(FokusDbContext db)
     : RepositoryBase<FokusDbContext, Ticket, string>(db)
 {
@@ -58,5 +66,35 @@ public class TicketRepository(FokusDbContext db)
 
         DbContext.StatusTransitions.RemoveRange(existing);
         DbContext.StatusTransitions.AddRange(transitions);
+    }
+
+    public async Task<TransitionEdgeData> GetTransitionEdgesForDetectionAsync(CancellationToken ct = default)
+    {
+        var nonBugTicketIds = await Entity
+            .Where(t => t.IssueType != "Bug")
+            .Select(t => t.Id)
+            .ToListAsync(ct);
+
+        var edges = await DbContext.StatusTransitions
+            .Where(st => nonBugTicketIds.Contains(st.TicketId))
+            .GroupBy(st => new { st.FromStatus, st.ToStatus })
+            .Select(g => new TransitionEdge(g.Key.FromStatus, g.Key.ToStatus, g.Count()))
+            .ToListAsync(ct);
+
+        var transitionCount = edges.Sum(e => e.Count);
+
+        var ticketCount = await DbContext.StatusTransitions
+            .Where(st => nonBugTicketIds.Contains(st.TicketId))
+            .Select(st => st.TicketId)
+            .Distinct()
+            .CountAsync(ct);
+
+        var sprintCount = await DbContext.SprintMemberships
+            .Where(sm => nonBugTicketIds.Contains(sm.TicketId))
+            .Select(sm => sm.SprintId)
+            .Distinct()
+            .CountAsync(ct);
+
+        return new TransitionEdgeData(edges, transitionCount, ticketCount, sprintCount);
     }
 }

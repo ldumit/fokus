@@ -65,6 +65,26 @@ namespace Fokus.Persistence.Migrations
                     b.ToTable("Developers");
                 });
 
+            modelBuilder.Entity("Fokus.Domain.DeveloperSprintCapacity", b =>
+                {
+                    b.Property<string>("DeveloperAccountId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SprintId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CapacityPercent")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("DeveloperAccountId", "SprintId");
+
+                    b.HasIndex("SprintId")
+                        .HasDatabaseName("IX_DeveloperSprintCapacity_SprintId");
+
+                    b.ToTable("DeveloperSprintCapacities");
+                });
+
             modelBuilder.Entity("Fokus.Domain.Sprint", b =>
                 {
                     b.Property<int>("Id")
@@ -322,6 +342,25 @@ namespace Fokus.Persistence.Migrations
 
                     b.Navigation("HealthWeights")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Fokus.Domain.DeveloperSprintCapacity", b =>
+                {
+                    b.HasOne("Fokus.Domain.Developer", "Developer")
+                        .WithMany()
+                        .HasForeignKey("DeveloperAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fokus.Domain.Sprint", "Sprint")
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Developer");
+
+                    b.Navigation("Sprint");
                 });
 
             modelBuilder.Entity("Fokus.Domain.SprintMembership", b =>

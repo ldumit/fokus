@@ -45,5 +45,13 @@ public class JiraPriority
 
 public class JiraStatus
 {
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public JiraStatusCategory? StatusCategory { get; set; }
+    public string CategoryKey => StatusCategory?.Key ?? string.Empty;
+}
+
+public class JiraStatusCategory
+{
+    public string Key { get; set; } = string.Empty;
 }

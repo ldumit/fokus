@@ -1,4 +1,6 @@
 using FastEndpoints.Swagger;
+using Fokus.API.Features.Analytics;
+using Fokus.API.Features.Settings;
 using Fokus.API.Features.Sync;
 using Fokus.Persistence;
 using Jira.RestApi;
@@ -17,6 +19,9 @@ public static class DependencyInjection
         services.AddRestApiJira(configuration);
 
         services.AddScoped<SprintIssueSyncService>();
+        services.AddScoped<WorkflowDetectionService>();
+        services.AddScoped<SprintSummaryService>();
+        services.AddScoped<DeveloperThroughputService>();
 
         return services;
     }

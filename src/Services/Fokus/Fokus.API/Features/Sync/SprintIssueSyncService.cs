@@ -50,7 +50,7 @@ public class SprintIssueSyncService(
             }
             catch (Exception ex)
             {
-                failures.Add(new SprintSyncFailure(jiraSprint.Id, ex.Message));
+                failures.Add(new SprintSyncFailure(jiraSprint.Id, $"{ex.Message} | {ex.StackTrace}"));
             }
         }
 
