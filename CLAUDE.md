@@ -17,36 +17,6 @@ Rules:
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
 - After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
 
-## Domain
-
-### Domain events
-
-Domain events carry a reference to the aggregate object, not individual properties. Since the `DomainEventPublishingInterceptor` dispatches after `SaveChangesAsync`, the aggregate's `Id` and all state are fully populated at dispatch time.
-
-```csharp
-// Event definition — holds the aggregate reference:
-public sealed record TeamCreatedEvent(Team Team) : IEvent;
-
-// Raised inside the aggregate factory/method:
-AddDomainEvent(new TeamCreatedEvent(this));
-
-// Handler reads populated state:
-var teamId = ev.Team.Id;       // real auto-incremented value
-var teamName = ev.Team.Name;
-```
-
-### Aggregate creation
-
-Use a static factory method when creation involves business rules (guards) or raises a domain event. Use `required init` properties with direct construction when creation is plain data assignment with no invariants.
-
-### Repositories
-
-Concrete classes (no interfaces — see Guardrails). Each repository wraps `SaveChangesAsync` so endpoints never touch `DbContext` directly:
-
-```csharp
-public Task<int> SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
-```
-
 ## Architecture
 
 DDD, Vertical Slice, CQRS, Clean Architecture, Event Driven Design
@@ -155,27 +125,8 @@ Example — a service at index `1` with app prefix `44`:
 - **No `.gitkeep` files** — don't track empty directories. Directories are created at runtime or when files are added.
 - **No Opus for general-purpose agents** — always set `model: "sonnet"`. General-purpose agents do research and summarization, not deep reasoning.
 - **Never override specialized agent models** — specialized agents (architect, developer, reviewer, etc.) have their model baked into their `.md` frontmatter. Never pass a `model` parameter that overrides it.
+- **Project agents own the pipeline** — for feature pipeline roles (architect, developer, reviewer), always use `.claude/agents/` project agents. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
+- **OMC pipeline orchestration forbidden** — never use OMC's team/pipeline management (oh-my-claudecode:team, oh-my-claudecode:autopilot, oh-my-claudecode:ralph) to replace the project pipeline.
+- **OMC specialists allowed** — OMC specialist agents (oh-my-claudecode:debugger, oh-my-claudecode:security-reviewer, oh-my-claudecode:tracer, oh-my-claudecode:code-simplifier, oh-my-claudecode:designer, etc.) are available for standalone tasks outside the pipeline.
 
-## Knowledge Base
 
-Before reading source files for domain, analytics, or feature questions, check `docs/kb/index.md` first. Navigate to the relevant entry, get business rules and key files, then read only the specific source files you need.
-
-After implementing a feature that modifies domain logic, analytics computation, or data flow, update the relevant `docs/kb/` entry. The KB is a living artifact maintained by the pipeline.
-
-## Codebase Graph
-
-This project has a graphify knowledge graph at `graphify-out/`.
-
-- Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md` for god nodes and community structure
-- If `graphify-out/wiki/index.md` exists, navigate it instead of reading raw files
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
-
-## EF Core Migrations
-
-```bash
-# Add migration
-dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API
-
-# Apply migration
-dotnet ef database update -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API
-```

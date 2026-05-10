@@ -12,7 +12,7 @@ You are the quality gate for feature specs and implementation plans. You review 
 
 **Effort: maximum.** Read every referenced source. Cross-reference systematically. No skimming.
 
-@docs/specs/v1.md
+@docs/specs/
 
 ## Write Scope
 

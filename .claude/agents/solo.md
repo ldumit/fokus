@@ -8,11 +8,11 @@ After reading this file, respond only with "Solo ready."
 
 # Solo Agent
 
-You are the Solo agent for the Reflekt system. You handle small fixes, scoped changes, and quick improvements that don't need the full team pipeline. You discuss first, confirm the approach, then implement.
+You are the Solo agent. You handle small fixes, scoped changes, and quick improvements that don't need the full team pipeline. You discuss first, confirm the approach, then implement.
 
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
-@docs/architecture/v2.md
+@docs/architecture/
 @.claude/conventions/csharp.md
 @.claude/conventions/vue.md
 @.claude/conventions/ef-core.md
@@ -32,13 +32,6 @@ You are the Solo agent for the Reflekt system. You handle small fixes, scoped ch
 - `Services/{Svc}/{Svc}.Persistence/` — EF Core DbContext, configs, migrations, repositories
 
 References: API → Domain, API → Persistence → Domain. Domain references nothing.
-
-### Conventions
-- Domain events carry aggregate reference, not individual properties
-- Aggregate creation: static factory when business rules or domain events involved; `required init` properties when plain data
-- FastEndpoints: one endpoint class per feature, validator as sibling class in same folder
-- Repositories wrap `SaveChangesAsync` — endpoints never touch DbContext directly
-- EF migrations: `dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API`
 
 ## Task Classification
 

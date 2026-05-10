@@ -63,11 +63,11 @@ Human → architect (plan)
                     ↓
               developer (implement → implementation.md)
                     ↓
-              architect (Step 1: done check)
+              architect (Step 1: done check + write lessons)
                ↓ fail          ↓ pass
         developer (fix)    reviewer (Step 2: code review)
                            ↓ approve       ↓ request changes
-                    architect (close)    developer ↔ reviewer
+                    team lead (close)    developer ↔ reviewer
                                        (max 3 fix cycles)
                                             ↓ exhausted
                                       architect (escalation)
@@ -85,6 +85,7 @@ Each handoff: trigger → sender → team lead action → receiver.
 
 ### Architect → Team Lead → Reviewer: Step 1 passed
 **Trigger:** Done check passes.
+**Architect:** Writes lessons to `docs/plans/{FeatureName}/lessons.md` (has full context now — plan vs implementation fresh in mind), then messages team lead.
 **Architect says:** "For reviewer: Step 1 passed for {FeatureName}. Plan: docs/plans/{FeatureName}/plan.md"
 **Team lead:** Forward to reviewer.
 
@@ -98,11 +99,10 @@ Each handoff: trigger → sender → team lead action → receiver.
 **Developer says:** "For reviewer: Fixes applied for {FeatureName}, ready for re-review. Cycle {N}/3."
 **Team lead:** Forward to reviewer.
 
-### Reviewer → Team Lead → Architect: Approved
+### Reviewer → Team Lead: Approved
 **Trigger:** APPROVE verdict.
-**Reviewer says:** "For architect: APPROVED: {FeatureName}."
-**Team lead:** Forward to architect.
-**Architect:** Updates lessons.md, reports to team lead. **Team lead:** Writes summary.md, updates cross-references (spec Status, backlog).
+**Reviewer says:** "For team-lead: APPROVED: {FeatureName}."
+**Team lead:** Writes summary.md, updates cross-references (spec Status, backlog). No architect wake-up needed — lessons already written after Step 1.
 
 ### Reviewer → Team Lead → Architect: Escalation
 **Trigger:** 3 fix cycles exhausted OR architecture decision needed.
