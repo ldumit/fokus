@@ -11,13 +11,15 @@ Composite 0-100 score summarizing sprint health. Displayed as a RAG badge on the
 
 | Metric | Formula | Polarity |
 |--------|---------|----------|
-| Completion % | completedSP / committedSP * 100 | Higher is better |
+| Completion % | featureCompletedSP / featureCommittedSP * 100 | Higher is better |
 | Disruption % | addedSP / committedSP * 100 | Lower is better |
 | CarryOver % | carryOverSP / (committedSP + addedSP) * 100 | Lower is better |
 
 All SP sums use `GetEffectiveSp(defaultSpPerBug)`: returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if ticket is a Bug and default > 0, else null. Filter: `RemovedAt == null`. Committed = `WasCommitted == true`. Completed = `FinalStatus IN doneStatuses`. Added = `WasCommitted == false`. CarryOver = `FinalStatus NOT IN doneStatuses`.
 
-The single combined `DisruptionRate` (scope + bug additions combined) is used for the health score. The dashboard displays it split into two metric cards: **Scope Disruption Rate** (non-bug additions) and **Bug Disruption Rate** (bug additions).
+**Completion % is feature-only** (since FeatureOnlyMetrics): uses `featureCommitted` (committed && !IsBug) and `featureCompleted` (done && !IsBug) as denominator and numerator. Returns 0 if featureCommitted == 0.
+
+**Disruption rates and Carry-Over Rate remain total-scope** (include bugs in committed denominator and carry-over numerator). The single combined `DisruptionRate` (scope + bug additions combined) is used for the health score. The dashboard displays it split into two metric cards: **Scope Disruption Rate** (non-bug additions) and **Bug Disruption Rate** (bug additions).
 
 ## Per-Metric Scoring
 

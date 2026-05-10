@@ -94,11 +94,11 @@ const sortedSingleDevelopers = computed(() => {
           <tr class="text-text-muted text-left border-b border-border-default">
             <th class="pb-2 pr-4 font-medium">Developer</th>
             <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
-            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugSp' }" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'nonBugSp' }" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugRatioPercent' }" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugTicketCount' }" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
+            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'nonBugTicketCount' }" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -153,11 +153,11 @@ const sortedSingleDevelopers = computed(() => {
           <tr class="text-text-muted text-left border-b border-border-default">
             <th class="pb-2 pr-4 font-medium">Developer</th>
             <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
-            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
-            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugSp' }" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'nonBugSp' }" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugRatioPercent' }" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'bugTicketCount' }" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
+            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" :class="{ 'text-text-primary': bugRatioSortColumn === 'nonBugTicketCount' }" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
           </tr>
         </thead>
         <tbody>

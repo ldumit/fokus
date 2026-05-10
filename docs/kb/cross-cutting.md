@@ -60,6 +60,38 @@ Applied in: SprintSummary, ScopeChange, CarryOver, BugRatio, Throughput, EpicPro
 
 Setting `DefaultSpPerBug = 0` disables the fallback entirely — unestimated bugs contribute no SP.
 
+## Feature-Only Metrics (FeatureOnlyMetrics)
+
+Several analytics surfaces show feature-only values — bugs are excluded from the computation. The filtering rule is `!IsBug(m)` where `IsBug(m) => m.Ticket?.IssueType == "Bug"`.
+
+### Feature-only surfaces
+
+| Surface | Metrics | Where |
+|---------|---------|-------|
+| Dashboard SP Completed card | Value, delta, sparkline | SprintSummaryService |
+| Dashboard Completion % card | Value (featureCompleted / featureCommitted), delta, sparkline | SprintSummaryService |
+| Dashboard Health Score — Completion sub-score | Uses feature-only Completion % | SprintSummaryService |
+| Burnup chart scope line (orange) | totalScopeSp, totalScopeTickets | ScopeChangeService |
+| Burnup chart completed line (green) | completedSp, completedTickets | ScopeChangeService |
+| Developer Throughput table | spAssigned, spCompleted, completionPercent, ticketsDone, ticketsCarriedOver, rolling average, all deltas | DeveloperThroughputService |
+
+### Remain total-scope (include bugs)
+
+- Scope Disruption Rate (denominator is total committed, not feature committed)
+- Bug Disruption Rate (same denominator)
+- Carry-Over Rate (all uncommitted + committed in numerator and denominator)
+- Burnup chart bug SP area (red) — tracks remaining bug work
+- Sprints page multi-sprint scope/completion fields
+- Dashboard SP Completed annotation `(+X bug SP)` — a separate field `bugSpCompleted` on MetricsResult
+
+### Two-committed-SP pattern
+
+`ComputeMetrics` in SprintSummaryService maintains two committed aggregates:
+- `committed` (total, including bugs) — used as denominator for disruption rates and carry-over
+- `featureCommitted` (bugs excluded) — used as denominator for completion rate
+
+`SprintMetrics` record carries both `FeatureCompleted` and `BugSpCompleted` for downstream use.
+
 ## Division by Zero
 
 All analytics produce 0 (not null, not error) when the denominator is 0.

@@ -98,20 +98,20 @@ public class DeveloperThroughputService
                 var capacity = GetCapacity(capacityLookup, developer.Id, sprint.Id, allDevelopers);
 
                 var spAssigned = memberships
-                    .Where(m => m.RemovedAt == null)
+                    .Where(m => m.RemovedAt == null && !IsBug(m))
                     .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                 var spCompleted = memberships
-                    .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus))
+                    .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus) && !IsBug(m))
                     .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                 var completionPercent = spAssigned > 0 ? spCompleted / spAssigned * 100 : 0;
 
                 var ticketsDone = memberships
-                    .Count(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus));
+                    .Count(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus) && !IsBug(m));
 
                 var ticketsCarriedOver = memberships
-                    .Count(m => m.RemovedAt == null && !doneStatuses.Contains(m.FinalStatus));
+                    .Count(m => m.RemovedAt == null && !doneStatuses.Contains(m.FinalStatus) && !IsBug(m));
 
                 var rollingAverage = ComputeRollingAverage(
                     developer.Id, sprint.Id, sortedAllSprints, capacityLookup, doneStatuses, subTeam, allDevelopers, defaultSpPerBug);
@@ -138,20 +138,20 @@ public class DeveloperThroughputService
                     var priorMemberships = GetDeveloperMemberships(priorSprint, developer.Id, subTeam);
 
                     var priorSpAssigned = priorMemberships
-                        .Where(m => m.RemovedAt == null)
+                        .Where(m => m.RemovedAt == null && !IsBug(m))
                         .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                     var priorSpCompleted = priorMemberships
-                        .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus))
+                        .Where(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus) && !IsBug(m))
                         .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 
                     var priorCompletionPercent = priorSpAssigned > 0 ? priorSpCompleted / priorSpAssigned * 100 : 0;
 
                     var priorTicketsDone = priorMemberships
-                        .Count(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus));
+                        .Count(m => m.RemovedAt == null && doneStatuses.Contains(m.FinalStatus) && !IsBug(m));
 
                     var priorTicketsCarriedOver = priorMemberships
-                        .Count(m => m.RemovedAt == null && !doneStatuses.Contains(m.FinalStatus));
+                        .Count(m => m.RemovedAt == null && !doneStatuses.Contains(m.FinalStatus) && !IsBug(m));
 
                     spAssignedDelta = spAssigned - priorSpAssigned;
                     spCompletedDelta = spCompleted - priorSpCompleted;
@@ -203,6 +203,11 @@ public class DeveloperThroughputService
 
         return new DeveloperThroughputResponse(sprintSummaryItems, developerEntries);
     }
+
+    // --- Bug classification (mirrors SprintSummaryService) ---
+
+    private static bool IsBug(SprintMembership m) =>
+        m.Ticket?.IssueType == "Bug";
 
     // --- Sub-team filtering (C2) ---
 
@@ -264,6 +269,7 @@ public class DeveloperThroughputService
                 .Where(m => m.Ticket?.AssigneeId == developerId &&
                             m.RemovedAt == null &&
                             doneStatuses.Contains(m.FinalStatus) &&
+                            m.Ticket?.IssueType != "Bug" &&
                             (string.IsNullOrWhiteSpace(subTeam) || m.Ticket?.Assignee?.SubTeam == subTeam))
                 .Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
 

@@ -24,7 +24,7 @@ const series = computed(() => [
     data: props.burnupData.map(d => d.bugSp)
   },
   {
-    name: 'Total Scope SP',
+    name: 'Scope SP',
     type: 'line',
     data: props.burnupData.map(d => d.totalScopeSp)
   },
@@ -75,7 +75,7 @@ const chartOptions = computed(() => ({
       const label = w.globals.categoryLabels[dataPointIndex] ?? xLabels.value[dataPointIndex] ?? ''
       const rows = [
         { name: 'Bug SP', value: d.bugSp.toFixed(1), tickets: d.bugTickets, color: '#ef4444' },
-        { name: 'Total Scope SP', value: d.totalScopeSp.toFixed(1), tickets: d.totalScopeTickets, color: '#f97316' },
+        { name: 'Scope SP', value: d.totalScopeSp.toFixed(1), tickets: d.totalScopeTickets, color: '#f97316' },
         { name: 'Completed SP', value: d.completedSp.toFixed(1), tickets: d.completedTickets, color: '#22c55e' },
       ]
       const rowsHtml = rows.map(r =>

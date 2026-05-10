@@ -31,10 +31,12 @@ Each mid-sprint addition (non-committed, non-removed) gets exactly one category:
 
 ## Burnup Chart (single-sprint)
 
-- Day 1 = sprint start. Starting scope = committedSpActive.
-- Each day: cumulative scope += added today - removed today.
-- Completed SP uses the FIRST done-status transition within the sprint window per ticket.
+- Day 1 = sprint start. Starting scope = committedSpActive (feature-only: excludes bugs).
+- Each day: cumulative scope += added today - removed today (feature-only: additions and removals exclude bugs).
+- Completed SP uses the FIRST done-status transition within the sprint window per ticket (feature-only: bug completions do NOT step up the green line).
 - Phase shading: days 1-2 = "planning", day 3+ = "execution".
+- **Feature-only (since FeatureOnlyMetrics):** `totalScopeSp` and `completedSp` series exclude bug tickets (`IssueType != "Bug"`). Ticket counts (`totalScopeTickets`, `completedTickets`) also exclude bugs. The `bugSp` red area is unchanged.
+- **Multi-sprint fields unchanged:** `ComputePerSprintData` and `ComputeSprintMetrics` remain total-scope.
 
 ## Bug Time-in-Progress (single-sprint)
 

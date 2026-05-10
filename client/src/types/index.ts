@@ -87,6 +87,7 @@ export interface MetricsResult {
   scopeDisruptionRate: MetricCard
   bugDisruptionRate: MetricCard
   carryOverRate: MetricCard
+  bugSpCompleted: number
 }
 
 export interface EpicProgress {

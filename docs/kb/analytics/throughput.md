@@ -11,12 +11,14 @@ Per-developer SP completed with capacity-aware rolling averages.
 
 All SP sums use `GetEffectiveSp(defaultSpPerBug)`: returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if IssueType == "Bug" and default > 0, else null. Configured via `AppSettings.DefaultSpPerBug` (default 3).
 
+**All metrics are feature-only (since FeatureOnlyMetrics):** bug tickets (`IssueType == "Bug"`) are excluded from all SP and ticket count calculations.
+
 ```
-spAssigned        = sum(effectiveSP) where !Removed
-spCompleted       = sum(effectiveSP) where !Removed AND FinalStatus IN doneStatuses
+spAssigned        = sum(effectiveSP) where !Removed AND !IsBug
+spCompleted       = sum(effectiveSP) where !Removed AND FinalStatus IN doneStatuses AND !IsBug
 completionPercent = spCompleted / spAssigned * 100  (0 if spAssigned == 0)
-ticketsDone       = count where !Removed AND FinalStatus IN doneStatuses
-ticketsCarriedOver = count where !Removed AND FinalStatus NOT IN doneStatuses
+ticketsDone       = count where !Removed AND FinalStatus IN doneStatuses AND !IsBug
+ticketsCarriedOver = count where !Removed AND FinalStatus NOT IN doneStatuses AND !IsBug
 ```
 
 ## Rolling Average (3-sprint, capacity-aware)
@@ -25,7 +27,7 @@ ticketsCarriedOver = count where !Removed AND FinalStatus NOT IN doneStatuses
 - Skips sprints where developer has 0% effective capacity
 - Collects up to 3 qualifying sprints
 - Returns null if fewer than 3 qualifying sprints found
-- Rolling average = average of SP completed in those 3 sprints
+- Rolling average = average of feature-only SP completed in those 3 sprints (excludes bug tickets)
 
 ## Capacity Resolution
 

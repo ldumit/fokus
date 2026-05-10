@@ -5,10 +5,11 @@ import InfoTooltip from '../InfoTooltip.vue'
 
 const props = defineProps<{
   metric: MetricCard
+  annotation?: string
 }>()
 
 function metricTooltip(name: string): string {
-  if (name === 'SP Completed') return 'Story points completed versus story points committed at sprint start.'
+  if (name === 'SP Completed') return 'Feature story points completed this sprint. Bug SP shown separately below.'
   if (name === 'Completion %') return 'Percentage of committed story points completed. Higher is better.'
   if (name === 'Scope Disruption Rate') return 'Non-bug work added mid-sprint as % of committed SP. Lower is better.'
   if (name === 'Bug Disruption Rate') return 'Bug work added mid-sprint as % of committed SP. Lower is better.'
@@ -58,6 +59,7 @@ const sparklineSeries = computed(() => [
       <InfoTooltip v-if="metricTooltip(metric.name)" :text="metricTooltip(metric.name)" />
     </div>
     <div class="text-2xl font-bold text-text-primary tabular-nums">{{ metric.displayValue }}</div>
+    <div v-if="annotation" class="text-xs text-text-muted">{{ annotation }}</div>
     <div class="flex items-center justify-between gap-2">
       <div v-if="metric.delta !== null" :class="['flex items-center gap-1 text-sm font-medium', deltaClass]">
         {{ deltaArrow }} {{ Math.abs(metric.delta) }}

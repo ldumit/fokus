@@ -63,6 +63,12 @@ function normalizedSp(spCompleted: number, capacityPercent: number): number | nu
   if (capacityPercent >= 100 || capacityPercent <= 0) return null
   return Math.round(spCompleted / (capacityPercent / 100))
 }
+
+const bugSpAnnotation = computed(() => {
+  const bugSp = store.summary?.metrics?.bugSpCompleted
+  if (!bugSp || bugSp === 0) return undefined
+  return `(+${bugSp} bug SP)`
+})
 </script>
 
 <template>
@@ -125,7 +131,7 @@ function normalizedSp(spCompleted: number, capacityPercent: number): number | nu
 
         <!-- Metric cards row -->
         <div v-if="store.summary.metrics" class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <MetricCardComponent :metric="store.summary.metrics.spCompleted" />
+          <MetricCardComponent :metric="store.summary.metrics.spCompleted" :annotation="bugSpAnnotation" />
           <MetricCardComponent :metric="store.summary.metrics.completionRate" />
           <MetricCardComponent :metric="store.summary.metrics.scopeDisruptionRate" />
           <MetricCardComponent :metric="store.summary.metrics.bugDisruptionRate" />

@@ -146,6 +146,10 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 
 **F20:** Bracketed normalized SP value (~X) next to SP completed for developers with <100% capacity. Shows estimated output at full availability. Applies to Throughput tab, Leaderboard tab, and Dashboard leaderboard. Client-side computation using existing capacity data; leaderboard API adds capacity to response.
 
+| F21 | Feature-Only Delivery Metrics | Done | [FeatureOnlyMetrics](features/FeatureOnlyMetrics/spec.md) | [plan](plans/FeatureOnlyMetrics/plan.md) |
+
+**F21:** Separates delivery metrics from bug metrics across Dashboard, burnup chart, and throughput table. SP Completed and Completion % become feature-only (with bug SP annotation on the card). Health score Completion sub-score uses feature-only completion %. Burnup chart scope/completed lines exclude bugs (red bug area unchanged). Throughput tab excludes bugs. Principle: delivery surfaces show features, bug surfaces show bugs, leaderboard bridges both.
+
 ---
 
 ### Tier 8 — Security & Access
