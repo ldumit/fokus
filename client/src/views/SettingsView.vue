@@ -9,7 +9,149 @@ import type { AppSettings, BoardOption, StatusOption, SyncSprintsResponse, SyncB
 
 const store = useSettingsStore()
 const authStore = useAuthStore()
-const saved = ref(false)
+
+// Settings tabs
+const activeSettingsTab = ref<'jira' | 'workflow' | 'health' | 'sync' | 'users'>('jira')
+
+// Per-panel save state
+const boardSaving = ref(false)
+const boardSaved = ref(false)
+const boardError = ref('')
+
+const doneStatusesSaving = ref(false)
+const doneStatusesSaved = ref(false)
+const doneStatusesError = ref('')
+
+const workflowStagesSaving = ref(false)
+const workflowStagesSaved = ref(false)
+const workflowStagesError = ref('')
+
+const healthConfigSaving = ref(false)
+const healthConfigSaved = ref(false)
+const healthConfigError = ref('')
+
+const bugRatioAlertsSaving = ref(false)
+const bugRatioAlertsSaved = ref(false)
+const bugRatioAlertsError = ref('')
+
+const syncConfigSaving = ref(false)
+const syncConfigSaved = ref(false)
+const syncConfigError = ref('')
+
+async function saveBoardPanel() {
+  boardSaved.value = false
+  boardError.value = ''
+  boardSaving.value = true
+  try {
+    await store.saveBoardAction(form.boardId)
+    if (!store.error) {
+      boardSaved.value = true
+      setTimeout(() => boardSaved.value = false, 3000)
+    } else {
+      boardError.value = store.error
+    }
+  } catch (e: any) {
+    boardError.value = e.message || 'Failed to save board.'
+  } finally {
+    boardSaving.value = false
+  }
+}
+
+async function saveDoneStatusesPanel() {
+  doneStatusesSaved.value = false
+  doneStatusesError.value = ''
+  doneStatusesSaving.value = true
+  try {
+    await store.saveDoneStatusesAction([...form.doneStatuses])
+    if (!store.error) {
+      doneStatusesSaved.value = true
+      setTimeout(() => doneStatusesSaved.value = false, 3000)
+    } else {
+      doneStatusesError.value = store.error
+    }
+  } catch (e: any) {
+    doneStatusesError.value = e.message || 'Failed to save done statuses.'
+  } finally {
+    doneStatusesSaving.value = false
+  }
+}
+
+async function saveWorkflowStagesPanel() {
+  workflowStagesSaved.value = false
+  workflowStagesError.value = ''
+  workflowStagesSaving.value = true
+  try {
+    await store.saveWorkflowStagesAction([...form.workflowStages])
+    if (!store.error) {
+      store.clearDetection()
+      workflowStagesSaved.value = true
+      setTimeout(() => workflowStagesSaved.value = false, 3000)
+    } else {
+      workflowStagesError.value = store.error
+    }
+  } catch (e: any) {
+    workflowStagesError.value = e.message || 'Failed to save workflow stages.'
+  } finally {
+    workflowStagesSaving.value = false
+  }
+}
+
+async function saveHealthConfigPanel() {
+  healthConfigSaved.value = false
+  healthConfigError.value = ''
+  healthConfigSaving.value = true
+  try {
+    await store.saveHealthConfigAction({ ...form.healthThresholds }, { ...form.healthWeights })
+    if (!store.error) {
+      healthConfigSaved.value = true
+      setTimeout(() => healthConfigSaved.value = false, 3000)
+    } else {
+      healthConfigError.value = store.error
+    }
+  } catch (e: any) {
+    healthConfigError.value = e.message || 'Failed to save health config.'
+  } finally {
+    healthConfigSaving.value = false
+  }
+}
+
+async function saveBugRatioAlertsPanel() {
+  bugRatioAlertsSaved.value = false
+  bugRatioAlertsError.value = ''
+  bugRatioAlertsSaving.value = true
+  try {
+    await store.saveBugRatioAlertsAction(form.bugRatioAlertThreshold, form.bugRatioConsecutiveSprintCount, form.defaultSpPerBug)
+    if (!store.error) {
+      bugRatioAlertsSaved.value = true
+      setTimeout(() => bugRatioAlertsSaved.value = false, 3000)
+    } else {
+      bugRatioAlertsError.value = store.error
+    }
+  } catch (e: any) {
+    bugRatioAlertsError.value = e.message || 'Failed to save bug ratio alerts.'
+  } finally {
+    bugRatioAlertsSaving.value = false
+  }
+}
+
+async function saveSyncConfigPanel() {
+  syncConfigSaved.value = false
+  syncConfigError.value = ''
+  syncConfigSaving.value = true
+  try {
+    await store.saveSyncConfigAction(form.syncBackSprintCount, form.planningWindowDays)
+    if (!store.error) {
+      syncConfigSaved.value = true
+      setTimeout(() => syncConfigSaved.value = false, 3000)
+    } else {
+      syncConfigError.value = store.error
+    }
+  } catch (e: any) {
+    syncConfigError.value = e.message || 'Failed to save sync config.'
+  } finally {
+    syncConfigSaving.value = false
+  }
+}
 
 // User management state (Admin only)
 const users = ref<UserEntry[]>([])
@@ -364,19 +506,6 @@ function moveStage(index: number, direction: -1 | 1) {
   form.workflowStages[target] = temp
 }
 
-async function save() {
-  saved.value = false
-  await store.updateSettings({ ...form, doneStatuses: [...form.doneStatuses], workflowStages: [...form.workflowStages], healthThresholds: { ...form.healthThresholds }, healthWeights: { ...form.healthWeights } })
-  if (!store.error) {
-    store.clearDetection()
-    saved.value = true
-    setTimeout(() => saved.value = false, 3000)
-    const boundaries = await getCycleTimeBoundaries()
-    boundaryStartStage.value = boundaries.startStage
-    boundaryEndStage.value = boundaries.endStage
-    boundaryAvailableStages.value = boundaries.availableStages
-  }
-}
 
 const weightsSum = () => form.healthWeights.completion + form.healthWeights.disruption + form.healthWeights.carryOver
 const isReadOnly = computed(() => !authStore.isAdmin)
@@ -423,8 +552,9 @@ async function syncAll() {
   syncResult.value = null
 
   try {
-    // Save settings first to ensure boardId is persisted
-    await save()
+    // Save sync config and board before syncing to ensure values are persisted
+    await store.saveSyncConfigAction(form.syncBackSprintCount, form.planningWindowDays)
+    await store.saveBoardAction(form.boardId)
     if (store.error) {
       syncError.value = 'Failed to save settings before sync.'
       syncing.value = false
@@ -469,6 +599,34 @@ async function syncAll() {
       <div v-if="store.loading" class="text-gray-400">Loading settings...</div>
 
       <template v-else>
+        <!-- Tab bar -->
+        <div class="flex gap-1 border-b border-border-default mb-6">
+          <button
+            :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeSettingsTab === 'jira' ? 'border-accent-default text-accent-default' : 'border-transparent text-text-secondary hover:text-text-primary']"
+            @click="activeSettingsTab = 'jira'"
+          >Jira</button>
+          <button
+            :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeSettingsTab === 'workflow' ? 'border-accent-default text-accent-default' : 'border-transparent text-text-secondary hover:text-text-primary']"
+            @click="activeSettingsTab = 'workflow'"
+          >Workflow</button>
+          <button
+            :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeSettingsTab === 'health' ? 'border-accent-default text-accent-default' : 'border-transparent text-text-secondary hover:text-text-primary']"
+            @click="activeSettingsTab = 'health'"
+          >Health</button>
+          <button
+            :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeSettingsTab === 'sync' ? 'border-accent-default text-accent-default' : 'border-transparent text-text-secondary hover:text-text-primary']"
+            @click="activeSettingsTab = 'sync'"
+          >Sync</button>
+          <button
+            v-if="authStore.isAdmin"
+            :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors', activeSettingsTab === 'users' ? 'border-accent-default text-accent-default' : 'border-transparent text-text-secondary hover:text-text-primary']"
+            @click="activeSettingsTab = 'users'"
+          >Users</button>
+        </div>
+
+        <!-- Jira tab -->
+        <template v-if="activeSettingsTab === 'jira'">
+
         <!-- Jira Board -->
         <section class="bg-gray-900 rounded-lg p-6 space-y-4">
           <div class="flex items-center gap-1">
@@ -518,6 +676,17 @@ async function syncAll() {
               />
               <p v-if="boardsError" class="text-xs text-amber-400 mt-1">Could not load boards from Jira.</p>
             </template>
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveBoardPanel"
+              :disabled="boardSaving || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ boardSaving ? 'Saving...' : 'Save Board' }}
+            </button>
+            <span v-if="boardSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="boardError" class="text-red-400 text-sm">{{ boardError }}</span>
           </div>
         </section>
 
@@ -585,6 +754,17 @@ async function syncAll() {
             </div>
             <p v-if="statusesError" class="text-xs text-amber-400 mt-1">Could not load statuses from Jira.</p>
           </template>
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveDoneStatusesPanel"
+              :disabled="doneStatusesSaving || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ doneStatusesSaving ? 'Saving...' : 'Save Done Statuses' }}
+            </button>
+            <span v-if="doneStatusesSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="doneStatusesError" class="text-red-400 text-sm">{{ doneStatusesError }}</span>
+          </div>
         </section>
 
         <!-- Excluded From Scope Statuses (GAP-1) -->
@@ -650,6 +830,11 @@ async function syncAll() {
             <span v-if="excludedError" class="text-red-400 text-sm">{{ excludedError }}</span>
           </div>
         </section>
+
+        </template><!-- end Jira tab -->
+
+        <!-- Workflow tab -->
+        <template v-if="activeSettingsTab === 'workflow'">
 
         <!-- Workflow Stages -->
         <section class="bg-gray-900 rounded-lg p-6 space-y-4">
@@ -735,6 +920,17 @@ async function syncAll() {
               </span>
             </div>
           </div>
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveWorkflowStagesPanel"
+              :disabled="workflowStagesSaving || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ workflowStagesSaving ? 'Saving...' : 'Save Workflow Stages' }}
+            </button>
+            <span v-if="workflowStagesSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="workflowStagesError" class="text-red-400 text-sm">{{ workflowStagesError }}</span>
+          </div>
         </section>
 
         <!-- Cycle Time Boundaries -->
@@ -797,6 +993,11 @@ async function syncAll() {
             </div>
           </template>
         </section>
+
+        </template><!-- end Workflow tab -->
+
+        <!-- Health tab -->
+        <template v-if="activeSettingsTab === 'health'">
 
         <!-- Health Thresholds -->
         <section class="bg-gray-900 rounded-lg p-6 space-y-4">
@@ -869,6 +1070,17 @@ async function syncAll() {
           <div class="text-sm" :class="weightsSum() === 100 ? 'text-green-400' : 'text-red-400'">
             Sum: {{ weightsSum() }} / 100
           </div>
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveHealthConfigPanel"
+              :disabled="healthConfigSaving || weightsSum() !== 100 || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ healthConfigSaving ? 'Saving...' : 'Save Health Config' }}
+            </button>
+            <span v-if="healthConfigSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="healthConfigError" class="text-red-400 text-sm">{{ healthConfigError }}</span>
+          </div>
         </section>
 
         <!-- Bug Ratio Alerts -->
@@ -925,20 +1137,23 @@ async function syncAll() {
               <p class="text-xs text-gray-500 mt-1">SP applied to unestimated bug tickets across all metrics (0–13). Default: 3.</p>
             </div>
           </div>
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveBugRatioAlertsPanel"
+              :disabled="bugRatioAlertsSaving || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ bugRatioAlertsSaving ? 'Saving...' : 'Save Bug Ratio Alerts' }}
+            </button>
+            <span v-if="bugRatioAlertsSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="bugRatioAlertsError" class="text-red-400 text-sm">{{ bugRatioAlertsError }}</span>
+          </div>
         </section>
 
-        <!-- Save -->
-        <div class="flex items-center gap-4">
-          <button
-            @click="save"
-            :disabled="store.saving || weightsSum() !== 100 || isReadOnly"
-            class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium"
-          >
-            {{ store.saving ? 'Saving...' : 'Save Settings' }}
-          </button>
-          <span v-if="saved" class="text-green-400 text-sm">Settings saved successfully.</span>
-          <span v-if="store.error" class="text-red-400 text-sm">{{ store.error }}</span>
-        </div>
+        </template><!-- end Health tab -->
+
+        <!-- Sync tab -->
+        <template v-if="activeSettingsTab === 'sync'">
 
         <!-- Sync -->
         <section class="bg-gray-900 rounded-lg p-6 space-y-4">
@@ -966,7 +1181,7 @@ async function syncAll() {
               :disabled="isReadOnly"
               class="w-24 bg-gray-800 border border-gray-700 rounded px-3 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <span class="text-xs text-gray-500">(1–50 sprints, saved with Save Settings)</span>
+            <span class="text-xs text-gray-500">(1–50 sprints, save with Save Sync Config)</span>
           </div>
 
           <!-- Planning window -->
@@ -981,6 +1196,18 @@ async function syncAll() {
               class="w-24 bg-gray-800 border border-gray-700 rounded px-3 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <span class="text-xs text-gray-500">(0–7 days, re-sync to apply)</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button
+              @click="saveSyncConfigPanel"
+              :disabled="syncConfigSaving || isReadOnly"
+              class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+            >
+              {{ syncConfigSaving ? 'Saving...' : 'Save Sync Config' }}
+            </button>
+            <span v-if="syncConfigSaved" class="text-green-400 text-sm">Saved.</span>
+            <span v-if="syncConfigError" class="text-red-400 text-sm">{{ syncConfigError }}</span>
           </div>
 
           <button
@@ -1066,8 +1293,13 @@ async function syncAll() {
           </div>
         </section>
 
+        </template><!-- end Sync tab -->
+
+        <!-- Users tab -->
+        <template v-if="activeSettingsTab === 'users' && authStore.isAdmin">
+
         <!-- User Management (Admin only) -->
-        <section v-if="authStore.isAdmin" class="bg-gray-900 rounded-lg p-6 space-y-6">
+        <section class="bg-gray-900 rounded-lg p-6 space-y-6">
           <h2 class="text-lg font-semibold text-gray-200">User Management</h2>
 
           <div v-if="userMgmtError" class="text-red-400 text-sm">{{ userMgmtError }}</div>
@@ -1189,6 +1421,8 @@ async function syncAll() {
             </table>
           </div>
         </section>
+
+        </template><!-- end Users tab -->
 
       </template>
   </div>

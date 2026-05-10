@@ -49,9 +49,14 @@ public record DeveloperSummary(
     string DisplayName,
     string? AvatarUrl,
     string? SubTeam,
-    decimal SpCompleted);
+    decimal SpCompleted,
+    decimal FeatureSp,
+    decimal BugSp,
+    int FeatureTickets,
+    int BugTickets,
+    int CapacityPercent);
 
-public record ZombieTicket(string TicketKey, string Summary, int SprintCount);
+public record ZombieTicket(string TicketKey, string Summary, int SprintCount, string? AssigneeName);
 
 public record MidSprintDisruption(decimal TotalSp, int TicketCount);
 
@@ -80,6 +85,8 @@ public class SprintSummaryService
         AppSettings settings,
         string? subTeam,
         List<Ticket> allEpicTickets,
+        Dictionary<string, Dictionary<int, int>> capacityLookup,
+        List<Developer> allDevelopers,
         HashSet<string>? excludedDeveloperIds = null)
     {
         // C2: sub-team filtering + cross-cutting exclusion
@@ -167,7 +174,7 @@ public class SprintSummaryService
         var topEpics = ComputeTopEpics(selectedMemberships, windowSprints, subTeam, doneStatuses, allEpicTickets, defaultSpPerBug);
 
         // Leaderboard
-        var leaderboard = ComputeLeaderboard(filteredDevelopers, selectedMemberships, doneStatuses, defaultSpPerBug);
+        var leaderboard = ComputeLeaderboard(filteredDevelopers, selectedMemberships, doneStatuses, settings.ExcludedFromScopeStatuses, defaultSpPerBug, capacityLookup, allDevelopers, selectedSprint.Id);
 
         // Flags
         var flags = ComputeFlags(selectedSprint, selectedMemberships, windowSprints, subTeam, filteredDevelopers, doneStatuses, defaultSpPerBug, excludedDeveloperIds);
@@ -485,19 +492,49 @@ public class SprintSummaryService
         List<Developer> developers,
         List<SprintMembership> memberships,
         List<string> doneStatuses,
-        int defaultSpPerBug)
+        List<string> excludedStatuses,
+        int defaultSpPerBug,
+        Dictionary<string, Dictionary<int, int>> capacityLookup,
+        List<Developer> allDevelopers,
+        int sprintId)
     {
-        var completedByDev = memberships
-            .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue && doneStatuses.Contains(m.FinalStatus) && m.Ticket?.AssigneeId != null)
-            .GroupBy(m => m.Ticket.AssigneeId!)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value));
+        // Apply excluded-from-scope filter (aligned with BugRatioService.CompletedMemberships)
+        var completed = memberships
+            .Where(m => doneStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)
+                        && m.RemovedAt == null
+                        && !excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)
+                        && m.Ticket?.AssigneeId != null)
+            .ToList();
+
+        // Group by developer
+        var completedByDev = completed
+            .GroupBy(m => m.Ticket!.AssigneeId!)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         return developers
-            .Select(d => new DeveloperSummary(
-                d.DisplayName,
-                d.AvatarUrl,
-                d.SubTeam,
-                Math.Round(completedByDev.GetValueOrDefault(d.Id, 0), 1)))
+            .Select(d =>
+            {
+                var devCompleted = completedByDev.GetValueOrDefault(d.Id, new List<SprintMembership>());
+                var featureSp = devCompleted.Where(m => m.Ticket?.IssueType != "Bug").Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+                var bugSp = devCompleted.Where(m => m.Ticket?.IssueType == "Bug").Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+                var featureTickets = devCompleted.Count(m => m.Ticket?.IssueType != "Bug");
+                var bugTickets = devCompleted.Count(m => m.Ticket?.IssueType == "Bug");
+                var totalSp = featureSp + bugSp;
+                var capacityPercent = capacityLookup.TryGetValue(d.Id, out var sprintMap) &&
+                    sprintMap.TryGetValue(sprintId, out var pct)
+                    ? pct
+                    : allDevelopers.FirstOrDefault(dev => dev.Id == d.Id)?.DefaultCapacityPercent ?? 100;
+                return new DeveloperSummary(
+                    d.DisplayName,
+                    d.AvatarUrl,
+                    d.SubTeam,
+                    Math.Round(totalSp, 1),
+                    Math.Round(featureSp, 1),
+                    Math.Round(bugSp, 1),
+                    featureTickets,
+                    bugTickets,
+                    capacityPercent);
+            })
             .OrderByDescending(d => d.SpCompleted)
             .ThenBy(d => d.DisplayName)
             .ToList();
@@ -529,7 +566,8 @@ public class SprintSummaryService
                 return new ZombieTicket(
                     first.TicketId,
                     first.Ticket?.Summary ?? first.TicketId,
-                    g.Select(m => m.SprintId).Distinct().Count());
+                    g.Select(m => m.SprintId).Distinct().Count(),
+                    first.Ticket?.Assignee?.DisplayName);
             })
             .OrderByDescending(z => z.SprintCount)
             .ToList();

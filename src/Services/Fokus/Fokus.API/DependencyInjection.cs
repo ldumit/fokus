@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<BugRatioService>();
         services.AddScoped<EpicProgressService>();
         services.AddScoped<CycleTimeService>();
+        services.AddScoped<LeaderboardService>();
 
         return services;
     }

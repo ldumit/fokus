@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import type { ClosedSprintItem } from '../../types'
 import { updateSprint } from '../../api/analytics'
 import type { UpdateSprintResponse } from '../../api/analytics'
@@ -23,6 +23,7 @@ const form = reactive({
 
 const saving = ref(false)
 const error = ref<string | null>(null)
+const isClosed = computed(() => props.sprint.state === 'closed')
 
 function toDateInput(isoString: string): string {
   return isoString.slice(0, 10)
@@ -102,8 +103,8 @@ async function onSubmit() {
             />
           </div>
 
-          <!-- Start date -->
-          <div>
+          <!-- Start date (not editable on closed sprints) -->
+          <div v-if="!isClosed">
             <label class="block text-sm text-text-secondary mb-1">
               Start date <span class="text-red-400">*</span>
             </label>
@@ -114,8 +115,8 @@ async function onSubmit() {
             />
           </div>
 
-          <!-- End date -->
-          <div>
+          <!-- End date (not editable on closed sprints) -->
+          <div v-if="!isClosed">
             <label class="block text-sm text-text-secondary mb-1">
               End date <span class="text-red-400">*</span>
             </label>

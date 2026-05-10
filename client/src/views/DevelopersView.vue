@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue'
+import { onMounted, computed, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDevelopersStore } from '../stores/developersStore'
 import PageLayout from '../components/PageLayout.vue'
@@ -7,6 +7,8 @@ import PageToolbar from '../components/PageToolbar.vue'
 import BaseCard from '../components/BaseCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import BugRatioTab from '../components/developers/BugRatioTab.vue'
+import LeaderboardTab from '../components/developers/LeaderboardTab.vue'
+import InfoTooltip from '../components/InfoTooltip.vue'
 import type { DeveloperThroughputEntry, SprintBreakdown } from '../types'
 
 const route = useRoute()
@@ -30,6 +32,8 @@ onMounted(async () => {
 
   if (tabParam === 'bug-ratio' || tabParam === 'bugRatio') {
     store.activeTab = 'bugRatio'
+  } else if (tabParam === 'leaderboard') {
+    store.activeTab = 'leaderboard'
   }
 
   await store.initialize()
@@ -37,6 +41,11 @@ onMounted(async () => {
   // If bug-ratio tab was requested and store initialized, load bug ratio data
   if (store.activeTab === 'bugRatio' && store.bugRatio === null) {
     await store.fetchBugRatio()
+  }
+
+  // If leaderboard tab was requested and store initialized, load leaderboard data
+  if (store.activeTab === 'leaderboard' && store.leaderboard === null) {
+    await store.fetchLeaderboard()
   }
 })
 
@@ -54,6 +63,8 @@ watch(
 
     if (tab === 'bugRatio') {
       query.tab = 'bug-ratio'
+    } else if (tab === 'leaderboard') {
+      query.tab = 'leaderboard'
     }
 
     router.replace({ query })
@@ -72,7 +83,7 @@ function onSubTeamChange(subTeam: string | null) {
   store.selectSubTeam(subTeam)
 }
 
-function onTabSwitch(tab: 'throughput' | 'bugRatio') {
+function onTabSwitch(tab: 'throughput' | 'bugRatio' | 'leaderboard') {
   store.switchTab(tab)
 }
 
@@ -146,6 +157,22 @@ function latestCapacity(dev: DeveloperThroughputEntry): number {
   return dev.sprintBreakdowns[dev.sprintBreakdowns.length - 1].capacityPercent
 }
 
+function normalizedSp(spCompleted: number, capacityPercent: number): number | null {
+  if (capacityPercent >= 100 || capacityPercent <= 0) return null
+  return Math.round(spCompleted / (capacityPercent / 100))
+}
+
+function avgNormalizedSpCompleted(dev: DeveloperThroughputEntry): number | null {
+  const anyReduced = dev.sprintBreakdowns.some(b => b.capacityPercent < 100 && b.capacityPercent > 0)
+  if (!anyReduced) return null
+  const perSprintNormalized = dev.sprintBreakdowns.map(b => {
+    if (b.capacityPercent >= 100 || b.capacityPercent <= 0) return b.spCompleted
+    return b.spCompleted / (b.capacityPercent / 100)
+  })
+  const avg = perSprintNormalized.reduce((a, b) => a + b, 0) / perSprintNormalized.length
+  return Math.round(avg)
+}
+
 const chartSeries = computed(() => {
   if (!store.throughput) return []
   return store.throughput.developers.map(dev => ({
@@ -185,6 +212,61 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
     store.updateCapacity(dev.accountId, sprintId, value)
   }
 }
+
+// Throughput table sorting
+const throughputSortColumn = ref<string | null>(null)
+const throughputSortDirection = ref<'asc' | 'desc'>('asc')
+
+function toggleThroughputSort(column: string) {
+  if (throughputSortColumn.value === column) {
+    throughputSortDirection.value = throughputSortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    throughputSortColumn.value = column
+    throughputSortDirection.value = 'asc'
+  }
+}
+
+function throughputSortIcon(column: string): string {
+  if (throughputSortColumn.value !== column) return ' ↕'
+  return throughputSortDirection.value === 'asc' ? ' ↑' : ' ↓'
+}
+
+const sortedSingleSprintRows = computed<SingleSprintRow[]>(() => {
+  const rows = [...singleSprintRows.value]
+  const col = throughputSortColumn.value
+  const dir = throughputSortDirection.value
+  if (!col) return rows
+  return rows.sort((a, b) => {
+    let aVal = 0
+    let bVal = 0
+    if (col === 'spAssigned') { aVal = a.bd?.spAssigned ?? 0; bVal = b.bd?.spAssigned ?? 0 }
+    else if (col === 'spCompleted') { aVal = a.bd?.spCompleted ?? 0; bVal = b.bd?.spCompleted ?? 0 }
+    else if (col === 'completionPercent') { aVal = a.bd?.completionPercent ?? 0; bVal = b.bd?.completionPercent ?? 0 }
+    else if (col === 'ticketsDone') { aVal = a.bd?.ticketsDone ?? 0; bVal = b.bd?.ticketsDone ?? 0 }
+    else if (col === 'ticketsCarriedOver') { aVal = a.bd?.ticketsCarriedOver ?? 0; bVal = b.bd?.ticketsCarriedOver ?? 0 }
+    else if (col === 'capacityPercent') { aVal = a.bd?.capacityPercent ?? 100; bVal = b.bd?.capacityPercent ?? 100 }
+    return dir === 'asc' ? aVal - bVal : bVal - aVal
+  })
+})
+
+const sortedMultiSprintDevelopers = computed<DeveloperThroughputEntry[]>(() => {
+  if (!store.throughput) return []
+  const devs = [...store.throughput.developers]
+  const col = throughputSortColumn.value
+  const dir = throughputSortDirection.value
+  if (!col) return devs
+  return devs.sort((a, b) => {
+    let aVal = 0
+    let bVal = 0
+    if (col === 'spAssigned') { aVal = parseFloat(avgSpAssigned(a)); bVal = parseFloat(avgSpAssigned(b)) }
+    else if (col === 'spCompleted') { aVal = parseFloat(avgSpCompleted(a)); bVal = parseFloat(avgSpCompleted(b)) }
+    else if (col === 'completionPercent') { aVal = parseFloat(avgCompletionPercent(a)); bVal = parseFloat(avgCompletionPercent(b)) }
+    else if (col === 'ticketsDone') { aVal = parseFloat(avgTicketsDone(a)); bVal = parseFloat(avgTicketsDone(b)) }
+    else if (col === 'ticketsCarriedOver') { aVal = parseFloat(avgTicketsCarriedOver(a)); bVal = parseFloat(avgTicketsCarriedOver(b)) }
+    else if (col === 'capacityPercent') { aVal = latestCapacity(a); bVal = latestCapacity(b) }
+    return dir === 'asc' ? aVal - bVal : bVal - aVal
+  })
+})
 </script>
 
 <template>
@@ -249,6 +331,17 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
         >
           Bug Ratio
         </button>
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            store.activeTab === 'leaderboard'
+              ? 'border-accent-default text-accent-default'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          ]"
+          @click="onTabSwitch('leaderboard')"
+        >
+          Leaderboard
+        </button>
       </div>
 
       <!-- Throughput tab -->
@@ -267,17 +360,17 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                   <tr class="text-text-muted text-left border-b border-border-default">
                     <th class="pb-2 pr-4 font-medium">Developer</th>
                     <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Total story points on non-removed tickets assigned to the developer in this sprint.">SP Assigned</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Story points on tickets the developer finished — those whose final status is in the done statuses list.">SP Completed</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned).">Completion %</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Number of tickets the developer completed — those with a final status in the done statuses list.">Tickets Done</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Non-removed tickets assigned to the developer that were not completed by sprint end.">Carried Over</th>
-                    <th class="pb-2 font-medium text-right" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available).">Capacity %</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Total story points on non-removed tickets assigned to the developer in this sprint." @click="toggleThroughputSort('spAssigned')">SP Assigned{{ throughputSortIcon('spAssigned') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Story points on tickets the developer finished — those whose final status is in the done statuses list." @click="toggleThroughputSort('spCompleted')">SP Completed <InfoTooltip text="When a developer has reduced capacity, a bracketed (~X) value shows their estimated SP at full availability." />{{ throughputSortIcon('spCompleted') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned)." @click="toggleThroughputSort('completionPercent')">Completion %{{ throughputSortIcon('completionPercent') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Number of tickets the developer completed — those with a final status in the done statuses list." @click="toggleThroughputSort('ticketsDone')">Tickets Done{{ throughputSortIcon('ticketsDone') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Non-removed tickets assigned to the developer that were not completed by sprint end." @click="toggleThroughputSort('ticketsCarriedOver')">Carried Over{{ throughputSortIcon('ticketsCarriedOver') }}</th>
+                    <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available)." @click="toggleThroughputSort('capacityPercent')">Capacity %{{ throughputSortIcon('capacityPercent') }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
-                    v-for="row in singleSprintRows"
+                    v-for="row in sortedSingleSprintRows"
                     :key="row.dev.accountId"
                     class="border-b border-border-default last:border-0"
                   >
@@ -308,6 +401,11 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                       </td>
                       <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                         <span>{{ row.bd.spCompleted }}</span>
+                        <span
+                          v-if="normalizedSp(row.bd.spCompleted, row.bd.capacityPercent) !== null"
+                          class="ml-1 text-xs text-text-muted"
+                          title="Estimated SP at full capacity. Shows what this developer's output would look like at 100% availability."
+                        >(~{{ normalizedSp(row.bd.spCompleted, row.bd.capacityPercent) }})</span>
                         <span v-if="row.bd.spCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(row.bd.spCompletedDeltaPolarity, row.bd.spCompletedDeltaDirection)]" title="Change from the prior sprint — green for improvement, red for regression, gray for neutral.">
                           {{ deltaIcon(row.bd.spCompletedDeltaDirection) }} {{ Math.abs(row.bd.spCompletedDelta).toFixed(1) }}
                         </span>
@@ -336,7 +434,8 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                           :value="row.bd.capacityPercent"
                           min="0"
                           max="100"
-                          class="w-16 text-right bg-surface-elevated border border-border-default rounded px-1 py-0.5 text-text-primary tabular-nums outline-none focus:border-accent-default"
+                          class="w-16 text-right bg-surface-elevated border border-border-default rounded px-1 py-0.5 tabular-nums outline-none focus:border-accent-default"
+                          :class="row.bd.capacityPercent !== 100 ? 'text-status-warning' : 'text-text-primary'"
                           @change="onCapacityChange(row.dev, singleSprintId!, $event)"
                         />
                       </td>
@@ -363,17 +462,17 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                   <tr class="text-text-muted text-left border-b border-border-default">
                     <th class="pb-2 pr-4 font-medium">Developer</th>
                     <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Total story points on non-removed tickets assigned to the developer in this sprint.">Avg SP Assigned</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Story points on tickets the developer finished — those whose final status is in the done statuses list.">Avg SP Completed</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned).">Avg Completion %</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Number of tickets the developer completed — those with a final status in the done statuses list.">Avg Tickets Done</th>
-                    <th class="pb-2 pr-4 font-medium text-right" title="Non-removed tickets assigned to the developer that were not completed by sprint end.">Avg Carried Over</th>
-                    <th class="pb-2 font-medium text-right" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available).">Capacity % (latest)</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Total story points on non-removed tickets assigned to the developer in this sprint." @click="toggleThroughputSort('spAssigned')">Avg SP Assigned{{ throughputSortIcon('spAssigned') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Story points on tickets the developer finished — those whose final status is in the done statuses list." @click="toggleThroughputSort('spCompleted')">Avg SP Completed <InfoTooltip text="When a developer has reduced capacity, a bracketed (~X) value shows their estimated SP at full availability." />{{ throughputSortIcon('spCompleted') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Percentage of assigned story points the developer completed (SP Completed / SP Assigned)." @click="toggleThroughputSort('completionPercent')">Avg Completion %{{ throughputSortIcon('completionPercent') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Number of tickets the developer completed — those with a final status in the done statuses list." @click="toggleThroughputSort('ticketsDone')">Avg Tickets Done{{ throughputSortIcon('ticketsDone') }}</th>
+                    <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Non-removed tickets assigned to the developer that were not completed by sprint end." @click="toggleThroughputSort('ticketsCarriedOver')">Avg Carried Over{{ throughputSortIcon('ticketsCarriedOver') }}</th>
+                    <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" title="Developer's availability for a sprint as a percentage (0-100%). Default is 100% (fully available)." @click="toggleThroughputSort('capacityPercent')">Capacity % (latest){{ throughputSortIcon('capacityPercent') }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
-                    v-for="dev in store.throughput.developers"
+                    v-for="dev in sortedMultiSprintDevelopers"
                     :key="dev.accountId"
                     class="border-b border-border-default last:border-0"
                   >
@@ -396,11 +495,18 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
                       <span v-else class="text-text-muted">—</span>
                     </td>
                     <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpAssigned(dev) }}</td>
-                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgSpCompleted(dev) }}</td>
+                    <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
+                      {{ avgSpCompleted(dev) }}
+                      <span
+                        v-if="avgNormalizedSpCompleted(dev) !== null"
+                        class="ml-1 text-xs text-text-muted"
+                        title="Estimated SP at full capacity. Shows what this developer's output would look like at 100% availability."
+                      >(~{{ avgNormalizedSpCompleted(dev) }})</span>
+                    </td>
                     <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgCompletionPercent(dev) }}%</td>
                     <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsDone(dev) }}</td>
                     <td class="py-2 pr-4 text-right tabular-nums text-text-primary">{{ avgTicketsCarriedOver(dev) }}</td>
-                    <td class="py-2 text-right tabular-nums text-text-secondary">{{ latestCapacity(dev) }}%</td>
+                    <td class="py-2 text-right tabular-nums" :class="latestCapacity(dev) !== 100 ? 'text-status-warning' : 'text-text-secondary'">{{ latestCapacity(dev) }}%</td>
                   </tr>
                 </tbody>
               </table>
@@ -435,6 +541,13 @@ function onCapacityChange(dev: DeveloperThroughputEntry, sprintId: number, event
         <div v-if="store.bugRatioLoading" class="text-xs text-text-muted">Loading bug ratio data...</div>
         <div v-else-if="store.bugRatioError" class="text-sm text-status-danger">{{ store.bugRatioError }}</div>
         <BugRatioTab v-else-if="store.bugRatio" :data="store.bugRatio" />
+      </template>
+
+      <!-- Leaderboard tab -->
+      <template v-else-if="store.activeTab === 'leaderboard'">
+        <div v-if="store.leaderboardLoading" class="text-xs text-text-muted">Loading leaderboard data...</div>
+        <div v-else-if="store.leaderboardError" class="text-sm text-status-danger">{{ store.leaderboardError }}</div>
+        <LeaderboardTab v-else-if="store.leaderboard" :data="store.leaderboard" />
       </template>
     </template>
   </PageLayout>

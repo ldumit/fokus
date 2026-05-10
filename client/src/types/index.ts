@@ -102,12 +102,18 @@ export interface DeveloperSummary {
   avatarUrl: string | null
   subTeam: string | null
   spCompleted: number
+  featureSp: number
+  bugSp: number
+  featureTickets: number
+  bugTickets: number
+  capacityPercent: number
 }
 
 export interface ZombieTicket {
   ticketKey: string
   summary: string
   sprintCount: number
+  assigneeName: string | null
 }
 
 export interface MidSprintDisruption {
@@ -334,6 +340,9 @@ export interface BurnupDataPoint {
   completedSp: number
   phase: string
   bugSp: number
+  totalScopeTickets: number
+  completedTickets: number
+  bugTickets: number
 }
 
 export interface ScopeChangeEvent {
@@ -839,4 +848,86 @@ export interface SyncBacklogResponse {
   epicTicketsDiscovered: number
   sprintFailures: number
   epicFailures: string[]
+}
+
+// Leaderboard types
+export interface LeaderboardSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface LeaderboardDeveloperSprintBreakdown {
+  sprintId: number
+  featureSp: number
+  bugSp: number
+  totalSp: number
+  featureTickets: number
+  bugTickets: number
+  capacityPercent: number
+}
+
+export interface LeaderboardDeveloperEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  featureSp: number
+  bugSp: number
+  totalSp: number
+  featureTickets: number
+  bugTickets: number
+  totalTickets: number
+  capacityPercent: number
+  sprintBreakdowns: LeaderboardDeveloperSprintBreakdown[]
+}
+
+export interface LeaderboardMultiSprintResponse {
+  sprints: LeaderboardSprintInfo[]
+  developers: LeaderboardDeveloperEntry[]
+}
+
+export interface LeaderboardDeveloperDelta {
+  featureSpDelta: number
+  featureSpDeltaDirection: string
+  featureSpDeltaPolarity: string
+  bugSpDelta: number
+  bugSpDeltaDirection: string
+  bugSpDeltaPolarity: string
+  totalSpDelta: number
+  totalSpDeltaDirection: string
+  totalSpDeltaPolarity: string
+  featureTicketsDelta: number
+  featureTicketsDeltaDirection: string
+  featureTicketsDeltaPolarity: string
+  bugTicketsDelta: number
+  bugTicketsDeltaDirection: string
+  bugTicketsDeltaPolarity: string
+}
+
+export interface LeaderboardDeveloperSingleEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  featureSp: number
+  bugSp: number
+  totalSp: number
+  featureTickets: number
+  bugTickets: number
+  totalTickets: number
+  capacityPercent: number
+  delta: LeaderboardDeveloperDelta | null
+}
+
+export interface LeaderboardSingleSprintResponse {
+  sprint: LeaderboardSprintInfo
+  developers: LeaderboardDeveloperSingleEntry[]
+}
+
+export interface LeaderboardResponse {
+  mode: 'multi' | 'single'
+  multiSprint: LeaderboardMultiSprintResponse | null
+  singleSprint: LeaderboardSingleSprintResponse | null
 }

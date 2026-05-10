@@ -8,7 +8,7 @@ Vue 3 + Pinia + Tailwind. Built with Vite into API's wwwroot/.
 |------|-------|--------------|-------|
 | DashboardView | dashboardStore | sprint-summary, closed sprints, sub-teams | Single sprint only, no multi-sprint mode |
 | SprintsView | sprintsStore | scope-change, carry-over | Scope change + carry-over on same page, shared selector |
-| DevelopersView | developersStore | developer-throughput, bug-ratio | Two tabs: Throughput (default) + Bug Ratio (lazy-loaded) |
+| DevelopersView | developersStore | developer-throughput, bug-ratio, leaderboard | Three tabs: Throughput (default) + Bug Ratio (lazy-loaded) + Leaderboard (lazy-loaded) |
 | CycleTimeView | cycleTimeStore | cycle-time, cycle-time boundaries | Separate boundaries config endpoint |
 | EpicsView | epicsStore | epic-progress | No sprint selector, cross-sprint always |
 | TeamView | teamStore | team roster, team config | Team management, not analytics |
@@ -36,5 +36,5 @@ Convention: `last=0` means "all sprints" (frontend sends 0 when user picks "All"
 - Dashboard metric cards: SP Completed, Completion %, Scope Disruption Rate, Bug Disruption Rate, Carry-Over Rate (5 cards, `lg:grid-cols-5`)
 - `client/src/components/dashboard/` — HealthScoreBadge, MetricCard, SprintFlags
 - `client/src/components/sprints/` — BurnupChart, ScopeChangeChart, CarryOver*, Classification*, Event*, Zombie*
-- `client/src/components/developers/` — BugRatio*, throughput table
+- `client/src/components/developers/` — BugRatio*, Leaderboard* (LeaderboardTab, LeaderboardChart, LeaderboardTable), throughput table
 - `client/src/components/` — shared: AppSidebar, PageToolbar, BaseCard, BaseSelect, EmptyState, PageLayout

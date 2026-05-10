@@ -13,7 +13,7 @@ const props = defineProps<{
 const xLabels = computed(() =>
   props.burnupData.map(d => {
     const date = new Date(d.date)
-    return `Day ${d.dayNumber} (${date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })})`
+    return `Day ${d.dayNumber} (${date.toLocaleDateString('en-US', { weekday: 'short' })})`
   })
 )
 
@@ -67,7 +67,30 @@ const chartOptions = computed(() => ({
     labels: { style: { colors: '#9ca3af', fontSize: '12px' } },
     title: { text: 'Story Points', style: { color: '#9ca3af' } }
   },
-  tooltip: { theme: 'dark' },
+  tooltip: {
+    theme: 'dark',
+    custom: ({ seriesIndex, dataPointIndex, w }: { seriesIndex: number; dataPointIndex: number; w: any }) => {
+      const d = props.burnupData[dataPointIndex]
+      if (!d) return ''
+      const label = w.globals.categoryLabels[dataPointIndex] ?? xLabels.value[dataPointIndex] ?? ''
+      const rows = [
+        { name: 'Bug SP', value: d.bugSp.toFixed(1), tickets: d.bugTickets, color: '#ef4444' },
+        { name: 'Total Scope SP', value: d.totalScopeSp.toFixed(1), tickets: d.totalScopeTickets, color: '#f97316' },
+        { name: 'Completed SP', value: d.completedSp.toFixed(1), tickets: d.completedTickets, color: '#22c55e' },
+      ]
+      const rowsHtml = rows.map(r =>
+        `<div style="display:flex;align-items:center;gap:6px;padding:2px 0">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${r.color}"></span>
+          <span style="color:#d1d5db">${r.name}:</span>
+          <span style="color:#f9fafb;font-weight:600">${r.value} [${r.tickets}]</span>
+        </div>`
+      ).join('')
+      return `<div style="background:#1f2937;border:1px solid #374151;border-radius:6px;padding:10px 14px;font-size:12px">
+        <div style="color:#9ca3af;margin-bottom:6px;font-weight:500">${label}</div>
+        ${rowsHtml}
+      </div>`
+    }
+  },
   legend: { labels: { colors: '#d1d5db' } },
   grid: { borderColor: '#374151' },
   theme: { mode: 'dark' },

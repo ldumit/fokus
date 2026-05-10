@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import type { BugRatioMultiSprintResponse, BugRatioSingleSprintResponse } from '../../types'
 import BaseCard from '../BaseCard.vue'
 
-defineProps<{
+const props = defineProps<{
   mode: 'multi' | 'single'
   multi?: BugRatioMultiSprintResponse
   single?: BugRatioSingleSprintResponse
@@ -20,6 +21,57 @@ function deltaClass(polarity: string | null | undefined, direction: string | nul
   if (polarity === 'negative') return 'text-status-danger'
   return 'text-text-secondary'
 }
+
+// Bug ratio table sorting
+const bugRatioSortColumn = ref<string | null>(null)
+const bugRatioSortDirection = ref<'asc' | 'desc'>('asc')
+
+function toggleBugRatioSort(column: string) {
+  if (bugRatioSortColumn.value === column) {
+    bugRatioSortDirection.value = bugRatioSortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    bugRatioSortColumn.value = column
+    bugRatioSortDirection.value = 'asc'
+  }
+}
+
+function bugRatioSortIcon(column: string): string {
+  if (bugRatioSortColumn.value !== column) return ' ↕'
+  return bugRatioSortDirection.value === 'asc' ? ' ↑' : ' ↓'
+}
+
+function bugRatioSortValue(dev: any, col: string): number {
+  if (col === 'bugSp') return dev.bugSp ?? 0
+  if (col === 'nonBugSp') return dev.nonBugSp ?? 0
+  if (col === 'bugRatioPercent') return dev.bugRatioPercent ?? 0
+  if (col === 'bugTicketCount') return dev.bugTicketCount ?? 0
+  if (col === 'nonBugTicketCount') return dev.nonBugTicketCount ?? 0
+  return 0
+}
+
+const sortedMultiDevelopers = computed(() => {
+  if (!props.multi) return []
+  const devs = [...props.multi.developers]
+  const col = bugRatioSortColumn.value
+  const dir = bugRatioSortDirection.value
+  if (!col) return devs
+  return devs.sort((a, b) => {
+    const diff = bugRatioSortValue(a, col) - bugRatioSortValue(b, col)
+    return dir === 'asc' ? diff : -diff
+  })
+})
+
+const sortedSingleDevelopers = computed(() => {
+  if (!props.single) return []
+  const devs = [...props.single.developers]
+  const col = bugRatioSortColumn.value
+  const dir = bugRatioSortDirection.value
+  if (!col) return devs
+  return devs.sort((a, b) => {
+    const diff = bugRatioSortValue(a, col) - bugRatioSortValue(b, col)
+    return dir === 'asc' ? diff : -diff
+  })
+})
 </script>
 
 <template>
@@ -42,16 +94,16 @@ function deltaClass(polarity: string | null | undefined, direction: string | nul
           <tr class="text-text-muted text-left border-b border-border-default">
             <th class="pb-2 pr-4 font-medium">Developer</th>
             <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug SP</th>
-            <th class="pb-2 pr-4 font-medium text-right">Non-Bug SP</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug Ratio %</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug Tickets</th>
-            <th class="pb-2 font-medium text-right">Non-Bug Tickets</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
+            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr
-            v-for="dev in multi.developers"
+            v-for="dev in sortedMultiDevelopers"
             :key="dev.accountId"
             class="border-b border-border-default last:border-0"
           >
@@ -101,16 +153,16 @@ function deltaClass(polarity: string | null | undefined, direction: string | nul
           <tr class="text-text-muted text-left border-b border-border-default">
             <th class="pb-2 pr-4 font-medium">Developer</th>
             <th class="pb-2 pr-4 font-medium">Sub-Team</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug SP</th>
-            <th class="pb-2 pr-4 font-medium text-right">Non-Bug SP</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug Ratio %</th>
-            <th class="pb-2 pr-4 font-medium text-right">Bug Tickets</th>
-            <th class="pb-2 font-medium text-right">Non-Bug Tickets</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugSp')">Bug SP{{ bugRatioSortIcon('bugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugSp')">Non-Bug SP{{ bugRatioSortIcon('nonBugSp') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugRatioPercent')">Bug Ratio %{{ bugRatioSortIcon('bugRatioPercent') }}</th>
+            <th class="pb-2 pr-4 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('bugTicketCount')">Bug Tickets{{ bugRatioSortIcon('bugTicketCount') }}</th>
+            <th class="pb-2 font-medium text-right cursor-pointer select-none hover:text-text-primary" @click="toggleBugRatioSort('nonBugTicketCount')">Non-Bug Tickets{{ bugRatioSortIcon('nonBugTicketCount') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr
-            v-for="dev in single.developers"
+            v-for="dev in sortedSingleDevelopers"
             :key="dev.accountId"
             class="border-b border-border-default last:border-0"
           >

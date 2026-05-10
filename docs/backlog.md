@@ -138,6 +138,14 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 
 **F17:** Semi-transparent red shaded area on the single-sprint Scope Burnup chart showing cumulative bug SP per day. Visualizes when bugs appeared and how much sprint capacity they consumed. Depends on F16 for default SP per bug.
 
+| F19 | Leaderboard Breakdown | Done | [LeaderboardBreakdown](features/LeaderboardBreakdown/spec.md) | [plan](plans/LeaderboardBreakdown/plan.md) |
+
+**F19:** Dashboard leaderboard Features/Bugs toggle with SP + ticket count columns. New Leaderboard tab on Developers page with stacked bar chart (feature SP blue, bug SP red) and detailed table. Aligns Dashboard excluded-from-scope filtering with Bug Ratio pattern.
+
+| F20 | Normalized Capacity Indicator | Done | [NormalizedCapacityIndicator](features/NormalizedCapacityIndicator/spec.md) | [Plan](plans/NormalizedCapacityIndicator/plan.md) |
+
+**F20:** Bracketed normalized SP value (~X) next to SP completed for developers with <100% capacity. Shows estimated output at full availability. Applies to Throughput tab, Leaderboard tab, and Dashboard leaderboard. Client-side computation using existing capacity data; leaderboard API adds capacity to response.
+
 ---
 
 ### Tier 8 — Security & Access

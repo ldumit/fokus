@@ -57,7 +57,10 @@ public record BurnupDataPoint(
     decimal TotalScopeSp,
     decimal CompletedSp,
     string Phase,
-    decimal BugSp);
+    decimal BugSp,
+    int TotalScopeTickets,
+    int CompletedTickets,
+    int BugTickets);
 
 public record ScopeChangeEvent(
     DateTime Date,
@@ -421,10 +424,23 @@ public class ScopeChangeService
                         && !IsExcluded(m.FinalStatus, excludedStatuses))
             .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
+        // Starting committed ticket counts
+        var startingTotalScopeTickets = memberships
+            .Count(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                        && !IsExcluded(m.FinalStatus, excludedStatuses));
+
+        var startingBugTickets = memberships
+            .Count(m => m.WasCommitted && m.RemovedAt == null && m.Ticket?.IssueType == "Bug"
+                        && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                        && !IsExcluded(m.FinalStatus, excludedStatuses));
+
         var result = new List<BurnupDataPoint>();
         var cumulativeTotalScope = startingCommitted;
         var cumulativeCompleted = 0m;
         var cumulativeBugSp = startingBugSp;
+        var cumulativeTotalScopeTickets = startingTotalScopeTickets;
+        var cumulativeCompletedTickets = 0;
+        var cumulativeBugTickets = startingBugTickets;
 
         for (var i = 0; i < sprintDays; i++)
         {
@@ -445,6 +461,18 @@ public class ScopeChangeService
                 .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
             cumulativeTotalScope += addedToday - removedToday;
+
+            // Ticket count additions and removals on this day
+            var addedTicketsToday = memberships
+                .Count(m => !m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && m.AddedAt.Date == day.Date);
+
+            var removedTicketsToday = memberships
+                .Count(m => m.RemovedAt.HasValue && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && m.RemovedAt.Value.Date == day.Date);
+
+            cumulativeTotalScopeTickets += addedTicketsToday - removedTicketsToday;
 
             // Bug SP additions on this day
             var bugAddedToday = memberships
@@ -472,6 +500,28 @@ public class ScopeChangeService
 
             cumulativeBugSp += bugAddedToday - bugRemovedToday - bugCompletedToday;
 
+            // Bug ticket count additions, removals, completions on this day
+            var bugAddedTicketsToday = memberships
+                .Count(m => !m.WasCommitted && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && m.RemovedAt == null
+                            && m.AddedAt.Date == day.Date);
+
+            var bugRemovedTicketsToday = memberships
+                .Count(m => m.RemovedAt.HasValue && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && m.RemovedAt.Value.Date == day.Date);
+
+            var bugCompletedTicketsToday = memberships
+                .Count(m => m.RemovedAt == null && m.Ticket?.IssueType == "Bug"
+                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && doneTransitionByTicket.TryGetValue(m.TicketId, out var ts)
+                            && ts.Date == day.Date);
+
+            cumulativeBugTickets += bugAddedTicketsToday - bugRemovedTicketsToday - bugCompletedTicketsToday;
+
             // Completions on this day (first done transition on this day)
             var completedToday = memberships
                 .Where(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
@@ -480,7 +530,14 @@ public class ScopeChangeService
                             && ts.Date == day.Date)
                 .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
 
+            var completedTicketsToday = memberships
+                .Count(m => m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
+                            && !IsExcluded(m.FinalStatus, excludedStatuses)
+                            && doneTransitionByTicket.TryGetValue(m.TicketId, out var ts)
+                            && ts.Date == day.Date);
+
             cumulativeCompleted += completedToday;
+            cumulativeCompletedTickets += completedTicketsToday;
 
             var phase = dayNumber <= planningWindowDays ? "planning" : "execution";
 
@@ -490,7 +547,10 @@ public class ScopeChangeService
                 Math.Round(cumulativeTotalScope, 1),
                 Math.Round(cumulativeCompleted, 1),
                 phase,
-                Math.Round(cumulativeBugSp, 1)));
+                Math.Round(cumulativeBugSp, 1),
+                cumulativeTotalScopeTickets,
+                cumulativeCompletedTickets,
+                cumulativeBugTickets));
         }
 
         return result;

@@ -18,6 +18,7 @@ Navigate here before reading source files. Find the relevant entry, get business
 - [Cycle Time](analytics/cycle-time.md) — stage durations, percentiles, outliers, rework
 - [Throughput](analytics/throughput.md) — per-developer SP, rolling averages, capacity
 - [Epic Progress](analytics/epic-progress.md) — dual tracking, imputed SP, velocity, projections
+- [Leaderboard](analytics/leaderboard.md) — feature vs bug SP breakdown, delta polarity, dashboard toggle
 
 ## Cross-Cutting
 

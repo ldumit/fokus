@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDashboardStore } from '../stores/dashboardStore'
 import PageLayout from '../components/PageLayout.vue'
@@ -9,10 +9,13 @@ import EmptyState from '../components/EmptyState.vue'
 import HealthScoreBadge from '../components/dashboard/HealthScoreBadge.vue'
 import MetricCardComponent from '../components/dashboard/MetricCard.vue'
 import SprintFlags from '../components/dashboard/SprintFlags.vue'
+import InfoTooltip from '../components/InfoTooltip.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useDashboardStore()
+
+const leaderboardMode = ref<'features' | 'bugs'>('features')
 
 onMounted(async () => {
   // Seed selectedSprintId from URL before initialize so it's used on first fetch
@@ -20,6 +23,7 @@ onMounted(async () => {
   if (sprintParam && !isNaN(Number(sprintParam))) {
     store.selectedSprintId = Number(sprintParam)
   }
+  leaderboardMode.value = 'features'
   await store.initialize()
 })
 
@@ -43,6 +47,21 @@ async function onSubTeamChange(subTeam: string | null) {
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const sortedLeaderboard = computed(() => {
+  if (!store.summary?.leaderboard) return []
+  const list = [...store.summary.leaderboard]
+  if (leaderboardMode.value === 'features') {
+    return list.sort((a, b) => b.featureSp - a.featureSp || a.displayName.localeCompare(b.displayName))
+  } else {
+    return list.sort((a, b) => b.bugSp - a.bugSp || a.displayName.localeCompare(b.displayName))
+  }
+})
+
+function normalizedSp(spCompleted: number, capacityPercent: number): number | null {
+  if (capacityPercent >= 100 || capacityPercent <= 0) return null
+  return Math.round(spCompleted / (capacityPercent / 100))
 }
 </script>
 
@@ -117,14 +136,7 @@ function formatDate(dateStr: string): string {
         <BaseCard v-if="store.summary.topEpics.length > 0">
           <div class="flex items-center gap-1 mb-3">
             <div class="text-sm font-medium text-text-primary">Top Epics</div>
-            <span
-              class="text-text-muted cursor-help"
-              title="Up to 3 epics with the most story points completed in this sprint."
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-              </svg>
-            </span>
+            <InfoTooltip text="Up to 3 epics with the most story points completed in this sprint." />
           </div>
           <div class="flex flex-col gap-3">
             <div
@@ -153,20 +165,56 @@ function formatDate(dateStr: string): string {
 
         <!-- Developer leaderboard -->
         <BaseCard v-if="store.summary.leaderboard.length > 0">
-          <div class="flex items-center gap-1 mb-3">
-            <div class="text-sm font-medium text-text-primary">Developer Leaderboard</div>
-            <span
-              class="text-text-muted cursor-help"
-              title="All active developers ranked by story points completed in this sprint."
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-              </svg>
+          <!-- Header row: title + info icon + toggle -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-1">
+              <div class="text-sm font-medium text-text-primary">
+                {{ leaderboardMode === 'features' ? 'Developer Leaderboard — Features' : 'Developer Leaderboard — Bugs' }}
+              </div>
+              <InfoTooltip :text="leaderboardMode === 'features'
+                  ? 'Active developers ranked by feature story points completed this sprint. Bug fixes excluded.'
+                  : 'Active developers ranked by bug fix story points completed this sprint. Feature work excluded.'" />
+            </div>
+            <!-- Toggle group -->
+            <div class="flex items-center gap-1">
+              <InfoTooltip text="Switch between feature work and bug fix rankings. Features shows planned delivery; Bugs shows rework." />
+              <div class="flex rounded overflow-hidden border border-border-default text-xs">
+                <button
+                  :class="[
+                    'px-2.5 py-1 transition-colors',
+                    leaderboardMode === 'features'
+                      ? 'bg-accent-default text-white'
+                      : 'text-text-secondary hover:text-text-primary'
+                  ]"
+                  @click="leaderboardMode = 'features'"
+                >Features</button>
+                <button
+                  :class="[
+                    'px-2.5 py-1 transition-colors',
+                    leaderboardMode === 'bugs'
+                      ? 'bg-accent-default text-white'
+                      : 'text-text-secondary hover:text-text-primary'
+                  ]"
+                  @click="leaderboardMode = 'bugs'"
+                >Bugs</button>
+              </div>
+            </div>
+          </div>
+          <!-- Column legend -->
+          <div class="flex justify-end gap-3 text-xs text-text-muted mb-1">
+            <span class="flex items-center gap-0.5">
+              SP
+              <InfoTooltip text="Story points completed for the selected work type. Numbers in parentheses (~N) show estimated SP at full capacity. Excludes unestimated tickets." />
+            </span>
+            <span class="flex items-center gap-0.5">
+              t
+              <InfoTooltip text="Number of done tickets for the selected work type. Includes tickets with no story points." />
             </span>
           </div>
+          <!-- Leaderboard rows -->
           <div class="flex flex-col gap-2">
             <div
-              v-for="(dev, index) in store.summary.leaderboard"
+              v-for="(dev, index) in sortedLeaderboard"
               :key="dev.displayName"
               class="flex items-center gap-3 text-sm"
             >
@@ -184,7 +232,16 @@ function formatDate(dateStr: string): string {
               <span v-if="dev.subTeam" class="text-xs bg-surface-elevated text-text-muted rounded px-2 py-0.5 shrink-0">
                 {{ dev.subTeam }}
               </span>
-              <span class="text-text-secondary tabular-nums shrink-0 font-medium">{{ dev.spCompleted }} SP</span>
+              <span class="text-text-secondary tabular-nums shrink-0 font-medium">
+                {{ leaderboardMode === 'features' ? dev.featureSp : dev.bugSp }} SP
+                <span
+                  v-if="normalizedSp(leaderboardMode === 'features' ? dev.featureSp : dev.bugSp, dev.capacityPercent) !== null"
+                  class="ml-1 text-xs text-text-muted font-normal"
+                >(~{{ normalizedSp(leaderboardMode === 'features' ? dev.featureSp : dev.bugSp, dev.capacityPercent) }})</span>
+              </span>
+              <span class="text-accent-default/70 tabular-nums shrink-0">
+                {{ leaderboardMode === 'features' ? dev.featureTickets : dev.bugTickets }}t
+              </span>
             </div>
           </div>
         </BaseCard>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse } from '../types'
-import { getDeveloperThroughput, getBugRatio, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse } from '../types'
+import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
 
 export const useDevelopersStore = defineStore('developers', () => {
@@ -16,10 +16,13 @@ export const useDevelopersStore = defineStore('developers', () => {
   const initializing = ref(false)
   const error = ref<string | null>(null)
 
-  const activeTab = ref<'throughput' | 'bugRatio'>('throughput')
+  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard'>('throughput')
   const bugRatio = ref<BugRatioResponse | null>(null)
   const bugRatioLoading = ref(false)
   const bugRatioError = ref<string | null>(null)
+  const leaderboard = ref<LeaderboardResponse | null>(null)
+  const leaderboardLoading = ref(false)
+  const leaderboardError = ref<string | null>(null)
 
   async function initialize() {
     initializing.value = true
@@ -49,6 +52,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'bugRatio') {
       await fetchBugRatio()
     }
+    if (activeTab.value === 'leaderboard') {
+      await fetchLeaderboard()
+    }
   }
 
   async function selectLastN(n: number | null) {
@@ -59,6 +65,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'bugRatio') {
       await fetchBugRatio()
     }
+    if (activeTab.value === 'leaderboard') {
+      await fetchLeaderboard()
+    }
   }
 
   async function selectSubTeam(subTeam: string | null) {
@@ -67,12 +76,18 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'bugRatio') {
       await fetchBugRatio()
     }
+    if (activeTab.value === 'leaderboard') {
+      await fetchLeaderboard()
+    }
   }
 
-  async function switchTab(tab: 'throughput' | 'bugRatio') {
+  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard') {
     activeTab.value = tab
     if (tab === 'bugRatio') {
       await fetchBugRatio()
+    }
+    if (tab === 'leaderboard') {
+      await fetchLeaderboard()
     }
   }
 
@@ -124,6 +139,30 @@ export const useDevelopersStore = defineStore('developers', () => {
     }
   }
 
+  async function fetchLeaderboard() {
+    leaderboardLoading.value = true
+    leaderboardError.value = null
+    try {
+      if (sprintMode.value === 'single') {
+        leaderboard.value = await getLeaderboard(
+          selectedSprintId.value ?? undefined,
+          undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      } else {
+        leaderboard.value = await getLeaderboard(
+          undefined,
+          selectedLast.value ?? undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      }
+    } catch (e) {
+      leaderboardError.value = e instanceof Error ? e.message : 'Failed to load leaderboard data'
+    } finally {
+      leaderboardLoading.value = false
+    }
+  }
+
   async function updateCapacity(accountId: string, sprintId: number, capacityPercent: number) {
     if (throughput.value) {
       const devEntry = throughput.value.developers.find(d => d.accountId === accountId)
@@ -168,6 +207,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     bugRatio,
     bugRatioLoading,
     bugRatioError,
+    leaderboard,
+    leaderboardLoading,
+    leaderboardError,
     initialize,
     selectSprint,
     selectLastN,
@@ -175,6 +217,7 @@ export const useDevelopersStore = defineStore('developers', () => {
     switchTab,
     fetchThroughput,
     fetchBugRatio,
+    fetchLeaderboard,
     updateCapacity
   }
 })

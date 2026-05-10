@@ -1,4 +1,4 @@
-import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse } from '../types'
+import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -90,4 +90,13 @@ export function getCycleTime(sprintId?: number, last?: number, subTeam?: string)
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<CycleTimeResponse>(`/analytics/cycle-time${query ? `?${query}` : ''}`)
+}
+
+export function getLeaderboard(sprintId?: number, last?: number, subTeam?: string): Promise<LeaderboardResponse> {
+  const params = new URLSearchParams()
+  if (sprintId !== undefined) params.set('sprintId', String(sprintId))
+  if (last !== undefined) params.set('last', String(last))
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<LeaderboardResponse>(`/analytics/leaderboard${query ? `?${query}` : ''}`)
 }

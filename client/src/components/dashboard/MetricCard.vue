@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MetricCard } from '../../types'
 import { computed } from 'vue'
+import InfoTooltip from '../InfoTooltip.vue'
 
 const props = defineProps<{
   metric: MetricCard
@@ -52,31 +53,27 @@ const sparklineSeries = computed(() => [
 
 <template>
   <div class="bg-surface-card border border-border-default rounded-lg p-4 flex flex-col gap-3">
-    <div
-      class="text-xs text-text-muted uppercase tracking-wide cursor-help"
-      :title="metricTooltip(metric.name)"
-    >{{ metric.name }}</div>
+    <div class="flex items-center gap-1 text-xs text-text-muted uppercase tracking-wide">
+      {{ metric.name }}
+      <InfoTooltip v-if="metricTooltip(metric.name)" :text="metricTooltip(metric.name)" />
+    </div>
     <div class="text-2xl font-bold text-text-primary tabular-nums">{{ metric.displayValue }}</div>
     <div class="flex items-center justify-between gap-2">
-      <div
-        v-if="metric.delta !== null"
-        :class="['text-sm font-medium cursor-help', deltaClass]"
-        title="Change versus the prior closed sprint. Arrow direction and color show whether the metric improved."
-      >
+      <div v-if="metric.delta !== null" :class="['flex items-center gap-1 text-sm font-medium', deltaClass]">
         {{ deltaArrow }} {{ Math.abs(metric.delta) }}
+        <InfoTooltip text="Change versus the prior closed sprint. Arrow direction and color show whether the metric improved." />
       </div>
       <div v-else class="text-sm text-text-muted">—</div>
-      <div
-        v-if="metric.sparkline.length > 1"
-        class="w-24 h-8"
-        title="Trend of the last 4 sprints ending at the selected sprint."
-      >
-        <apexchart
-          type="line"
-          height="32"
-          :options="sparklineOptions"
-          :series="sparklineSeries"
-        />
+      <div v-if="metric.sparkline.length > 1" class="flex items-center gap-1">
+        <div class="w-24 h-8">
+          <apexchart
+            type="line"
+            height="32"
+            :options="sparklineOptions"
+            :series="sparklineSeries"
+          />
+        </div>
+        <InfoTooltip text="Trend of the last 4 sprints ending at the selected sprint." />
       </div>
     </div>
   </div>

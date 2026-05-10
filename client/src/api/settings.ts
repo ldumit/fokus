@@ -1,14 +1,49 @@
-import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse } from '../types'
+import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse, HealthThresholdConfig, HealthWeightConfig } from '../types'
 import { apiFetch } from './client'
 
 export function getSettings(): Promise<AppSettings> {
   return apiFetch<AppSettings>('/settings')
 }
 
-export function saveSettings(settings: AppSettings): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>('/settings', {
+export function saveBoard(boardId: number | null): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/board', {
     method: 'PUT',
-    body: JSON.stringify(settings)
+    body: JSON.stringify({ boardId })
+  })
+}
+
+export function saveDoneStatuses(statuses: string[]): Promise<string[]> {
+  return apiFetch<string[]>('/settings/done-statuses', {
+    method: 'PUT',
+    body: JSON.stringify({ statuses })
+  })
+}
+
+export function saveWorkflowStages(stages: string[]): Promise<string[]> {
+  return apiFetch<string[]>('/settings/workflow-stages', {
+    method: 'PUT',
+    body: JSON.stringify({ stages })
+  })
+}
+
+export function saveHealthConfig(healthThresholds: HealthThresholdConfig, healthWeights: HealthWeightConfig): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/health-config', {
+    method: 'PUT',
+    body: JSON.stringify({ healthThresholds, healthWeights })
+  })
+}
+
+export function saveBugRatioAlerts(alertThreshold: number, consecutiveSprintCount: number, defaultSpPerBug: number): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/bug-ratio-alerts', {
+    method: 'PUT',
+    body: JSON.stringify({ alertThreshold, consecutiveSprintCount, defaultSpPerBug })
+  })
+}
+
+export function saveSyncConfig(syncBackSprintCount: number, planningWindowDays: number): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/sync-config', {
+    method: 'PUT',
+    body: JSON.stringify({ syncBackSprintCount, planningWindowDays })
   })
 }
 

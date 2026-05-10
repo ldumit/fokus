@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { AppSettings, DetectionResult } from '../types'
-import { getSettings, saveSettings, detectWorkflowStages } from '../api/settings'
+import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig } from '../types'
+import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages } from '../api/settings'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({
@@ -47,14 +47,79 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  async function updateSettings(updated: AppSettings) {
+  async function saveBoardAction(boardId: number | null) {
     saving.value = true
     error.value = null
     try {
-      await saveSettings(updated)
-      settings.value = updated
+      await saveBoard(boardId)
+      settings.value = { ...settings.value, boardId }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to save settings'
+      error.value = e instanceof Error ? e.message : 'Failed to save board'
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function saveDoneStatusesAction(statuses: string[]) {
+    saving.value = true
+    error.value = null
+    try {
+      const result = await saveDoneStatuses(statuses)
+      settings.value = { ...settings.value, doneStatuses: result }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save done statuses'
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function saveWorkflowStagesAction(stages: string[]) {
+    saving.value = true
+    error.value = null
+    try {
+      const result = await saveWorkflowStages(stages)
+      settings.value = { ...settings.value, workflowStages: result }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save workflow stages'
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function saveHealthConfigAction(healthThresholds: HealthThresholdConfig, healthWeights: HealthWeightConfig) {
+    saving.value = true
+    error.value = null
+    try {
+      await saveHealthConfig(healthThresholds, healthWeights)
+      settings.value = { ...settings.value, healthThresholds: { ...healthThresholds }, healthWeights: { ...healthWeights } }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save health config'
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function saveBugRatioAlertsAction(alertThreshold: number, consecutiveSprintCount: number, defaultSpPerBug: number) {
+    saving.value = true
+    error.value = null
+    try {
+      await saveBugRatioAlerts(alertThreshold, consecutiveSprintCount, defaultSpPerBug)
+      settings.value = { ...settings.value, bugRatioAlertThreshold: alertThreshold, bugRatioConsecutiveSprintCount: consecutiveSprintCount, defaultSpPerBug }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save bug ratio alerts'
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function saveSyncConfigAction(syncBackSprintCount: number, planningWindowDays: number) {
+    saving.value = true
+    error.value = null
+    try {
+      await saveSyncConfig(syncBackSprintCount, planningWindowDays)
+      settings.value = { ...settings.value, syncBackSprintCount, planningWindowDays }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save sync config'
     } finally {
       saving.value = false
     }
@@ -100,7 +165,12 @@ export const useSettingsStore = defineStore('settings', () => {
     detectionResult,
     detecting,
     fetchSettings,
-    updateSettings,
+    saveBoardAction,
+    saveDoneStatusesAction,
+    saveWorkflowStagesAction,
+    saveHealthConfigAction,
+    saveBugRatioAlertsAction,
+    saveSyncConfigAction,
     runDetectWorkflowStages,
     clearDetection,
     moveSidelinedToStages,

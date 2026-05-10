@@ -63,6 +63,13 @@ public class GetSprintSummaryEndpoint(
         // 8. Load capacity records for the window sprints
         var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(windowIds, ct);
 
+        // 8a. Build capacity lookup: accountId -> sprintId -> capacityPercent
+        var capacityLookup = capacityRecords
+            .GroupBy(c => c.DeveloperAccountId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.ToDictionary(c => c.SprintId, c => c.CapacityPercent));
+
         // 9. Apply cross-cutting exclusion for the selected sprint
         var selectedSprint = windowSprints.First(s => s.Id == selectedSprintInfo.Id);
         var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
@@ -73,7 +80,7 @@ public class GetSprintSummaryEndpoint(
         var allEpicTickets = await ticketRepository.GetTicketsWithEpicAsync(ct);
 
         // 11. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, excludedIds);
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, excludedIds);
 
         await SendOkAsync(result, ct);
     }

@@ -47,7 +47,7 @@ function sortedGroups(): Array<{ label: string; developers: TeamDeveloperDto[] }
         {{ group.label }}
       </div>
       <div class="overflow-x-auto rounded-md border border-border-default">
-        <table class="w-full text-sm">
+        <table class="w-auto text-sm">
           <thead>
             <tr class="text-text-muted text-left border-b border-border-default bg-surface-elevated">
               <th class="pb-2 pt-2 px-4 font-medium">Developer</th>
