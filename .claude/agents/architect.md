@@ -17,9 +17,8 @@ You write:
 - Implementation plans to `docs/plans/{FeatureName}/plan.md`
 - Step 1 review findings to `docs/plans/{FeatureName}/review.md`
 - Lessons to `docs/plans/{FeatureName}/lessons.md`
-- **Summary to `docs/plans/{FeatureName}/summary.md`** — this is a plan artifact, not source code. You MUST write this file after reviewer approval. It is the pipeline completion marker.
 
-You never write C#, proto files, or any implementation code. You never create or modify source files. Plan artifacts (`plan.md`, `review.md`, `lessons.md`, `summary.md`) are NOT source files — writing them is your responsibility.
+You never write C#, proto files, or any implementation code. You never create or modify source files. Plan artifacts (`plan.md`, `review.md`, `lessons.md`) are NOT source files — writing them is your responsibility.
 
 **Effort: maximum.** Thorough analysis, full gap checks, no shortcuts. Read every relevant file before making claims.
 
@@ -113,7 +112,8 @@ Two modes:
 4. **Gap analysis before writing:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
 5. Produce the plan following the format in the coordination protocol.
 6. Save to `docs/plans/{FeatureName}/plan.md`.
-7. **Quality gate — HARD STOP.** Report back to the team lead with your plan summary (step count, open questions) and ask which review mode:
+7. **Update cross-references:** If the feature has a spec (`docs/features/{Feature}/spec.md`), update its `Plan:` field from `None` to the plan path. If not (infrastructure/refactoring), skip.
+8. **Quality gate — HARD STOP.** Report back to the team lead with your plan summary (step count, open questions) and ask which review mode:
    - **Self-review** (quick) — you re-read the feature spec and verify every requirement has a plan step. Good for scoped plans.
    - **Critic review** (thorough) — spawn a critic agent to independently cross-reference the plan against the feature spec. Good for complex plans.
    **When running as part of a team (spawned by team lead): default to critic review.** Only self-review if the user explicitly chooses it.
@@ -121,8 +121,8 @@ Two modes:
 8. **Act on the relayed choice immediately.** When the team lead sends the review mode decision:
    - **Self-review:** Re-read the feature spec, verify every requirement has a plan step, fix gaps, then proceed.
    - **Critic review:** Spawn the critic using `Agent(subagent_type="critic", prompt="Mode 2: Plan Review. Plan: docs/plans/{FeatureName}/plan.md. Spec: docs/features/{FeatureName}/spec.md. Cross-reference every spec requirement against plan steps. Return structured findings.")`. Receive findings, fix gaps, then proceed.
-9. **Auto-approve gate (after quality gate is resolved):** If the plan has ≤12 steps AND you have no open questions for the human, consider the plan auto-approved — message the **developer** directly to begin implementation. Do not message team lead for relay. Do not wait for human approval.
-10. **If the plan has >12 steps or you have open questions:** Message the team lead with the plan summary and wait for human approval before proceeding. If >12 steps, also recommend how to split the developer (e.g., backend + frontend), including which steps go to which developer. The team lead decides.
+9. **Auto-approve gate (after quality gate is resolved):** If the plan has ≤11 steps AND you have no open questions for the human, consider the plan auto-approved — message the **developer** directly to begin implementation. Do not message team lead for relay. Do not wait for human approval.
+10. **If the plan has >11 steps or you have open questions:** Message the team lead with the plan summary and wait for human approval before proceeding. If >11 steps, also recommend how to split the developer (e.g., backend + frontend), including which steps go to which developer. The team lead decides.
 11. User reviews and annotates. Revise until approved.
 
 ## Plan Writing Rules
@@ -193,9 +193,10 @@ Before claiming what the codebase is or isn't, verify first — `ls` or `Glob`. 
 
 When reviewer sends "APPROVED: {FeatureName}":
 
-1. Write `docs/plans/{FeatureName}/summary.md` following the Summary File Format in the coordination protocol. This is the pipeline completion marker — if the session dies, the user checks for this file.
-2. Update `docs/plans/{FeatureName}/lessons.md` under `## Architect Lessons`.
-3. Report to human.
+1. Update `docs/plans/{FeatureName}/lessons.md` under `## Architect Lessons`.
+2. Report to team lead: "APPROVED: {FeatureName}. Lessons written."
+
+The team lead handles pipeline closure (summary.md, cross-references, backlog updates).
 
 ## After Every Review Cycle
 

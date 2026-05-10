@@ -10,7 +10,12 @@ Use this template for every `docs/features/{Feature}/spec.md` file. Omit section
 **Traces to:** `docs/specs/v1.md` §{section numbers}
 **Source:** Scratch | Jira {TICKET-KEY}
 **Dependencies:** {features or aggregates that must exist first, or "None"}
-**Status:** Draft | Ready
+**Status:** Draft | Ready | Done
+**Plan:** `docs/plans/{Feature}/plan.md` | None
+
+---
+
+> **Revision (YYYY-MM-DD) — Pending:** One-paragraph summary: what changed, why, what's already implemented, and where the implementation delta is. Include enough detail that the architect can plan only the delta — not re-plan the entire feature. Status is `Pending` (not yet implemented) or `Implemented` (done). Stack multiple revisions in reverse chronological order (newest first). The architect plans only `Pending` revisions; mark `Implemented` when the pipeline completes. *Only add when revising a spec that already reached `Status: Ready`. Omit during initial creation.*
 
 ---
 

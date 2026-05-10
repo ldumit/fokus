@@ -7,6 +7,8 @@ Use this template for every `docs/plans/{Feature}/plan.md` file. This template e
 ```markdown
 # {Feature Name}
 
+**Feature Spec:** `docs/features/{Feature}/spec.md` | None
+
 ## Context
 What problem this solves. Which service(s) impacted and why.
 

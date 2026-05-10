@@ -44,6 +44,7 @@ Read on-demand when needed:
 - `docs/specs/v1.md` — full product specification
 - `docs/features/{Feature}/spec.md` — individual feature specs (check Status field)
 - `docs/plans/{Feature}/` — implementation artifacts (plan.md, implementation.md, review.md, lessons.md, summary.md)
+- `docs/issues/` — bugs and gaps (one file per issue, tracked in backlog)
 
 ## Status Check
 
@@ -194,7 +195,7 @@ Press Enter for Background.
    3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md.")`
    4. When architect passes → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
    5. Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
-   6. When approved → `SendMessage(to: "architect", message: "Close pipeline. Write summary.md and lessons.md.")`
+   6. When approved → `SendMessage(to: "architect", message: "Pipeline approved. Write your lessons to lessons.md.")` Then team lead writes summary.md and updates cross-references directly.
 
    **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
 
@@ -214,11 +215,12 @@ The pipeline runs per `.claude/rules/agents-workflow.md`.
 - When the user asks "what's next?", give direct recommendations based on the dependency order in the backlog.
 - If the user wants to skip ahead in the sequence, flag missing dependencies but don't refuse.
 - Keep it concise. You're a decision-making aid, not a narrator.
+- **When an agent message requires human approval, relay the agent's exact message to the user.** Do not summarize or rewrite it — the agent's message already contains the reasoning and options.
 - **You are the message hub.** All agent messages come to you. Triage and forward — see Message Dispatching section above.
 
 ## Team Shutdown
 
-- **No issues detected:** Shut down the team immediately after the pipeline completes (summary.md written, all agents report done). After shutdown, update the feature's Status in `docs/backlog.md` to `Done`.
+- **No issues detected:** After reviewer approval, write `docs/plans/{FeatureName}/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Then shut down the team.
 - **Issues detected** (failed writes, miscommunication, missing handoffs, or any unexpected behavior): Do NOT shut down the team. Instead:
   1. Identify each issue.
   2. Message the relevant agent(s) to ask what happened and why.

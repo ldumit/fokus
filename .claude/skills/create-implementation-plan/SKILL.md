@@ -45,7 +45,7 @@ Before writing, ensure you have:
 
 6. **Write the plan** following `references/plan-template.md`. Output: `docs/plans/{Feature}/plan.md`.
 
-7. **Apply the auto-approve gate** from `agents-workflow.md` (<=12 steps, no open questions — auto-approve and message developer).
+7. **Apply the auto-approve gate** from `agents-workflow.md` (<=11 steps, no open questions — auto-approve and message developer).
 
 ## Arguments
 

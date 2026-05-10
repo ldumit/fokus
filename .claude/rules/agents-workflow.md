@@ -59,7 +59,7 @@ Human → architect (plan)
           ↓                     ↓ findings
      plan approved         architect fixes gaps → plan approved
                     ↓
-         auto-approve if ≤12 steps & no open questions, else human approves
+         auto-approve if ≤11 steps & no open questions, else human approves
                     ↓
               developer (implement → implementation.md)
                     ↓
@@ -102,7 +102,7 @@ Each handoff: trigger → sender → team lead action → receiver.
 **Trigger:** APPROVE verdict.
 **Reviewer says:** "For architect: APPROVED: {FeatureName}."
 **Team lead:** Forward to architect.
-**Architect:** Writes summary.md, updates lessons.md, reports to team lead.
+**Architect:** Updates lessons.md, reports to team lead. **Team lead:** Writes summary.md, updates cross-references (spec Status, backlog).
 
 ### Reviewer → Team Lead → Architect: Escalation
 **Trigger:** 3 fix cycles exhausted OR architecture decision needed.
@@ -138,6 +138,8 @@ Plans saved to `docs/plans/{FeatureName}/plan.md` by architect.
 
 ```
 # {Feature Name}
+
+**Feature Spec:** `docs/features/{Feature}/spec.md` | None
 
 ## Context
 What problem this solves. Which service(s) impacted and why.
@@ -195,7 +197,7 @@ Written by developer after each implementation round: `docs/plans/{FeatureName}/
 
 ## Summary File Format
 
-Written by architect after reviewer approval: `docs/plans/{FeatureName}/summary.md`. Its existence means the pipeline completed successfully.
+Written by team lead after reviewer approval: `docs/plans/{FeatureName}/summary.md`. Its existence means the pipeline completed successfully.
 
 ```
 # {Feature Name} — Summary
