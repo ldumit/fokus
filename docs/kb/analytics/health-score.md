@@ -7,19 +7,24 @@ Composite 0-100 score summarizing sprint health. Displayed as a RAG badge on the
 **Store:** `client/src/stores/dashboardStore.ts`
 **View:** `client/src/views/DashboardView.vue`
 
-## Input Metrics
+## Input Metrics (transition-based since TransitionBasedSprintScope)
 
 | Metric | Formula | Polarity |
 |--------|---------|----------|
-| Completion % | featureCompletedSP / featureCommittedSP * 100 | Higher is better |
-| Disruption % | addedSP / committedSP * 100 | Lower is better |
-| CarryOver % | carryOverSP / (committedSP + addedSP) * 100 | Lower is better |
+| Completion % | completedSp / activeSp * 100 | Higher is better |
+| Disruption % | addedSp / activeSp * 100 | Lower is better |
+| CarryOver % | carryOverSp / activeSp * 100 | Lower is better |
 
-All SP sums use `GetEffectiveSp(defaultSpPerBug)`: returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if ticket is a Bug and default > 0, else null. Filter: `RemovedAt == null`. Committed = `WasCommitted == true`. Completed = `FinalStatus IN doneStatuses`. Added = `WasCommitted == false`. CarryOver = `FinalStatus NOT IN doneStatuses`.
+All metrics are **feature-only** and **transition-based** (see cross-cutting.md TransitionBasedSprintScope). All SP sums use `GetEffectiveSp(defaultSpPerBug)`. Filter: `RemovedAt == null AND !IsBug AND !excluded`.
 
-**Completion % is feature-only** (since FeatureOnlyMetrics): uses `featureCommitted` (committed && !IsBug) and `featureCompleted` (done && !IsBug) as denominator and numerator. Returns 0 if featureCommitted == 0.
+- `activeSp` = sum(SP) where isStarted (transitioned to CycleTimeStartStage or beyond during sprint)
+- `completedSp` = sum(SP) where isCompleted (transitioned to CycleTimeEndStage or beyond during sprint)
+- `addedSp` = sum(SP) where isAdded (AddedAt > sprintStart AND isStarted)
+- `carryOverSp` = sum(SP) where isStarted AND !isCompleted
 
-**Disruption rates and Carry-Over Rate remain total-scope** (include bugs in committed denominator and carry-over numerator). The single combined `DisruptionRate` (scope + bug additions combined) is used for the health score. The dashboard displays it split into two metric cards: **Scope Disruption Rate** (non-bug additions) and **Bug Disruption Rate** (bug additions).
+Completion % can exceed 100% when carry-over from a prior sprint completes in the current sprint (no activeSp increment, but completedSp increments).
+
+The dashboard displays disruption split into two metric cards: **Scope Disruption Rate** (feature additions / activeSp) and **Bug Disruption Rate** (bug additions / activeSp).
 
 ## Per-Metric Scoring
 

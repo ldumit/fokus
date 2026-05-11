@@ -7,36 +7,44 @@ Measures what changed during a sprint — additions, removals, and disruption cl
 **Store:** `client/src/stores/sprintsStore.ts`
 **View:** `client/src/views/SprintsView.vue`
 
-## Core Formulas
+## Core Formulas (planning-gated since PlanningGatedDisruption)
+
+All scope attribution uses `TransitionAttributionChecker` (see cross-cutting.md). Feature-only throughout.
+`planningCutoff = sprint.StartDate.AddDays(planningWindowDays)` (configured in Settings).
 
 ```
-committedSpActive = sum(SP) where WasCommitted AND !Removed AND NOT IN excludedStatuses
-committedSpTotal  = sum(SP) where WasCommitted AND !Removed (no exclusion)
-addedSp           = sum(SP) where !WasCommitted AND !Removed AND NOT IN excludedStatuses
-removedSp         = sum(SP) where Removed
-completedSp       = sum(SP) where FinalStatus IN doneStatuses AND !Removed AND NOT IN excludedStatuses
-netScopeChange    = addedSp - removedSp
-disruptionRate    = addedSp / committedSpActive * 100  (0 if denominator == 0)
-bugCount          = count where !WasCommitted AND !Removed AND IssueType == "Bug"
+activeSp         = sum(SP) where isStarted AND !Removed AND !IsBug AND !excluded  (tickets that transitioned to startStage during sprint)
+committedSpTotal = sum(SP) where !IsBug AND (WasCommitted OR AddedAt <= planningCutoff) AND (RemovedAt == null OR RemovedAt > planningCutoff)
+                   (membership at planning cutoff — no excluded-status filter; matches dashed line behavior)
+addedSp          = sum(SP) where AddedAt > planningCutoff AND isStarted AND !Removed AND !IsBug AND !excluded  (post-planning cycle-entered additions)
+removedSp        = sum(SP) where RemovedAt > planningCutoff AND had entered cycle before removal AND !IsBug AND !excluded
+                   (IsRemovedPostPlanning: RemovedAt > planningCutoff AND qualifying start transition in [sprintStart, RemovedAt])
+completedSp      = sum(SP) where isCompleted AND !Removed AND !IsBug AND !excluded  (transition to endStage during sprint)
+bugSpCompleted   = sum(SP) where isCompleted AND !Removed AND IsBug AND !excluded  (separate bug bar)
+netScopeChange   = addedSp - removedSp
+disruptionRate   = addedSp / activeSp * 100  (0 if denominator == 0)
+bugCount         = count of bug tickets with isCompleted during sprint
 ```
 
 ## Classification (priority order)
 
-Each mid-sprint addition (non-committed, non-removed) gets exactly one category:
+Only tickets that qualify as Added SP (AddedAt > planningCutoff AND cycle-entered AND non-bug AND non-excluded AND non-removed) receive a classification category. 3 categories (Planning Overflow removed since PlanningGatedDisruption):
 
-1. **Planning Overflow** — AddedAt <= planningCutoff (sprint start + 2 days). Wins over all others.
-2. **Unplanned Bug** — IssueType == "Bug" AND added after planning window.
-3. **Priority Escalation** — Ticket.CreatedDate < sprint.StartDate AND added after day 2. Pre-existing work pulled in.
-4. **Scope Injection** — everything else after day 2. Brand new work.
+1. **Unplanned Bug** — IssueType == "Bug". (Note: bug tickets still get a category when they qualify as added.)
+2. **Priority Escalation** — Ticket.CreatedDate < sprint.StartDate. Pre-existing work pulled in after planning.
+3. **Scope Injection** — everything else. Brand new work added after planning.
 
-## Burnup Chart (single-sprint)
+## Burnup Chart (single-sprint, transition-based since TransitionBasedSprintScope)
 
-- Day 1 = sprint start. Starting scope = committedSpActive (feature-only: excludes bugs).
-- Each day: cumulative scope += added today - removed today (feature-only: additions and removals exclude bugs).
-- Completed SP uses the FIRST done-status transition within the sprint window per ticket (feature-only: bug completions do NOT step up the green line).
+- **Scope line (orange):** Cumulative feature SP that have transitioned to CycleTimeStartStage (or beyond) within [sprintStart, current day]. Starts near zero and grows as tickets enter the pipeline.
+- **Completed line (green):** Cumulative feature SP that have transitioned to CycleTimeEndStage (or beyond) within [sprintStart, current day].
+- **Bug area (red):** Unchanged — tracks remaining bug work (starts at bug SP present at sprint start, grows with bug additions, shrinks with bug completions and removals).
 - Phase shading: days 1-2 = "planning", day 3+ = "execution".
-- **Feature-only (since FeatureOnlyMetrics):** `totalScopeSp` and `completedSp` series exclude bug tickets (`IssueType != "Bug"`). Ticket counts (`totalScopeTickets`, `completedTickets`) also exclude bugs. The `bugSp` red area is unchanged.
-- **Multi-sprint fields unchanged:** `ComputePerSprintData` and `ComputeSprintMetrics` remain total-scope.
+- `TotalScopeSp` semantic changed from "plan-based scope" to "cumulative started tickets SP."
+
+## Multi-Sprint Bar Chart (since TransitionBasedSprintScope)
+
+`ScopeChangePerSprintData` includes `BugSpCompleted` field — separate bug SP completed bars alongside feature bars. Previously total-scope fields are now feature-only.
 
 ## Bug Time-in-Progress (single-sprint)
 

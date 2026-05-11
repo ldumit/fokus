@@ -9,7 +9,7 @@ Measures how much developer capacity goes to bug fixing vs. planned work.
 
 ## Core Formulas
 
-Bug = `IssueType == "Bug"` (exact match, case-sensitive). Completed = `FinalStatus IN doneStatuses AND RemovedAt == null AND FinalStatus NOT IN excludedStatuses`.
+Bug = `IssueType == "Bug"` (exact match, case-sensitive). Completed = `isCompletedInSprint AND RemovedAt == null AND FinalStatus NOT IN excludedStatuses` (transition-based since TransitionBasedSprintScope — see cross-cutting.md).
 
 All SP sums use `GetEffectiveSp(defaultSpPerBug)`: returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if Bug and default > 0, else null. Configured via `AppSettings.DefaultSpPerBug` (default 3).
 
@@ -26,7 +26,7 @@ bugRatioPercent = bugSp / completedSp * 100  (0 if completedSp == 0)
 
 Configurable in Settings: threshold (default 50%), consecutive sprint count (default 2).
 
-**Evaluation:** Walks closed sprints from most recent backward. Counts consecutive sprints where developer's bug ratio >= threshold. Alert is active if count >= configured consecutive sprint count.
+**Evaluation:** Walks closed sprints from most recent backward. Counts consecutive sprints where developer's bug ratio >= threshold (transition-based completion per sprint). Alert is active if count >= configured consecutive sprint count.
 
 **Streak breakers:**
 - A sprint with 0 completed SP = 0% bug ratio -> breaks the streak

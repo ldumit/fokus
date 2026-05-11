@@ -55,10 +55,18 @@ public class EpicProgressService
         List<SprintMembership> allClosedMemberships,
         List<Ticket> unlinkedTickets,
         AppSettings settings,
+        List<StatusTransition> statusTransitions,
+        List<Sprint> closedSprints,
         string? subTeam)
     {
-        var doneStatuses = settings.DoneStatuses;
+        var completedStatuses = CompletionChecker.ResolveCompletedStatuses(settings);
         var defaultSpPerBug = settings.DefaultSpPerBug;
+
+        var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+
+        // Build sprint date lookup for velocity transition checks
+        var sprintDateLookup = closedSprints.ToDictionary(s => s.Id, s => (s.StartDate, s.EndDate));
 
         // BR13: sub-team filtering
         var filteredEpicTickets = FilterTickets(epicTickets, subTeam);
@@ -81,8 +89,8 @@ public class EpicProgressService
             var epicName = tickets.First().EpicName ?? epicKey;
 
             // Done vs remaining (BR2)
-            var doneTickets = tickets.Where(t => doneStatuses.Contains(t.CurrentStatus)).ToList();
-            var remainingTickets = tickets.Where(t => !doneStatuses.Contains(t.CurrentStatus)).ToList();
+            var doneTickets = tickets.Where(t => completedStatuses.Contains(t.CurrentStatus)).ToList();
+            var remainingTickets = tickets.Where(t => !completedStatuses.Contains(t.CurrentStatus)).ToList();
 
             var totalTickets = tickets.Count;
             var doneCount = doneTickets.Count;
@@ -130,17 +138,33 @@ public class EpicProgressService
                 .Where(sm => sm.Ticket?.EpicKey == epicKey)
                 .ToList();
 
-            // Group by SprintId, sum completed SP per sprint
+            var transitionsByTicket = statusTransitions
+                .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            // Group by SprintId, sum completed SP per sprint (transition-based — spec BR16 velocity)
             var sprintSpCompleted = epicMemberships
                 .GroupBy(sm => sm.SprintId)
-                .Select(g => new
+                .Select(g =>
                 {
-                    SprintId = g.Key,
-                    SprintStartDate = g.First().Sprint?.StartDate ?? DateTime.MinValue,
-                    CompletedSp = g
-                        .Where(sm => doneStatuses.Contains(sm.FinalStatus)
-                                     && sm.RemovedAt == null)
-                        .Sum(sm => sm.GetEffectiveSp(defaultSpPerBug) ?? 0m)
+                    var sprintId = g.Key;
+                    var sprintStartDate = g.First().Sprint?.StartDate ?? DateTime.MinValue;
+                    var (sprintStart, sprintEnd) = sprintDateLookup.TryGetValue(sprintId, out var dates)
+                        ? dates
+                        : (sprintStartDate, sprintStartDate);
+
+                    var completedSp = g
+                        .Where(sm =>
+                        {
+                            if (sm.RemovedAt != null) return false;
+                            var ticketTransitions = transitionsByTicket.GetValueOrDefault(sm.TicketId, []);
+                            var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                                sm.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                            return isCompleted;
+                        })
+                        .Sum(sm => sm.GetEffectiveSp(defaultSpPerBug) ?? 0m);
+
+                    return new { SprintId = sprintId, SprintStartDate = sprintStartDate, CompletedSp = completedSp };
                 })
                 .Where(x => x.CompletedSp > 0) // BR8: skip zero-progress sprints
                 .OrderByDescending(x => x.SprintStartDate)
@@ -176,7 +200,7 @@ public class EpicProgressService
                 .Count();
 
             // Is completed (BR11): all tickets have done status
-            var isCompleted = tickets.All(t => doneStatuses.Contains(t.CurrentStatus));
+            var isCompleted = tickets.All(t => completedStatuses.Contains(t.CurrentStatus));
 
             // Ticket list — sort: remaining first (by current status for grouping), then done (BR spec Flow 2 step 3)
             var ticketEntries = remainingTickets
@@ -189,7 +213,7 @@ public class EpicProgressService
                     t.StoryPoints,
                     t.CurrentStatus,
                     t.Assignee?.DisplayName,
-                    doneStatuses.Contains(t.CurrentStatus)))
+                    completedStatuses.Contains(t.CurrentStatus)))
                 .ToList();
 
             epicEntries.Add(new EpicProgressEntry(

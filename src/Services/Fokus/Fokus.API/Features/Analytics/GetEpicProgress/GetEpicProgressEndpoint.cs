@@ -30,15 +30,24 @@ public class GetEpicProgressEndpoint(
             return;
         }
 
-        // 5. Load all closed sprint memberships
+        // 5. Load all closed sprints (lightweight, for velocity transition date ranges)
+        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
+        var closedSprintIds = closedSprints.Select(s => s.Id).ToList();
+
+        // 6. Load all closed sprint memberships (for velocity grouping by sprint)
         var closedMemberships = await sprintRepository.GetAllClosedSprintMembershipsAsync(ct);
 
-        // 6. Load unlinked tickets (in at least one sprint, no epic key)
+        // 7. Load status transitions for all closed sprint tickets (for transition-based velocity)
+        var statusTransitions = closedSprintIds.Count > 0
+            ? await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(closedSprintIds, ct)
+            : new List<StatusTransition>();
+
+        // 8. Load unlinked tickets (in at least one sprint, no epic key)
         var unlinkedTickets = await ticketRepository.GetTicketsWithoutEpicInSprintsAsync(ct);
 
-        // 7. Compute epic progress
+        // 9. Compute epic progress
         var result = epicProgressService.ComputeEpicProgress(
-            epicTickets, closedMemberships, unlinkedTickets, settings, subTeam);
+            epicTickets, closedMemberships, unlinkedTickets, settings, statusTransitions, closedSprints, subTeam);
 
         await SendOkAsync(result, ct);
     }

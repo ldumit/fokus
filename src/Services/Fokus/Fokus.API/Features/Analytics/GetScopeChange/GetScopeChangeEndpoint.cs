@@ -59,24 +59,14 @@ public class GetScopeChangeEndpoint(
                 ? loadedSprints.FirstOrDefault(s => s.Id == priorSprintLightweight.Id)
                 : null;
 
-            // 8b. Compute excluded developer IDs for the target sprint
+            // 8b. Load status transitions for all sprint tickets (replaces ticket-ID-based approach)
+            var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(sprintIdsToLoad, ct);
+
+            // 9b. Compute excluded developer IDs for the target sprint
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                targetSprint, allDevelopers, capacityRecords, settings.DoneStatuses);
+                targetSprint, allDevelopers, capacityRecords, statusTransitions, settings);
 
-            // 9b. Identify all non-removed ticket IDs (needed for burnup completion tracking)
-            var allActiveTicketIds = targetSprint.Memberships
-                .Where(m => m.RemovedAt == null)
-                .Select(m => m.TicketId)
-                .ToList();
-
-            // 10b. Load status transitions for all active tickets.
-            // BuildBurnupData uses these to place each ticket's completion on the correct day.
-            // ComputeBugTimeInProgress filters internally to mid-sprint bugs only.
-            var statusTransitions = allActiveTicketIds.Count > 0
-                ? await ticketRepository.GetStatusTransitionsForTicketsAsync(allActiveTicketIds, ct)
-                : new List<StatusTransition>();
-
-            // 11b. Compute single-sprint response
+            // 10b. Compute single-sprint response
             var singleResult = scopeChangeService.ComputeSingleSprint(
                 targetSprint, priorSprint, statusTransitions, settings, subTeam, excludedIds);
 
@@ -95,17 +85,20 @@ public class GetScopeChangeEndpoint(
             // 7a. Bulk load sprints with memberships
             var loadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(targetIds, ct);
 
-            // 8a. Compute excluded developer IDs across all target sprints
+            // 8a. Load status transitions for all target sprint tickets
+            var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(targetIds, ct);
+
+            // 9a. Compute excluded developer IDs across all target sprints
             var excludedInAll = loadedSprints
                 .SelectMany(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses))
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings))
                 .GroupBy(id => id)
                 .Where(g => g.Count() == loadedSprints.Count)
                 .Select(g => g.Key)
                 .ToHashSet();
 
-            // 9a. Compute multi-sprint response
-            var multiResult = scopeChangeService.ComputeMultiSprint(loadedSprints, settings, subTeam, excludedInAll);
+            // 10a. Compute multi-sprint response
+            var multiResult = scopeChangeService.ComputeMultiSprint(loadedSprints, statusTransitions, settings, subTeam, excludedInAll);
 
             await SendOkAsync(new ScopeChangeResponse("multi", multiResult, null), ct);
         }

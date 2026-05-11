@@ -70,17 +70,20 @@ public class GetSprintSummaryEndpoint(
                 g => g.Key,
                 g => g.ToDictionary(c => c.SprintId, c => c.CapacityPercent));
 
+        // 8b. Load status transitions for all window sprint tickets
+        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(windowIds, ct);
+
         // 9. Apply cross-cutting exclusion for the selected sprint
         var selectedSprint = windowSprints.First(s => s.Id == selectedSprintInfo.Id);
         var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-            selectedSprint, allDevelopers, capacityRecords, settings.DoneStatuses);
+            selectedSprint, allDevelopers, capacityRecords, statusTransitions, settings);
         var filteredActiveDevelopers = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
         // 10. Load all epic tickets for F8/F14 alignment (BR20)
         var allEpicTickets = await ticketRepository.GetTicketsWithEpicAsync(ct);
 
         // 11. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, excludedIds);
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds);
 
         await SendOkAsync(result, ct);
     }

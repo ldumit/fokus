@@ -344,6 +344,8 @@ export interface BurnupDataPoint {
   totalScopeTickets: number
   completedTickets: number
   bugTickets: number
+  committedTotalSp: number
+  committedTotalTickets: number
 }
 
 export interface ScopeChangeEvent {

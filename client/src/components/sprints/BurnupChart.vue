@@ -24,6 +24,11 @@ const series = computed(() => [
     data: props.burnupData.map(d => d.bugSp)
   },
   {
+    name: 'Committed Total',
+    type: 'line',
+    data: props.burnupData.map(d => d.committedTotalSp)
+  },
+  {
     name: 'Scope SP',
     type: 'line',
     data: props.burnupData.map(d => d.totalScopeSp)
@@ -40,6 +45,8 @@ const planningEndIndex = computed(() =>
   props.burnupData.filter(d => d.phase === 'planning').length - 1
 )
 
+
+
 const chartOptions = computed(() => ({
   chart: {
     type: 'line',
@@ -47,10 +54,10 @@ const chartOptions = computed(() => ({
     toolbar: { show: false },
     animations: { enabled: false }
   },
-  stroke: { curve: 'smooth', width: [0, 2, 1] },
+  stroke: { curve: 'smooth', width: [0, 2, 2, 1], dashArray: [0, 5, 0, 0] },
   fill: {
-    type: ['solid', 'solid', 'gradient'],
-    opacity: [0.2, 1, 1],
+    type: ['solid', 'solid', 'solid', 'gradient'],
+    opacity: [0.2, 1, 1, 1],
     gradient: {
       shade: 'dark',
       type: 'vertical',
@@ -58,7 +65,7 @@ const chartOptions = computed(() => ({
       opacityTo: 0.05
     }
   },
-  colors: ['#ef4444', '#f97316', '#22c55e'],
+  colors: ['#ef4444', '#9ca3af', '#f97316', '#22c55e'],
   xaxis: {
     categories: xLabels.value,
     labels: { style: { colors: '#9ca3af', fontSize: '11px' }, rotate: -30 }
@@ -69,12 +76,13 @@ const chartOptions = computed(() => ({
   },
   tooltip: {
     theme: 'dark',
-    custom: ({ seriesIndex, dataPointIndex, w }: { seriesIndex: number; dataPointIndex: number; w: any }) => {
+    custom: ({ dataPointIndex, w }: { seriesIndex: number; dataPointIndex: number; w: any }) => {
       const d = props.burnupData[dataPointIndex]
       if (!d) return ''
       const label = w.globals.categoryLabels[dataPointIndex] ?? xLabels.value[dataPointIndex] ?? ''
       const rows = [
         { name: 'Bug SP', value: d.bugSp.toFixed(1), tickets: d.bugTickets, color: '#ef4444' },
+        { name: 'Committed Total', value: d.committedTotalSp.toFixed(1), tickets: d.committedTotalTickets, color: '#9ca3af' },
         { name: 'Scope SP', value: d.totalScopeSp.toFixed(1), tickets: d.totalScopeTickets, color: '#f97316' },
         { name: 'Completed SP', value: d.completedSp.toFixed(1), tickets: d.completedTickets, color: '#22c55e' },
       ]

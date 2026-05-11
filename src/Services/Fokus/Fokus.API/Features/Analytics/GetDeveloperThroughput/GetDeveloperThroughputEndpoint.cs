@@ -6,6 +6,7 @@ public class GetDeveloperThroughputEndpoint(
     SprintRepository sprintRepository,
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
+    TicketRepository ticketRepository,
     DeveloperThroughputService developerThroughputService)
     : Endpoint<GetDeveloperThroughputRequest, DeveloperThroughputResponse>
 {
@@ -77,11 +78,14 @@ public class GetDeveloperThroughputEndpoint(
         // 9. Normalize sub-team
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
-        // 10. Apply cross-cutting exclusion: remove developers excluded in ALL target sprints
+        // 10. Load status transitions for all sprint tickets (covers target + rolling average window)
+        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allSprintIds, ct);
+
+        // 11. Apply cross-cutting exclusion: remove developers excluded in ALL target sprints
         var targetSprintsLoaded = loadedSprints.Where(s => targetSprintIds.Contains(s.Id)).ToList();
         var excludedInAllTargets = activeDevelopers
             .Where(dev => targetSprintsLoaded.All(sprint =>
-                ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses)
+                ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings)
                     .Contains(dev.Id)))
             .Select(dev => dev.Id)
             .ToHashSet();
@@ -89,7 +93,7 @@ public class GetDeveloperThroughputEndpoint(
             .Where(d => !excludedInAllTargets.Contains(d.Id))
             .ToList();
 
-        // 11. Compute throughput
+        // 12. Compute throughput
         var result = developerThroughputService.ComputeThroughput(
             loadedSprints,
             targetSprintIds,
@@ -97,7 +101,8 @@ public class GetDeveloperThroughputEndpoint(
             capacityRecords,
             settings,
             subTeam,
-            allDevelopers);
+            allDevelopers,
+            statusTransitions);
 
         await SendOkAsync(result, ct);
     }

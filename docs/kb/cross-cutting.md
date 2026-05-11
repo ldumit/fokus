@@ -60,37 +60,88 @@ Applied in: SprintSummary, ScopeChange, CarryOver, BugRatio, Throughput, EpicPro
 
 Setting `DefaultSpPerBug = 0` disables the fallback entirely — unestimated bugs contribute no SP.
 
-## Feature-Only Metrics (FeatureOnlyMetrics)
+## Feature-Only Metrics (FeatureOnlyMetrics + TransitionBasedSprintScope)
 
-Several analytics surfaces show feature-only values — bugs are excluded from the computation. The filtering rule is `!IsBug(m)` where `IsBug(m) => m.Ticket?.IssueType == "Bug"`.
+All sprint scope surfaces are feature-only — bugs are excluded from the computation. The filtering rule is `!IsBug(m)` where `IsBug(m) => m.Ticket?.IssueType == "Bug"`.
 
-### Feature-only surfaces
+### Feature-only surfaces (all scope metrics)
 
 | Surface | Metrics | Where |
 |---------|---------|-------|
-| Dashboard SP Completed card | Value, delta, sparkline | SprintSummaryService |
-| Dashboard Completion % card | Value (featureCompleted / featureCommitted), delta, sparkline | SprintSummaryService |
+| Dashboard Active SP card | activeSp (transition-based), delta, sparkline | SprintSummaryService |
+| Dashboard Completion % card | completedSp / activeSp, delta, sparkline | SprintSummaryService |
 | Dashboard Health Score — Completion sub-score | Uses feature-only Completion % | SprintSummaryService |
-| Burnup chart scope line (orange) | totalScopeSp, totalScopeTickets | ScopeChangeService |
-| Burnup chart completed line (green) | completedSp, completedTickets | ScopeChangeService |
-| Developer Throughput table | spAssigned, spCompleted, completionPercent, ticketsDone, ticketsCarriedOver, rolling average, all deltas | DeveloperThroughputService |
+| Dashboard Carry-Over Rate | carryOverSp / activeSp | SprintSummaryService |
+| Dashboard Scope Disruption Rate | addedSp / activeSp | SprintSummaryService |
+| Burnup chart scope line (orange) | cumulative feature tickets transitioned to startStage | ScopeChangeService |
+| Burnup chart completed line (green) | cumulative feature tickets transitioned to endStage | ScopeChangeService |
+| Multi-sprint bar chart | activeSp, completedSp (feature-only) + BugSpCompleted (separate bug bars) | ScopeChangeService |
+| Carry-Over tracker | carryOverSp, carryOverRate, totalScopeSp | CarryOverService |
+| Developer Throughput table | spAssigned, spCompleted, completionPercent, ticketsDone, ticketsCarriedOver, rolling average | DeveloperThroughputService |
 
-### Remain total-scope (include bugs)
+### Remain total-scope or separate (include bugs)
 
-- Scope Disruption Rate (denominator is total committed, not feature committed)
-- Bug Disruption Rate (same denominator)
-- Carry-Over Rate (all uncommitted + committed in numerator and denominator)
-- Burnup chart bug SP area (red) — tracks remaining bug work
-- Sprints page multi-sprint scope/completion fields
-- Dashboard SP Completed annotation `(+X bug SP)` — a separate field `bugSpCompleted` on MetricsResult
+- Burnup chart bug SP area (red) — tracks remaining bug work separately
+- `BugSpCompleted` field on `ScopeChangePerSprintData` — separate bug bars in multi-sprint bar chart
+- Dashboard SP Completed annotation `(+X bug SP)` — a separate field `BugSpCompleted` on SprintMetrics
 
-### Two-committed-SP pattern
+## Transition-Based Sprint Scope (TransitionBasedSprintScope)
 
-`ComputeMetrics` in SprintSummaryService maintains two committed aggregates:
-- `committed` (total, including bugs) — used as denominator for disruption rates and carry-over
-- `featureCommitted` (bugs excluded) — used as denominator for completion rate
+All sprint scope attribution uses transition timestamps, not snapshot fields (`WasCommitted`, `FinalStatus`).
 
-`SprintMetrics` record carries both `FeatureCompleted` and `BugSpCompleted` for downstream use.
+**Utility:** `TransitionAttributionChecker` (`Fokus.API/Features/Analytics/TransitionAttributionChecker.cs`)
+
+**Attribution rules:**
+- A ticket is **started** in the sprint where its first qualifying transition to CycleTimeStartStage (or beyond) occurred within [sprintStart, sprintEnd].
+- A ticket is **completed** in the sprint where its first qualifying transition to CycleTimeEndStage (or beyond) occurred within [sprintStart, sprintEnd].
+- Each transition timestamp falls in exactly one sprint — no double-counting.
+
+**Ordered stage sequence:** `WorkflowStages ++ DoneStatuses` (same construction as CompletionChecker).
+
+**Start stage fallback (spec BR19):** `CycleTimeStartStage ?? orderedStages[0]` (first stage — scope attribution captures all sprint engagement including queue entry; wider than cycle time measurement which defaults to second stage).
+
+**End stage fallback:** `CycleTimeEndStage ?? DoneStatuses[0]`. Returns -1 if no done statuses configured (nothing completes).
+
+**Key methods:**
+- `ResolveStartIndex(settings)` → `(orderedStages, startIndex)`
+- `ResolveEndIndex(settings, orderedStages)` → `endIndex` (−1 = nothing completes)
+- `IsStartedInSprint(ticketId, transitions, sprintStart, sprintEnd, orderedStages, startIndex)` → `(bool, DateTime?)`
+- `IsCompletedInSprint(ticketId, transitions, sprintStart, sprintEnd, orderedStages, endIndex)` → `(bool, DateTime?)`
+- `IsAddedInSprint(membership, isStarted, planningCutoff)` → `bool` — AddedAt > planningCutoff AND isStarted
+- `IsCarryOver(isStarted, isCompleted)` → `bool` — started AND NOT completed
+
+**Transition loading:** Endpoints load transitions via `TicketRepository.GetStatusTransitionsForSprintTicketsAsync(sprintIds)` — single bulk query joining SprintMemberships to StatusTransitions.
+
+**Used by:** All 8 analytics services, ExcludedDeveloperFilter.
+
+**Carry-over completions:** A ticket started in a prior sprint and completed in the current sprint adds to `completedSp` but NOT `activeSp` for the current sprint. This is why completion % can exceed 100% (spec BR14).
+
+## Boundary-Driven Completion (BoundaryDrivenCompletion)
+
+**Retained for non-sprint-scope uses only.** For sprint scope attribution, use `TransitionAttributionChecker` instead.
+
+**Utility:** `CompletionChecker` (`Fokus.API/Features/Analytics/CompletionChecker.cs`)
+
+**Answers:** "Is this status a completed status?" (position-based, snapshot check on CurrentStatus or FinalStatus).
+
+**Still used by:**
+- EpicProgress progress tracking — `CurrentStatus IN completedStatuses` (current state, not sprint attribution)
+- ExcludedFromScopeStatuses filtering — `FinalStatus` at sprint end (spec BR15)
+
+**NOT used by:** Sprint scope attribution in any service. All services use `TransitionAttributionChecker` for started/completed checks.
+
+## Planning-Gated Disruption (PlanningGatedDisruption)
+
+All disruption metrics are now gated by `planningCutoff = sprint.StartDate.AddDays(planningWindowDays)`:
+
+- **Dashboard Scope Disruption Rate** (`SprintSummaryService.ComputeScopeDisruptionRate`): uses `planningCutoff` as the addition threshold — only post-planning cycle-entered feature additions count.
+- **Dashboard Bug Disruption Rate** (`SprintSummaryService.ComputeBugDisruptionRate`): same — uses `planningCutoff` for bug additions.
+- **Dashboard `ComputeMetrics`**: `IsAddedInSprint` receives `planningCutoff` (not `sprintStart`).
+- **Mid-sprint disruption flag** (`SprintSummaryService.ComputeFlags`): uses `planningWindowDays` instead of hardcoded 2 days for `disruptionCutoff`.
+- **`IsAddedInSprint`** (`TransitionAttributionChecker`): parameter renamed from `sprintStart` to `planningCutoff` — callers pass `sprint.StartDate.AddDays(planningWindowDays)`.
+- **`IsRemovedPostPlanning`** (`TransitionAttributionChecker`): new method — checks `RemovedAt > planningCutoff` AND qualifying start transition in `[sprintStart, RemovedAt]`.
+
+`planningWindowDays` is configured in `AppSettings` (Settings page). Default is 2.
 
 ## Division by Zero
 

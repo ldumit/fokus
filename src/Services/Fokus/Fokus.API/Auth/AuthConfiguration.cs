@@ -36,8 +36,7 @@ public static class AuthConfiguration
             })
             .AddGoogle(options =>
             {
-                options.ClientId = configuration["Google:ClientId"] ?? throw new InvalidOperationException("Google:ClientId is not configured.");
-                options.ClientSecret = configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Google:ClientSecret is not configured.");
+                configuration.GetSection("Google").Bind(options);
                 options.CallbackPath = "/auth/callback";
                 options.SaveTokens = false;
                 options.Events.OnTicketReceived = async context =>

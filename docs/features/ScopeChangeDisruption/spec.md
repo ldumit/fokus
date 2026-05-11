@@ -191,7 +191,7 @@ Bug time-in-progress entry:
 
 9. **Bug time-in-progress measures capacity consumed by bugs.** For each bug added mid-sprint, compute the total calendar time spent in active work statuses (statuses between the workflow start and end boundaries from app settings). Expressed in days (fractional). Available only in single-sprint detail view.
 
-10. **Burnup chart uses daily granularity.** Each day of the sprint is a data point. Total scope line starts at committed SP and steps up (addition) or down (removal) on the day the event occurred. Completed SP line climbs as tickets reach done statuses. Both lines use active commitment (after exclusion).
+10. **Burnup chart uses daily granularity.** Each day of the sprint is a data point. The chart has four series: Scope SP (transition-based cumulative), Completed SP (transition-based cumulative), Committed Total (membership-based daily snapshot, dashed), and Bug SP (area). Scope and completed lines are governed by F23 BR11. The Committed Total line is governed by F23 BR12. Bug area is unchanged from original design.
 
 11. **Phase shading on burnup chart.** Days 1-2 are the "planning" phase. Day 3 onward is the "execution" phase. This provides visual context for when scope changes occurred without requiring a separate timeline chart.
 

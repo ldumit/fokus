@@ -150,6 +150,18 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 
 **F21:** Separates delivery metrics from bug metrics across Dashboard, burnup chart, and throughput table. SP Completed and Completion % become feature-only (with bug SP annotation on the card). Health score Completion sub-score uses feature-only completion %. Burnup chart scope/completed lines exclude bugs (red bug area unchanged). Throughput tab excludes bugs. Principle: delivery surfaces show features, bug surfaces show bugs, leaderboard bridges both.
 
+| F22 | Boundary-Driven Completion | Done | [BoundaryDrivenCompletion](features/BoundaryDrivenCompletion/spec.md) | [BoundaryDrivenCompletion](plans/BoundaryDrivenCompletion/plan.md) |
+
+**F22:** Completion across all analytics derived from cycle time end boundary instead of static done statuses list. Changing the cycle time end stage redefines what "completed" means everywhere — dev throughput (end at Testing), end-to-end (end at Done), or any workflow boundary. Done statuses setting retained but no longer drives completion. Affects F8, F9, F10, F11, F12, F13, F14, F21.
+
+| F23 | Transition-Based Sprint Scope | Done | [TransitionBasedSprintScope](features/TransitionBasedSprintScope/spec.md) | [TransitionBasedSprintScope](plans/TransitionBasedSprintScope/plan.md) |
+
+**F23:** Sprint scope attribution via StatusTransition timestamps instead of snapshot-based WasCommitted/FinalStatus. Both cycle time boundaries drive all metrics: CycleTimeStartStage defines active/committed, CycleTimeEndStage defines completed. No carry-over double-counting. All scope surfaces feature-only with separate bug bars. Supersedes F22 completion mechanism. Affects F8, F9, F10, F11, F12, F13, F14.
+
+| F24 | Planning-Gated Disruption | Done | [PlanningGatedDisruption](features/PlanningGatedDisruption/spec.md) | [PlanningGatedDisruption](plans/PlanningGatedDisruption/plan.md) |
+
+**F24:** Aligns Committed SP cards and burnup chart into a coherent system. Total = membership at planning close (not activeSp + removedSp). Added/Removed SP gated by planning window + cycle entry — only post-planning, cycle-entered activity counts as disruption. Planning Overflow classification removed. Dashboard disruption rates and mid-sprint flag updated to use planningCutoff. Affects F8, F10.
+
 ---
 
 ### Tier 8 — Security & Access
@@ -191,7 +203,18 @@ Tracked in `docs/issues/`. One file per issue. Gaps are specified features with 
 | GAP-1 | Excluded from Scope Statuses UI | Gap | High | Open | F10 | [GAP-1](issues/GAP-1-excluded-statuses-ui.md) |
 | GAP-2 | Sprint Range Picker for Sync | Gap | Medium | Open | F5 | [GAP-2](issues/GAP-2-sprint-range-picker.md) |
 | GAP-3 | Sub-Team Management UI | Gap | Medium | Open | F3 | [GAP-3](issues/GAP-3-sub-team-management-ui.md) |
+| GAP-4 | Sprint Cards Total-Scope vs Burnup Feature-Only | Gap | Medium | Open | F21 | [GAP-4](issues/GAP-4-sprint-cards-scope-mismatch.md) |
 | BUG-1 | Bug Count = 0 on Sprint 26 | Bug | High | Open | F10 | [BUG-1](issues/BUG-1-bug-count-zero.md) |
+| BUG-2 | Bar Chart vs Burnup Completed SP Disagree (63 SP gap) | Bug | High | Open | F10/F21 | [BUG-2](issues/BUG-2-barchart-burnup-completed-sp-mismatch.md) |
+
+---
+
+## Tech Debt
+
+| ID | Item | Priority | Notes |
+|----|------|----------|-------|
+| TD-1 | Cookie `SecurePolicy.Always` for production | High | Currently `SameAsRequest` — cookies not marked Secure over HTTP. Must be `Always` before Azure deployment behind HTTPS. |
+| TD-2 | Google OAuth options pattern | Medium | `AuthConfiguration` reads `Google:ClientId`/`ClientSecret` via `configuration[]` + inline `Bind`. Should use a typed `GoogleAuthOptions` class with `ValidateDataAnnotations().ValidateOnStart()` like `JiraOptions`. |
 
 ---
 

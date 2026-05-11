@@ -35,11 +35,11 @@ function singleCards(metrics: ScopeChangeSingleSprintMetrics): ScopeMetricCard[]
 
 function singleCardTooltip(name: string): string {
   if (name === 'Committed SP (Active)') return 'Story points committed at sprint start. Active excludes tickets with excluded final statuses.'
-  if (name === 'Committed SP (Total)') return 'Story points committed at sprint start. Active excludes tickets with excluded final statuses.'
-  if (name === 'Added SP') return 'Story points on tickets added after the sprint started (not removed, not excluded).'
-  if (name === 'Removed SP') return 'Story points on tickets explicitly pulled out of the sprint.'
-  if (name === 'Net Scope Change') return 'Added SP minus removed SP. Positive means the sprint grew; negative means it shrank.'
-  if (name === 'Disruption Rate') return 'Added SP as a percentage of active committed SP. Lower is better.'
+  if (name === 'Committed SP (Total)') return 'Feature story points in the sprint when the planning window closed — what the team committed to going into execution.'
+  if (name === 'Added SP') return 'Feature story points added after planning ended that entered the work cycle. Measures real disruption, not planning adjustments.'
+  if (name === 'Removed SP') return 'Feature story points removed after planning ended that had entered the work cycle. Only counts started work that was pulled.'
+  if (name === 'Net Scope Change') return 'Added SP minus Removed SP, both measured after planning ended. Positive means execution scope grew.'
+  if (name === 'Disruption Rate') return 'Post-planning Added SP as a percentage of Active SP. Only counts additions that entered the cycle.'
   if (name === 'Bug Count') return 'Number of bug-type tickets added mid-sprint, regardless of story points.'
   return ''
 }

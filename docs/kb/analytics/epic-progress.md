@@ -12,7 +12,7 @@ Dual tracking (ticket count + story points) with velocity and projected completi
 All SP sums use `GetEffectiveTicketSp(ticket, defaultSpPerBug)` (local helper on `EpicProgressService`): returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if IssueType == "Bug" and default > 0, else null. Velocity uses `SprintMembership.GetEffectiveSp(defaultSpPerBug)`. Configured via `AppSettings.DefaultSpPerBug` (default 3).
 
 ```
-doneTickets          = tickets where CurrentStatus IN doneStatuses
+doneTickets          = tickets where CurrentStatus IN completedStatuses  (boundary-driven, see cross-cutting.md)
 ticketCompletionPct  = doneCount / totalCount * 100
 doneSp               = sum(effectiveSP) for done tickets
 remainingSp          = sum(effectiveSP) for remaining tickets
@@ -35,10 +35,16 @@ spCompletionPct = doneSp / adjustedTotalSp * 100
 
 Imputed SP are never used in velocity calculations. When an epic has zero estimated tickets, SP metrics are unavailable — ticket-count-only.
 
-## Velocity (rolling 3-sprint)
+## Dual Mode: Progress vs Velocity (since TransitionBasedSprintScope)
+
+**Progress tracking** (doneTickets, doneSp, spCompletionPct, isCompleted): Uses `CurrentStatus IN completedStatuses` (position-based, boundary-driven — see cross-cutting.md). Reflects current state of tickets, not sprint attribution.
+
+**Velocity tracking**: Uses `TransitionAttributionChecker.IsCompletedInSprint` — transition-based. The sprint where the CycleTimeEndStage transition occurred gets velocity credit.
+
+## Velocity (rolling 3-sprint, transition-based)
 
 - Groups closed sprint memberships for epic by sprint
-- Sums completed SP per sprint
+- Sums completed SP per sprint using transition-based completion (isCompletedInSprint per sprint's date range)
 - Excludes sprints with zero completed SP
 - Takes up to 3 most recent sprints by StartDate desc
 - Velocity = average completed SP across those sprints

@@ -6,6 +6,7 @@ public class GetLeaderboardEndpoint(
     SprintRepository sprintRepository,
     AppSettingsRepository appSettingsRepository,
     DeveloperRepository developerRepository,
+    TicketRepository ticketRepository,
     LeaderboardService leaderboardService)
     : Endpoint<GetLeaderboardRequest, LeaderboardResponse>
 {
@@ -47,7 +48,10 @@ public class GetLeaderboardEndpoint(
                 g => g.Key,
                 g => g.ToDictionary(c => c.SprintId, c => c.CapacityPercent));
 
-        // 9. Determine mode
+        // 9. Load status transitions for all closed sprint tickets
+        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allClosedIds, ct);
+
+        // 10. Determine mode
         if (req.SprintId.HasValue)
         {
             // Single-sprint mode
@@ -63,11 +67,11 @@ public class GetLeaderboardEndpoint(
             var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
 
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                target, allDevelopers, capacityRecords, settings.DoneStatuses);
+                target, allDevelopers, capacityRecords, statusTransitions, settings);
             var filteredActive = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
             var singleResult = leaderboardService.ComputeSingleSprint(
-                target, priorSprint, filteredActive, settings, subTeam, capacityLookup, allDevelopers, excludedIds);
+                target, priorSprint, filteredActive, settings, statusTransitions, subTeam, capacityLookup, allDevelopers, excludedIds);
 
             await SendOkAsync(new LeaderboardResponse("single", null, singleResult), ct);
         }
@@ -80,14 +84,14 @@ public class GetLeaderboardEndpoint(
             // For multi-sprint: exclude developers excluded in ALL selected sprints
             var excludedInAll = activeDevelopers
                 .Where(dev => selectedSprints.All(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses)
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings)
                         .Contains(dev.Id)))
                 .Select(dev => dev.Id)
                 .ToHashSet();
             var filteredActive = activeDevelopers.Where(d => !excludedInAll.Contains(d.Id)).ToList();
 
             var multiResult = leaderboardService.ComputeMultiSprint(
-                selectedSprints, filteredActive, settings, subTeam, capacityLookup, allDevelopers, excludedInAll);
+                selectedSprints, filteredActive, settings, statusTransitions, subTeam, capacityLookup, allDevelopers, excludedInAll);
 
             await SendOkAsync(new LeaderboardResponse("multi", multiResult, null), ct);
         }

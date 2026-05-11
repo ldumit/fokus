@@ -19,8 +19,8 @@ Both configurable in Settings. Null = auto-detect.
 
 ## Per-Ticket Computation
 
-1. Only completed tickets: `RemovedAt == null AND FinalStatus IN doneStatuses`
-2. Find earliest done-status transition within [sprintStart, sprintEnd] — tickets done before the sprint are excluded
+1. Only completed tickets: `RemovedAt == null AND isCompletedInSprint` (transition-based pre-filter since TransitionBasedSprintScope — ticket must have a qualifying transition to CycleTimeEndStage or beyond within [sprintStart, sprintEnd])
+2. Find earliest qualifying completion transition within [sprintStart, sprintEnd] — tickets done before the sprint are excluded
 3. Walk ALL transitions for the ticket. For each transition entering a stage within [startStage, endStage]:
    - Entry time clamped to sprintStart if transition predates it
    - Exit time = next transition timestamp (clamped to sprintEnd), or sprintEnd if no next transition

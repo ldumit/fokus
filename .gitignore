@@ -3,11 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-# Secrets setup script
-setup-secrets.ps1
-
-# Google OAuth credentials
-client_secret*.json
+# Credentials (OAuth secrets, API tokens, setup scripts)
+.credentials/
 
 # User-specific files
 *.rsuser
@@ -48,8 +45,11 @@ bld/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
+# Deploy artifacts
+*.zip
+
 # Vite build output (populated by npm run build)
-src/Services/Reflekt/Reflekt.API/wwwroot/
+src/Services/*/*.API/wwwroot/
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/
@@ -424,19 +424,16 @@ FodyWeavers.xsd
 *.msp
 
 # SQLite data files
-data/*.db
-data/*.db-*
+*.db
+*.db-wal
+*.db-shm
 
 # Environment-specific settings (may contain secrets)
 appsettings.Development.json
 
-# Frontend build artifacts
-web/reflekt-web/node_modules/
-web/reflekt-web/dist/
 
 # Claude Plugins
 .omc
 
 # Graphify
-graphify-out/cache/
-graphify-out/graph.html
+graphify-out/

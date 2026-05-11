@@ -227,6 +227,8 @@ function copyInviteLink(link: string) {
 }
 const newStatus = ref('')
 const newStage = ref('')
+const doneStatusOpen = ref(false)
+const excludedStatusOpen = ref(false)
 
 // Board dropdown state
 const boards = ref<BoardOption[]>([])
@@ -237,7 +239,7 @@ const boardsError = ref(false)
 const statuses = ref<StatusOption[]>([])
 const statusesLoading = ref(false)
 const statusesError = ref(false)
-const selectedStatus = ref('')
+const selectedStatus = ref<string[]>([])
 
 const form = reactive<AppSettings>({
   boardId: null,
@@ -265,7 +267,7 @@ const form = reactive<AppSettings>({
 
 // Excluded statuses state (GAP-1)
 const excludedStatuses = ref<string[]>([])
-const selectedExcludedStatus = ref('')
+const selectedExcludedStatus = ref<string[]>([])
 const excludedSaving = ref(false)
 const excludedSaved = ref(false)
 const excludedError = ref('')
@@ -276,12 +278,13 @@ const availableExcludedStatuses = computed<StatusOption[]>(() => {
 
 function addExcludedStatus() {
   if (statuses.value.length > 0 && !statusesError.value) {
-    const val = selectedExcludedStatus.value.trim()
-    if (val && !excludedStatuses.value.includes(val)) {
-      excludedStatuses.value.push(val)
-      const next = availableExcludedStatuses.value.find(s => s.name !== val)
-      selectedExcludedStatus.value = next?.name ?? ''
+    for (const val of selectedExcludedStatus.value) {
+      if (val && !excludedStatuses.value.includes(val)) {
+        excludedStatuses.value.push(val)
+      }
     }
+    selectedExcludedStatus.value = []
+    excludedStatusOpen.value = false
   }
 }
 
@@ -416,12 +419,6 @@ onMounted(async () => {
   if (statusesResult.status === 'fulfilled') {
     statuses.value = statusesResult.value.statuses
     // Set default selection to first available
-    if (availableStatuses.value.length > 0) {
-      selectedStatus.value = availableStatuses.value[0].name
-    }
-    if (availableExcludedStatuses.value.length > 0) {
-      selectedExcludedStatus.value = availableExcludedStatuses.value[0].name
-    }
   } else {
     statusesError.value = true
   }
@@ -464,14 +461,13 @@ const reDetectDisabled = computed(() => {
 
 function addStatus() {
   if (statuses.value.length > 0 && !statusesError.value) {
-    // Dropdown mode
-    const val = selectedStatus.value.trim()
-    if (val && !form.doneStatuses.includes(val)) {
-      form.doneStatuses.push(val)
-      // Update selection to next available
-      const next = availableStatuses.value.find(s => s.name !== val)
-      selectedStatus.value = next?.name ?? ''
+    for (const val of selectedStatus.value) {
+      if (val && !form.doneStatuses.includes(val)) {
+        form.doneStatuses.push(val)
+      }
     }
+    selectedStatus.value = []
+    doneStatusOpen.value = false
   } else {
     // Fallback free-text mode
     const val = newStatus.value.trim()
@@ -706,24 +702,41 @@ async function syncAll() {
           </div>
           <!-- Dropdown mode -->
           <template v-if="!statusesError && !statusesLoading && statuses.length > 0">
-            <div class="flex gap-2">
-              <select
-                v-model="selectedStatus"
-                :disabled="isReadOnly"
-                class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="" disabled>Select a status...</option>
-                <option
-                  v-for="s in availableStatuses"
-                  :key="s.name"
-                  :value="s.name"
+            <div class="flex gap-2 items-center">
+              <div class="relative flex-1">
+                <div v-if="doneStatusOpen" class="fixed inset-0 z-[9]" @click="doneStatusOpen = false"></div>
+                <button
+                  type="button"
+                  @click="doneStatusOpen = !doneStatusOpen"
+                  :disabled="isReadOnly"
+                  class="w-full flex items-center justify-between bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="doneStatusOpen ? 'border-blue-500' : ''"
                 >
-                  {{ s.name }}<template v-if="s.categoryKey === 'done'"> *</template>
-                </option>
-              </select>
+                  <span :class="selectedStatus.length ? 'text-gray-100' : 'text-gray-500'">
+                    {{ selectedStatus.length ? `${selectedStatus.length} status${selectedStatus.length > 1 ? 'es' : ''} selected` : 'Select statuses...' }}
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 transition-transform" :class="doneStatusOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <div
+                  v-if="doneStatusOpen"
+                  class="absolute z-10 w-full bottom-full mb-1 bg-gray-800 border border-gray-700 rounded shadow-lg max-h-48 overflow-y-auto"
+                >
+                  <label
+                    v-for="s in availableStatuses"
+                    :key="s.name"
+                    class="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-100"
+                  >
+                    <input type="checkbox" :value="s.name" v-model="selectedStatus" class="accent-blue-500" />
+                    <span>{{ s.name }}<template v-if="s.categoryKey === 'done'"> *</template></span>
+                  </label>
+                  <p v-if="availableStatuses.length === 0" class="px-3 py-2 text-sm text-gray-500 italic">All statuses added</p>
+                </div>
+              </div>
               <button
                 @click="addStatus"
-                :disabled="!selectedStatus || isReadOnly"
+                :disabled="!selectedStatus.length || isReadOnly"
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded"
               >Add</button>
             </div>
@@ -783,22 +796,41 @@ async function syncAll() {
           </div>
           <!-- Dropdown mode -->
           <template v-if="!statusesError && !statusesLoading && statuses.length > 0">
-            <div class="flex gap-2">
-              <select
-                v-model="selectedExcludedStatus"
-                :disabled="isReadOnly"
-                class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="" disabled>Select a status...</option>
-                <option
-                  v-for="s in availableExcludedStatuses"
-                  :key="s.name"
-                  :value="s.name"
-                >{{ s.name }}</option>
-              </select>
+            <div class="flex gap-2 items-center">
+              <div class="relative flex-1">
+                <div v-if="excludedStatusOpen" class="fixed inset-0 z-[9]" @click="excludedStatusOpen = false"></div>
+                <button
+                  type="button"
+                  @click="excludedStatusOpen = !excludedStatusOpen"
+                  :disabled="isReadOnly"
+                  class="w-full flex items-center justify-between bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="excludedStatusOpen ? 'border-blue-500' : ''"
+                >
+                  <span :class="selectedExcludedStatus.length ? 'text-gray-100' : 'text-gray-500'">
+                    {{ selectedExcludedStatus.length ? `${selectedExcludedStatus.length} status${selectedExcludedStatus.length > 1 ? 'es' : ''} selected` : 'Select statuses...' }}
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 transition-transform" :class="excludedStatusOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <div
+                  v-if="excludedStatusOpen"
+                  class="absolute z-10 w-full bottom-full mb-1 bg-gray-800 border border-gray-700 rounded shadow-lg max-h-48 overflow-y-auto"
+                >
+                  <label
+                    v-for="s in availableExcludedStatuses"
+                    :key="s.name"
+                    class="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-gray-100"
+                  >
+                    <input type="checkbox" :value="s.name" v-model="selectedExcludedStatus" class="accent-blue-500" />
+                    <span>{{ s.name }}</span>
+                  </label>
+                  <p v-if="availableExcludedStatuses.length === 0" class="px-3 py-2 text-sm text-gray-500 italic">All statuses added</p>
+                </div>
+              </div>
               <button
                 @click="addExcludedStatus"
-                :disabled="!selectedExcludedStatus || isReadOnly"
+                :disabled="!selectedExcludedStatus.length || isReadOnly"
                 class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded"
               >Add</button>
             </div>

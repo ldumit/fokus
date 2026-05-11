@@ -59,21 +59,12 @@ public class GetCycleTimeEndpoint(
                 ? loadedSprints.FirstOrDefault(s => s.Id == priorSprintLightweight.Id)
                 : null;
 
-            // Load status transitions for all non-removed tickets in both sprints
-            var ticketIds = loadedSprints
-                .SelectMany(s => s.Memberships)
-                .Where(m => m.RemovedAt == null)
-                .Select(m => m.TicketId)
-                .Distinct()
-                .ToList();
-
-            var statusTransitions = ticketIds.Count > 0
-                ? await ticketRepository.GetStatusTransitionsForTicketsAsync(ticketIds, ct)
-                : new List<StatusTransition>();
+            // Load status transitions via sprint-based method
+            var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(sprintIdsToLoad, ct);
 
             // Compute excluded developer IDs for the target sprint
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                targetSprint, allDevelopers, capacityRecords, settings.DoneStatuses);
+                targetSprint, allDevelopers, capacityRecords, statusTransitions, settings);
 
             var singleResult = cycleTimeService.ComputeSingleSprint(
                 targetSprint, priorSprint, statusTransitions, settings, subTeam, excludedIds);
@@ -90,22 +81,13 @@ public class GetCycleTimeEndpoint(
 
             var loadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(targetIds, ct);
 
-            // Load status transitions for all non-removed tickets across all loaded sprints
-            var ticketIds = loadedSprints
-                .SelectMany(s => s.Memberships)
-                .Where(m => m.RemovedAt == null)
-                .Select(m => m.TicketId)
-                .Distinct()
-                .ToList();
-
-            var statusTransitions = ticketIds.Count > 0
-                ? await ticketRepository.GetStatusTransitionsForTicketsAsync(ticketIds, ct)
-                : new List<StatusTransition>();
+            // Load status transitions via sprint-based method
+            var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(targetIds, ct);
 
             // Compute excluded developer IDs across all target sprints
             var excludedInAll = loadedSprints
                 .SelectMany(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses))
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings))
                 .GroupBy(id => id)
                 .Where(g => g.Count() == loadedSprints.Count)
                 .Select(g => g.Key)

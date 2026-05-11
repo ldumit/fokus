@@ -6,6 +6,7 @@ public class GetCarryOverEndpoint(
     SprintRepository sprintRepository,
     AppSettingsRepository appSettingsRepository,
     DeveloperRepository developerRepository,
+    TicketRepository ticketRepository,
     CarryOverService carryOverService)
     : Endpoint<GetCarryOverRequest, CarryOverResponse>
 {
@@ -35,7 +36,10 @@ public class GetCarryOverEndpoint(
         var allLoadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(allClosedIds, ct);
         var allSprints = allLoadedSprints.OrderBy(s => s.StartDate).ToList();
 
-        // 6. Determine mode
+        // 6. Load status transitions for all closed sprint tickets
+        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allClosedIds, ct);
+
+        // 7. Determine mode
         if (req.SprintId.HasValue)
         {
             // Single-sprint mode
@@ -47,17 +51,17 @@ public class GetCarryOverEndpoint(
                 return;
             }
 
-            // 7b. Identify prior sprint (next-earlier by start date)
+            // 8b. Identify prior sprint (next-earlier by start date)
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
             var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
 
-            // 8b. Compute excluded developer IDs for the target sprint
+            // 9b. Compute excluded developer IDs for the target sprint
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                target, allDevelopers, capacityRecords, settings.DoneStatuses);
+                target, allDevelopers, capacityRecords, statusTransitions, settings);
 
-            // 9b. Compute single-sprint response
+            // 10b. Compute single-sprint response
             var singleResult = carryOverService.ComputeSingleSprint(
-                target, priorSprint, allSprints, settings, subTeam, excludedIds);
+                target, priorSprint, allSprints, statusTransitions, settings, subTeam, excludedIds);
 
             await SendOkAsync(new CarryOverResponse("single", null, singleResult), ct);
         }
@@ -67,21 +71,21 @@ public class GetCarryOverEndpoint(
             // last=0 means "all sprints"; null defaults to last 5
             var last = req.Last ?? 5;
 
-            // 7a. Take last N sprints (0 = all)
+            // 8a. Take last N sprints (0 = all)
             var selectedSprints = last == 0 ? allSprints : allSprints.TakeLast(last).ToList();
 
-            // 8a. Compute excluded developer IDs across selected sprints
+            // 9a. Compute excluded developer IDs across selected sprints
             var excludedInAll = selectedSprints
                 .SelectMany(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, settings.DoneStatuses))
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings))
                 .GroupBy(id => id)
                 .Where(g => g.Count() == selectedSprints.Count)
                 .Select(g => g.Key)
                 .ToHashSet();
 
-            // 9a. Compute multi-sprint response
+            // 10a. Compute multi-sprint response
             var multiResult = carryOverService.ComputeMultiSprint(
-                selectedSprints, allSprints, settings, subTeam, excludedInAll);
+                selectedSprints, allSprints, statusTransitions, settings, subTeam, excludedInAll);
 
             await SendOkAsync(new CarryOverResponse("multi", multiResult, null), ct);
         }

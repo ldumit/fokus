@@ -74,6 +74,26 @@ public class TicketRepository(FokusDbContext db)
             .Where(st => ticketIds.Contains(st.TicketId))
             .ToListAsync(ct);
 
+    /// <summary>
+    /// Loads all StatusTransitions for tickets that appear in any of the given sprints' memberships.
+    /// Single query joining SprintMemberships to StatusTransitions — avoids intermediate ticket ID materialization.
+    /// </summary>
+    public async Task<List<StatusTransition>> GetStatusTransitionsForSprintTicketsAsync(List<int> sprintIds, CancellationToken ct = default)
+    {
+        var ticketIds = await DbContext.SprintMemberships
+            .Where(sm => sprintIds.Contains(sm.SprintId))
+            .Select(sm => sm.TicketId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        if (ticketIds.Count == 0)
+            return new List<StatusTransition>();
+
+        return await DbContext.StatusTransitions
+            .Where(st => ticketIds.Contains(st.TicketId))
+            .ToListAsync(ct);
+    }
+
     public async Task<List<Ticket>> GetTicketsWithEpicAsync(CancellationToken ct = default) =>
         await Entity
             .Where(t => t.EpicKey != null)

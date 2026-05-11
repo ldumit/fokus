@@ -9,7 +9,7 @@ Singleton entity (Id=1). Configuration for all analytics features.
 | Property | Default | Used By |
 |----------|---------|---------|
 | BoardId | null | Jira sync — which board to sync |
-| DoneStatuses | ["Done", "Closed"] | All analytics — determines ticket completion |
+| DoneStatuses | ["Done", "Closed"] | Contributes tail of ordered stage sequence (WorkflowStages ++ DoneStatuses). No longer directly used for completion checks (see cross-cutting.md). |
 | WorkflowStages | [] | CycleTime (stage funnel), CarryOver (status distribution) |
 | ExcludedFromScopeStatuses | [] | ScopeChange, CarryOver, BugRatio — removes tickets from SP calculations |
 | PlanningWindowDays | 2 | SprintMembership commitment logic |
@@ -17,8 +17,8 @@ Singleton entity (Id=1). Configuration for all analytics features.
 | BugRatioAlertThreshold | 50 | BugRatio — % threshold for alert |
 | BugRatioConsecutiveSprintCount | 2 | BugRatio — how many consecutive sprints triggers alert |
 | DefaultSpPerBug | 3 | All analytics — fallback SP for unestimated Bug tickets |
-| CycleTimeStartStage | null | CycleTime — null = auto (second workflow stage) |
-| CycleTimeEndStage | null | CycleTime — null = auto (first done status) |
+| CycleTimeStartStage | null | CycleTime measurement start (null = auto: second workflow stage). Also drives **active/started scope attribution** across all analytics via TransitionAttributionChecker (null = auto: first stage, wider than cycle time). |
+| CycleTimeEndStage | null | CycleTime measurement end (null = auto: first done status). Also drives **completion attribution** across all analytics via TransitionAttributionChecker (supersedes FinalStatus snapshot approach for sprint scope). EpicProgress progress tracking still uses boundary-driven CompletionChecker. |
 | HealthThresholds | (see below) | Health score RAG classification |
 | HealthWeights | (see below) | Health score composite weighting |
 

@@ -110,15 +110,19 @@ public class CarryOverService
     public CarryOverMultiSprintResponse ComputeMultiSprint(
         List<Sprint> selectedSprints,
         List<Sprint> allSyncedSprints,
+        List<StatusTransition> statusTransitions,
         AppSettings settings,
         string? subTeam,
         HashSet<string>? excludedDeveloperIds = null)
     {
         var sortedSelected = selectedSprints.OrderBy(s => s.StartDate).ToList();
-        var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var workflowStages = settings.WorkflowStages;
         var defaultSpPerBug = settings.DefaultSpPerBug;
+
+        // Resolve transition boundaries once
+        var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
         var sprintInfos = sortedSelected
             .Select(s => new CarryOverSprintInfo(s.Id, s.Name, s.StartDate, s.EndDate))
@@ -128,7 +132,10 @@ public class CarryOverService
             .Select(s =>
             {
                 var memberships = FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds);
-                return ComputePerSprintData(s, memberships, doneStatuses, excludedStatuses, workflowStages, defaultSpPerBug);
+                return ComputePerSprintData(
+                    s, memberships, statusTransitions,
+                    orderedStages, startIndex, endIndex,
+                    excludedStatuses, workflowStages, defaultSpPerBug);
             })
             .ToList();
 
@@ -140,27 +147,50 @@ public class CarryOverService
             ? Math.Round(perSprintData.Average(d => d.CarryOverSp), 1)
             : 0;
 
-        // Issue type breakdown across all selected sprints
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        // Issue type breakdown: carry-over tickets across all selected sprints (feature-only)
         var allCarryOverMemberships = sortedSelected
-            .SelectMany(s => FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds)
-                .Where(m => IsCarryOver(m, doneStatuses)))
+            .SelectMany(s =>
+            {
+                var memberships = FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds);
+                return memberships.Where(m =>
+                {
+                    if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") return false;
+                    var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                    var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                        m.TicketId, ticketTransitions, s.StartDate, s.EndDate, orderedStages, startIndex);
+                    var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                        m.TicketId, ticketTransitions, s.StartDate, s.EndDate, orderedStages, endIndex);
+                    return TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted);
+                });
+            })
             .ToList();
 
         var issueTypeBreakdown = BuildIssueTypeBreakdown(allCarryOverMemberships, excludedStatuses, defaultSpPerBug);
 
-        // Zombie detection: tickets with 3+ distinct sprint appearances across ALL synced sprints
+        // Zombie detection
         var selectedSprintIds = new HashSet<int>(sortedSelected.Select(s => s.Id));
         var zombieTicketKeys = GetZombieTicketKeys(allSyncedSprints);
 
-        // Zombie summary: distinct zombies that appear in the selected range
         var zombieTickets = new List<CarryOverZombieSummary>();
         var seenZombieKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var sprint in sortedSelected)
         {
             var memberships = FilterMemberships(sprint.Memberships, subTeam, excludedDeveloperIds);
-            foreach (var m in memberships.Where(m => IsCarryOver(m, doneStatuses)))
+            foreach (var m in memberships)
             {
+                if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") continue;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                    m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, startIndex);
+                var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
+                if (!TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted)) continue;
+
                 if (!zombieTicketKeys.TryGetValue(m.TicketId, out var sprintCount)) continue;
                 if (!seenZombieKeys.Add(m.TicketId)) continue;
 
@@ -191,14 +221,18 @@ public class CarryOverService
         Sprint targetSprint,
         Sprint? priorSprint,
         List<Sprint> allSyncedSprints,
+        List<StatusTransition> statusTransitions,
         AppSettings settings,
         string? subTeam,
         HashSet<string>? excludedDeveloperIds = null)
     {
-        var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var workflowStages = settings.WorkflowStages;
         var defaultSpPerBug = settings.DefaultSpPerBug;
+
+        // Resolve transition boundaries once
+        var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
         var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var priorMemberships = priorSprint is not null
@@ -210,10 +244,32 @@ public class CarryOverService
 
         var zombieTicketKeys = GetZombieTicketKeys(allSyncedSprints);
 
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        // Identify carry-over memberships for this sprint (feature-only: spec BR12)
+        var carryOverMemberships = memberships
+            .Where(m =>
+            {
+                if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") return false;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                    m.TicketId, ticketTransitions, targetSprint.StartDate, targetSprint.EndDate, orderedStages, startIndex);
+                var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    m.TicketId, ticketTransitions, targetSprint.StartDate, targetSprint.EndDate, orderedStages, endIndex);
+                return TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted);
+            })
+            .ToList();
+
         // Core carry-over metrics
-        var current = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug);
-        CarryOverMetrics? prior = priorMemberships is not null
-            ? ComputeCarryOverMetrics(priorMemberships, doneStatuses, excludedStatuses, defaultSpPerBug)
+        var current = ComputeCarryOverMetrics(
+            memberships, statusTransitions, targetSprint,
+            orderedStages, startIndex, endIndex, excludedStatuses, defaultSpPerBug);
+        CarryOverMetrics? prior = priorMemberships is not null && priorSprint is not null
+            ? ComputeCarryOverMetrics(
+                priorMemberships, statusTransitions, priorSprint,
+                orderedStages, startIndex, endIndex, excludedStatuses, defaultSpPerBug)
             : null;
 
         var metrics = new CarryOverSingleSprintMetrics(
@@ -230,23 +286,17 @@ public class CarryOverService
                 prior is not null ? (decimal)(current.CarryOverTicketCount - prior.CarryOverTicketCount) : null,
                 "positive-down"));
 
-        var statusDistribution = BuildStatusDistribution(
-            memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList(),
-            workflowStages,
-            excludedStatuses,
-            defaultSpPerBug);
+        var statusDistribution = BuildStatusDistribution(carryOverMemberships, workflowStages, excludedStatuses, defaultSpPerBug);
+        var issueTypeBreakdown = BuildIssueTypeBreakdown(carryOverMemberships, excludedStatuses, defaultSpPerBug);
 
-        var issueTypeBreakdown = BuildIssueTypeBreakdown(
-            memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList(),
-            excludedStatuses,
-            defaultSpPerBug);
-
-        // Carry-over destination
-        var destination = BuildCarryOverDestination(priorSprint, priorMemberships, targetSprint, memberships, doneStatuses, excludedStatuses, subTeam, defaultSpPerBug);
+        // Carry-over destination (transition-based — spec BR22)
+        var destination = BuildCarryOverDestination(
+            priorSprint, priorMemberships, targetSprint, memberships,
+            statusTransitions, orderedStages, startIndex, endIndex,
+            excludedStatuses, defaultSpPerBug);
 
         // Full carry-over ticket table
-        var tickets = memberships
-            .Where(m => IsCarryOver(m, doneStatuses))
+        var tickets = carryOverMemberships
             .Select(m =>
             {
                 var sprintCount = zombieTicketKeys.TryGetValue(m.TicketId, out var sc) ? sc : 1;
@@ -263,7 +313,6 @@ public class CarryOverService
             })
             .ToList();
 
-        // Zombie trajectories for zombie tickets in this sprint
         var zombieTrajectories = BuildZombieTrajectories(tickets, allSyncedSprints, zombieTicketKeys);
 
         return new CarryOverSingleSprintResponse(
@@ -291,17 +340,12 @@ public class CarryOverService
         return result.ToList();
     }
 
-    // --- Carry-over identification (BR1) ---
-
-    private static bool IsCarryOver(SprintMembership m, List<string> doneStatuses) =>
-        !doneStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase) && m.RemovedAt == null;
-
     // --- Excluded status check (case-insensitive) ---
 
     private static bool IsExcluded(string status, List<string> excludedStatuses) =>
         excludedStatuses.Contains(status, StringComparer.OrdinalIgnoreCase);
 
-    // --- Carry-over metrics per sprint ---
+    // --- Carry-over metrics per sprint (feature-only) ---
 
     private record CarryOverMetrics(
         decimal CarryOverSp,
@@ -311,36 +355,54 @@ public class CarryOverService
 
     private static CarryOverMetrics ComputeCarryOverMetrics(
         List<SprintMembership> memberships,
-        List<string> doneStatuses,
+        List<StatusTransition> statusTransitions,
+        Sprint sprint,
+        List<string> orderedStages,
+        int startIndex,
+        int endIndex,
         List<string> excludedStatuses,
         int defaultSpPerBug)
     {
-        var carryOverTickets = memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList();
+        var activeSp = 0m;
+        var carryOverSp = 0m;
+        var carryOverCount = 0;
 
-        var carryOverSp = carryOverTickets
-            .Where(m => m.GetEffectiveSp(defaultSpPerBug).HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
-        var carryOverTicketCount = carryOverTickets.Count;
+        foreach (var m in memberships)
+        {
+            if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") continue;
+            var sp = m.GetEffectiveSp(defaultSpPerBug);
 
-        // Total scope SP: committed (active, not excluded) + added (not excluded)
-        var committedSpActive = memberships
-            .Where(m => m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                        && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+            var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+            var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, startIndex);
+            var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
 
-        var addedSp = memberships
-            .Where(m => !m.WasCommitted && m.RemovedAt == null && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                        && !IsExcluded(m.FinalStatus, excludedStatuses))
-            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
+            if (isStarted)
+            {
+                if (sp.HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
+                    activeSp += sp.Value;
+            }
 
-        var totalScopeSp = committedSpActive + addedSp;
-        var carryOverRate = totalScopeSp > 0 ? carryOverSp / totalScopeSp * 100 : 0;
+            if (TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted))
+            {
+                carryOverCount++;
+                if (sp.HasValue && !IsExcluded(m.FinalStatus, excludedStatuses))
+                    carryOverSp += sp.Value;
+            }
+        }
+
+        // totalScopeSp = activeSp (feature tickets that transitioned to startStage — spec BR21)
+        var carryOverRate = activeSp > 0 ? carryOverSp / activeSp * 100 : 0;
 
         return new CarryOverMetrics(
             Math.Round(carryOverSp, 1),
-            carryOverTicketCount,
-            Math.Round(totalScopeSp, 1),
+            carryOverCount,
+            Math.Round(activeSp, 1),
             Math.Round(carryOverRate, 1));
     }
 
@@ -349,13 +411,35 @@ public class CarryOverService
     private static CarryOverPerSprintData ComputePerSprintData(
         Sprint sprint,
         List<SprintMembership> memberships,
-        List<string> doneStatuses,
+        List<StatusTransition> statusTransitions,
+        List<string> orderedStages,
+        int startIndex,
+        int endIndex,
         List<string> excludedStatuses,
         List<string> workflowStages,
         int defaultSpPerBug)
     {
-        var metrics = ComputeCarryOverMetrics(memberships, doneStatuses, excludedStatuses, defaultSpPerBug);
-        var carryOverMemberships = memberships.Where(m => IsCarryOver(m, doneStatuses)).ToList();
+        var metrics = ComputeCarryOverMetrics(
+            memberships, statusTransitions, sprint,
+            orderedStages, startIndex, endIndex, excludedStatuses, defaultSpPerBug);
+
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var carryOverMemberships = memberships
+            .Where(m =>
+            {
+                if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") return false;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                    m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, startIndex);
+                var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    m.TicketId, ticketTransitions, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
+                return TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted);
+            })
+            .ToList();
+
         var statusDistribution = BuildStatusDistribution(carryOverMemberships, workflowStages, excludedStatuses, defaultSpPerBug);
 
         return new CarryOverPerSprintData(
@@ -367,7 +451,7 @@ public class CarryOverService
             statusDistribution);
     }
 
-    // --- Status distribution (BR4, BR5, BR20) ---
+    // --- Status distribution ---
 
     private static List<CarryOverStatusDistributionEntry> BuildStatusDistribution(
         List<SprintMembership> carryOverMemberships,
@@ -375,7 +459,6 @@ public class CarryOverService
         List<string> excludedStatuses,
         int defaultSpPerBug)
     {
-        // Excluded-from-scope tickets are invisible in status distribution (not just excluded from SP)
         var visibleMemberships = carryOverMemberships
             .Where(m => !IsExcluded(m.FinalStatus, excludedStatuses))
             .ToList();
@@ -400,7 +483,6 @@ public class CarryOverService
                 stage, items.Count, Math.Round(spTotal, 1), percentage));
         }
 
-        // "Other" bucket for unmatched statuses — appears last
         var stageSet = new HashSet<string>(workflowStages, StringComparer.OrdinalIgnoreCase);
         var otherItems = visibleMemberships
             .Where(m => !stageSet.Contains(m.FinalStatus))
@@ -419,14 +501,13 @@ public class CarryOverService
         return result;
     }
 
-    // --- Issue type breakdown (BR6, BR3) ---
+    // --- Issue type breakdown ---
 
     private static List<CarryOverIssueTypeEntry> BuildIssueTypeBreakdown(
         List<SprintMembership> carryOverMemberships,
         List<string> excludedStatuses,
         int defaultSpPerBug)
     {
-        // BR3: exclude tickets with excluded-from-scope statuses from issue type counts
         var includedMemberships = carryOverMemberships
             .Where(m => !IsExcluded(m.FinalStatus, excludedStatuses))
             .ToList();
@@ -448,7 +529,7 @@ public class CarryOverService
             .ToList();
     }
 
-    // --- Zombie detection (BR7) ---
+    // --- Zombie detection ---
 
     private static Dictionary<string, int> GetZombieTicketKeys(List<Sprint> allSyncedSprints)
     {
@@ -469,23 +550,39 @@ public class CarryOverService
         return match ?? "Other";
     }
 
-    // --- Carry-over destination (BR9, BR10, BR11) ---
+    // --- Carry-over destination (transition-based — spec BR22) ---
 
     private static CarryOverDestination? BuildCarryOverDestination(
         Sprint? priorSprint,
         List<SprintMembership>? priorMemberships,
         Sprint targetSprint,
         List<SprintMembership> targetMemberships,
-        List<string> doneStatuses,
+        List<StatusTransition> statusTransitions,
+        List<string> orderedStages,
+        int startIndex,
+        int endIndex,
         List<string> excludedStatuses,
-        string? subTeam,
         int defaultSpPerBug)
     {
         if (priorSprint is null || priorMemberships is null)
             return null;
 
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        // Prior sprint carry-over: feature tickets that started but did not complete in prior sprint
         var priorCarryOverMemberships = priorMemberships
-            .Where(m => IsCarryOver(m, doneStatuses))
+            .Where(m =>
+            {
+                if (m.RemovedAt != null || m.Ticket?.IssueType == "Bug") return false;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
+                    m.TicketId, ticketTransitions, priorSprint.StartDate, priorSprint.EndDate, orderedStages, startIndex);
+                var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    m.TicketId, ticketTransitions, priorSprint.StartDate, priorSprint.EndDate, orderedStages, endIndex);
+                return TransitionAttributionChecker.IsCarryOver(isStarted, isCompleted);
+            })
             .ToList();
 
         var priorCarryOverCount = priorCarryOverMemberships.Count;
@@ -527,15 +624,40 @@ public class CarryOverService
                 removedCount++;
                 removedSp += sp;
             }
-            else if (doneStatuses.Contains(cm.FinalStatus, StringComparer.OrdinalIgnoreCase))
-            {
-                completedCount++;
-                completedSp += sp;
-            }
             else
             {
-                carriedAgainCount++;
-                carriedAgainSp += sp;
+                var pmTransitions = transitionsByTicket.GetValueOrDefault(pm.TicketId, []);
+                // Transition-based: completed in current sprint = has a transition to endStage during current sprint
+                var (isCompletedInCurrent, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    pm.TicketId, pmTransitions,
+                    targetSprint.StartDate, targetSprint.EndDate,
+                    orderedStages, endIndex);
+
+                if (isCompletedInCurrent)
+                {
+                    completedCount++;
+                    completedSp += sp;
+                }
+                else
+                {
+                    // Carried again: started in current sprint but not completed
+                    var (isStartedInCurrent, _) = TransitionAttributionChecker.IsStartedInSprint(
+                        pm.TicketId, pmTransitions,
+                        targetSprint.StartDate, targetSprint.EndDate,
+                        orderedStages, startIndex);
+
+                    if (isStartedInCurrent)
+                    {
+                        carriedAgainCount++;
+                        carriedAgainSp += sp;
+                    }
+                    else
+                    {
+                        // In current sprint but no qualifying transition — dropped into backlog
+                        droppedCount++;
+                        droppedSp += sp;
+                    }
+                }
             }
         }
 
@@ -550,7 +672,7 @@ public class CarryOverService
             new CarryOverDestinationBucket(droppedCount, Math.Round(droppedSp, 1)));
     }
 
-    // --- Zombie trajectories (BR8) ---
+    // --- Zombie trajectories ---
 
     private static List<ZombieTrajectoryEntry> BuildZombieTrajectories(
         List<CarryOverTicketEntry> tickets,
@@ -570,7 +692,6 @@ public class CarryOverService
                 .OrderBy(s => s.StartDate)
                 .ToList();
 
-            // Cap at 10 most recent sprints
             if (sprintAppearances.Count > 10)
                 sprintAppearances = sprintAppearances.TakeLast(10).ToList();
 

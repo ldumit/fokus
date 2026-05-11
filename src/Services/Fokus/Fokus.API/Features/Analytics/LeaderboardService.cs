@@ -79,14 +79,17 @@ public class LeaderboardService
         List<Sprint> targetSprints,
         List<Developer> activeDevelopers,
         AppSettings settings,
+        List<StatusTransition> statusTransitions,
         string? subTeam,
         Dictionary<string, Dictionary<int, int>> capacityLookup,
         List<Developer> allDevelopers,
         HashSet<string>? excludedDeveloperIds = null)
     {
-        var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var defaultSpPerBug = settings.DefaultSpPerBug;
+
+        var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
         var sortedTarget = targetSprints.OrderBy(s => s.StartDate).ToList();
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
@@ -100,7 +103,9 @@ public class LeaderboardService
             var sprintBreakdowns = sortedTarget.Select(s =>
             {
                 var memberships = GetDeveloperMemberships(s, dev.Id, subTeam);
-                var completed = CompletedMemberships(memberships, doneStatuses, excludedStatuses);
+                var completed = GetTransitionCompletedMemberships(
+                    memberships, statusTransitions, s.StartDate, s.EndDate,
+                    orderedStages, endIndex, excludedStatuses);
                 var featureSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var totalSp = featureSp + bugSp;
@@ -153,15 +158,18 @@ public class LeaderboardService
         Sprint? priorSprint,
         List<Developer> activeDevelopers,
         AppSettings settings,
+        List<StatusTransition> statusTransitions,
         string? subTeam,
         Dictionary<string, Dictionary<int, int>> capacityLookup,
         List<Developer> allDevelopers,
         HashSet<string>? excludedDeveloperIds = null)
     {
-        var doneStatuses = settings.DoneStatuses;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var defaultSpPerBug = settings.DefaultSpPerBug;
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
+
+        var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
         var sprintInfo = new LeaderboardSprintInfo(
             targetSprint.Id, targetSprint.Name, targetSprint.StartDate, targetSprint.EndDate);
@@ -169,7 +177,9 @@ public class LeaderboardService
         var developerEntries = filteredDevelopers.Select(dev =>
         {
             var devMemberships = GetDeveloperMemberships(targetSprint, dev.Id, subTeam);
-            var devCompleted = CompletedMemberships(devMemberships, doneStatuses, excludedStatuses);
+            var devCompleted = GetTransitionCompletedMemberships(
+                devMemberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+                orderedStages, endIndex, excludedStatuses);
             var featureSp = devCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var bugSp = devCompleted.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var totalSp = featureSp + bugSp;
@@ -181,7 +191,9 @@ public class LeaderboardService
             if (priorSprint is not null)
             {
                 var priorMemberships = GetDeveloperMemberships(priorSprint, dev.Id, subTeam);
-                var priorCompleted = CompletedMemberships(priorMemberships, doneStatuses, excludedStatuses);
+                var priorCompleted = GetTransitionCompletedMemberships(
+                    priorMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                    orderedStages, endIndex, excludedStatuses);
                 var priorFeatureSp = priorCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var priorBugSp = priorCompleted.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var priorTotalSp = priorFeatureSp + priorBugSp;
@@ -225,6 +237,34 @@ public class LeaderboardService
         return new LeaderboardSingleSprintResponse(sprintInfo, developerEntries);
     }
 
+    // --- Transition-based completed memberships ---
+
+    private static List<SprintMembership> GetTransitionCompletedMemberships(
+        List<SprintMembership> memberships,
+        List<StatusTransition> statusTransitions,
+        DateTime sprintStart,
+        DateTime sprintEnd,
+        List<string> orderedStages,
+        int endIndex,
+        List<string> excludedStatuses)
+    {
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        return memberships
+            .Where(m =>
+            {
+                if (m.RemovedAt != null) return false;
+                if (excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)) return false;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
+                var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
+                    m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                return isCompleted;
+            })
+            .ToList();
+    }
+
     // --- Capacity resolution ---
 
     private static int GetCapacity(
@@ -246,20 +286,6 @@ public class LeaderboardService
 
     private static bool IsBug(SprintMembership m) =>
         m.Ticket?.IssueType == "Bug";
-
-    // --- Completed tickets filter (done + not removed + not excluded-from-scope) ---
-
-    private static List<SprintMembership> CompletedMemberships(
-        List<SprintMembership> memberships,
-        List<string> doneStatuses,
-        List<string> excludedStatuses)
-    {
-        return memberships
-            .Where(m => doneStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)
-                        && m.RemovedAt == null
-                        && !excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-    }
 
     // --- Sub-team filtering ---
 

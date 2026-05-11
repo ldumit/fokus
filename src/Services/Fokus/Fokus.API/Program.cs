@@ -14,6 +14,13 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FokusDbContext>();
+    var connStr = db.Database.GetConnectionString();
+    if (connStr is not null)
+    {
+        var dbPath = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connStr).DataSource;
+        var dir = Path.GetDirectoryName(dbPath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+    }
     db.Database.Migrate();
 
     if (!await db.AppSettings.AnyAsync())

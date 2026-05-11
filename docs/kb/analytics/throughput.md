@@ -13,21 +13,23 @@ All SP sums use `GetEffectiveSp(defaultSpPerBug)`: returns `StoryPoints` if non-
 
 **All metrics are feature-only (since FeatureOnlyMetrics):** bug tickets (`IssueType == "Bug"`) are excluded from all SP and ticket count calculations.
 
+All metrics use `TransitionAttributionChecker` (see cross-cutting.md TransitionBasedSprintScope). Feature-only.
+
 ```
-spAssigned        = sum(effectiveSP) where !Removed AND !IsBug
-spCompleted       = sum(effectiveSP) where !Removed AND FinalStatus IN doneStatuses AND !IsBug
-completionPercent = spCompleted / spAssigned * 100  (0 if spAssigned == 0)
-ticketsDone       = count where !Removed AND FinalStatus IN doneStatuses AND !IsBug
-ticketsCarriedOver = count where !Removed AND FinalStatus NOT IN doneStatuses AND !IsBug
+spAssigned         = sum(effectiveSP) where isStarted AND !Removed AND !IsBug  (transitioned to startStage during sprint)
+spCompleted        = sum(effectiveSP) where isCompleted AND !Removed AND !IsBug  (transitioned to endStage during sprint)
+completionPercent  = spCompleted / spAssigned * 100  (0 if spAssigned == 0)
+ticketsDone        = count where isCompleted AND !Removed AND !IsBug
+ticketsCarriedOver = count where isStarted AND !isCompleted AND !Removed AND !IsBug
 ```
 
-## Rolling Average (3-sprint, capacity-aware)
+## Rolling Average (3-sprint, capacity-aware, transition-based)
 
 - Walks backward from current sprint (inclusive)
 - Skips sprints where developer has 0% effective capacity
 - Collects up to 3 qualifying sprints
 - Returns null if fewer than 3 qualifying sprints found
-- Rolling average = average of feature-only SP completed in those 3 sprints (excludes bug tickets)
+- Rolling average = average of feature-only transition-based spCompleted in those 3 sprints
 
 ## Capacity Resolution
 

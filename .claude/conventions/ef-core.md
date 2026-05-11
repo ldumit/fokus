@@ -1,6 +1,6 @@
 # EF Core Conventions
 
-Programming conventions for EF Core specific to this codebase. Referenced by developer and reviewer agents. Complements `.claude/rules/ef-core-gotchas.md`.
+Programming conventions for EF Core specific to this codebase. Referenced by developer and reviewer agents.
 
 ## Navigation Loading
 
@@ -20,3 +20,5 @@ Programming conventions for EF Core specific to this codebase. Referenced by dev
 
 - `First` vs `FirstOrDefault` at service boundaries: even in single-user SQLite apps, prefer `FirstOrDefault` with null handling over `First` which throws an unhandled 500.
 - `required int` on composite key members is more defensively correct than plain `int` — int defaults to 0 which can silently produce invalid FK records.
+- `HasData` + `ToJson()` are incompatible. EF Core cannot seed entities via `HasData` when the entity (or an owned type on it) uses `ToJson()` column mapping. Use runtime seeding (`SeedTestData`) instead.
+- Collection expressions (`[]`) fail in expression tree lambdas. EF Core translates lambdas to SQL via expression trees. C# 12 collection expressions are not representable as expression trees — use `new List<T>()` or `Array.Empty<T>()` explicitly.

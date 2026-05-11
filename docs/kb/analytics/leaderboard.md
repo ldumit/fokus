@@ -5,7 +5,7 @@ Covers both the Dashboard leaderboard widget (single-sprint, features/bugs toggl
 ## Business Rules
 
 - **Bug classification:** `IssueType == "Bug"` (exact, case-sensitive). Everything else is a feature.
-- **Completed filter:** `FinalStatus IN doneStatuses AND RemovedAt == null AND FinalStatus NOT IN excludedFromScopeStatuses`. Excludes scope-rejection statuses — aligned with BugRatio.
+- **Completed filter:** `isCompletedInSprint AND RemovedAt == null AND FinalStatus NOT IN excludedFromScopeStatuses` (transition-based since TransitionBasedSprintScope — see cross-cutting.md). Excludes scope-rejection statuses — aligned with BugRatio.
 - **SP computation:** `GetEffectiveSp(defaultSpPerBug)` — unestimated bugs use DefaultSpPerBug. Null-SP tickets are excluded from SP sums but included in ticket counts.
 - **Active developers only:** Only active developers appear in results. Zero-value developers are shown (not hidden).
 - **Developer exclusion:** Cross-cutting exclusion applies (0% capacity + 0 completed tickets). For multi-sprint: exclude developers excluded in ALL selected sprints.
