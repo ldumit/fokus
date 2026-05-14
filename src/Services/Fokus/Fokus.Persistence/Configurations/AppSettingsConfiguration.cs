@@ -23,5 +23,7 @@ public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
             v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>());
 
         builder.Property(s => s.CompanyDomain).HasMaxLength(256);
+        builder.Property(s => s.XrayClientId).HasMaxLength(512);
+        builder.Property(s => s.XrayClientSecret).HasMaxLength(512);
     }
 }

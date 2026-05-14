@@ -8,7 +8,7 @@ namespace Jira.RestApi;
 
 public class RestApiJiraClient(IJiraApi api) : IJiraClient
 {
-    private const string IssueFields = "summary,issuetype,customfield_10016,customfield_10014,customfield_10008,assignee,priority,status,created,resolutiondate,parent";
+    private const string IssueFields = "summary,issuetype,customfield_10016,customfield_10014,customfield_10008,assignee,priority,status,created,resolutiondate,parent,issuelinks";
     private const string IssueExpand = "changelog";
 
     protected IJiraApi Api { get; } = api;

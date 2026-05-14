@@ -25,6 +25,37 @@ public class JiraIssueFields
     public DateTime? Created { get; set; }
     public DateTime? Resolutiondate { get; set; }
     public JiraParent? Parent { get; set; }
+    public List<JiraIssueLink>? Issuelinks { get; set; }
+}
+
+public class JiraIssueLink
+{
+    public JiraIssueLinkType? Type { get; set; }
+    public JiraLinkedIssue? OutwardIssue { get; set; }
+    public JiraLinkedIssue? InwardIssue { get; set; }
+}
+
+public class JiraIssueLinkType
+{
+    public string Name { get; set; } = string.Empty;
+    public string Inward { get; set; } = string.Empty;
+    public string Outward { get; set; } = string.Empty;
+}
+
+public class JiraLinkedIssue
+{
+    public string Id { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+    public JiraLinkedIssueFields Fields { get; set; } = new();
+}
+
+public class JiraLinkedIssueFields
+{
+    public string Summary { get; set; } = string.Empty;
+    public JiraStatus? Status { get; set; }
+    public JiraIssueType? Issuetype { get; set; }
+    public JiraUser? Assignee { get; set; }
+    public DateTime? Created { get; set; }
 }
 
 public class JiraParent

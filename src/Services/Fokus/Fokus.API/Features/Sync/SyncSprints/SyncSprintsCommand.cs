@@ -8,6 +8,14 @@ public class SyncSprintsCommand
     public int ToSprintId { get; set; }
 }
 
+public class XraySyncSummary
+{
+    public int TestExecutionsSynced { get; set; }
+    public int TestRunsSynced { get; set; }
+    public int TestSetsSynced { get; set; }
+    public string[] Warnings { get; set; } = [];
+}
+
 public class SyncSprintsResponse
 {
     public int SprintsAttempted { get; set; }
@@ -15,6 +23,7 @@ public class SyncSprintsResponse
     public int TicketsUpserted { get; set; }
     public int DevelopersDiscovered { get; set; }
     public List<SprintSyncFailure> Failures { get; set; } = [];
+    public XraySyncSummary? Xray { get; set; }
 }
 
 public class SyncSprintsCommandValidator : Validator<SyncSprintsCommand>

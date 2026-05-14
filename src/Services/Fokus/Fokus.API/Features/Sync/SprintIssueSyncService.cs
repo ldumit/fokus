@@ -1,14 +1,19 @@
+using Fokus.API.Features.Xray;
 using Jira.Contracts;
 
 namespace Fokus.API.Features.Sync;
 
-public record SprintIssueSyncResult(int TicketsUpserted, HashSet<string> DeveloperIds);
+public record SprintIssueSyncResult(int TicketsUpserted, HashSet<string> DeveloperIds, XraySyncResult? XrayResult = null);
 
 public record SprintBatchSyncResult(
     int SprintsSynced,
     int TicketsUpserted,
     int DevelopersDiscovered,
-    List<SprintSyncFailure> Failures);
+    List<SprintSyncFailure> Failures,
+    int XrayTestExecutionsSynced = 0,
+    int XrayTestRunsSynced = 0,
+    int XrayTestSetsSynced = 0,
+    List<string>? XrayWarnings = null);
 
 public record SprintSyncFailure(int SprintId, string Error);
 
@@ -20,6 +25,7 @@ public class SprintIssueSyncService(
     TicketRepository ticketRepository,
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
+    XrayIssueSyncService xrayIssueSyncService,
     ILogger<SprintIssueSyncService> logger)
 {
     public async Task<SprintBatchSyncResult> SyncSprintsFromJiraAsync(
@@ -33,6 +39,10 @@ public class SprintIssueSyncService(
         var totalTickets = 0;
         var allDeveloperIds = new HashSet<string>();
         var failures = new List<SprintSyncFailure>();
+        var xrayTeSynced = 0;
+        var xrayRunSynced = 0;
+        var xraySetSynced = 0;
+        var xrayWarnings = new List<string>();
 
         foreach (var jiraSprint in jiraSprints)
         {
@@ -51,6 +61,14 @@ public class SprintIssueSyncService(
                 sprintsSynced++;
                 totalTickets += result.TicketsUpserted;
                 allDeveloperIds.UnionWith(result.DeveloperIds);
+
+                if (result.XrayResult is not null)
+                {
+                    xrayTeSynced += result.XrayResult.TestExecutionsSynced;
+                    xrayRunSynced += result.XrayResult.TestRunsSynced;
+                    xraySetSynced += result.XrayResult.TestSetsSynced;
+                    xrayWarnings.AddRange(result.XrayResult.Warnings);
+                }
             }
             catch (Exception ex)
             {
@@ -58,7 +76,15 @@ public class SprintIssueSyncService(
             }
         }
 
-        return new SprintBatchSyncResult(sprintsSynced, totalTickets, allDeveloperIds.Count, failures);
+        return new SprintBatchSyncResult(
+            sprintsSynced,
+            totalTickets,
+            allDeveloperIds.Count,
+            failures,
+            xrayTeSynced,
+            xrayRunSynced,
+            xraySetSynced,
+            xrayWarnings);
     }
 
     public async Task<EpicDiscoveryResult> SyncEpicDiscoveryAsync(
@@ -136,6 +162,22 @@ public class SprintIssueSyncService(
         await sprintRepository.UpsertMembershipsAsync(sprint.Id, memberships, ct);
         await sprintRepository.SaveChangesAsync(ct);
 
-        return new SprintIssueSyncResult(issues.Count, uniqueDeveloperIds);
+        // Piggyback Xray sync if enabled — failures do not block sprint sync
+        XraySyncResult? xrayResult = null;
+        var settings2 = await appSettingsRepository.GetAsync(ct);
+        if (settings2.XrayEnabled)
+        {
+            try
+            {
+                xrayResult = await xrayIssueSyncService.SyncXrayForIssuesAsync(issues, ct);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Xray piggyback sync failed for sprint {SprintId}", sprint.Id);
+                xrayResult = new XraySyncResult(0, 0, 0, [$"Xray sync failed: {ex.Message}"]);
+            }
+        }
+
+        return new SprintIssueSyncResult(issues.Count, uniqueDeveloperIds, xrayResult);
     }
 }

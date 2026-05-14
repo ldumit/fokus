@@ -1,4 +1,4 @@
-import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse, HealthThresholdConfig, HealthWeightConfig } from '../types'
+import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse, HealthThresholdConfig, HealthWeightConfig, TestConnectionResponse, XraySyncResponse } from '../types'
 import { apiFetch } from './client'
 
 export function getSettings(): Promise<AppSettings> {
@@ -78,5 +78,26 @@ export function saveCycleTimeBoundaries(startStage: string, endStage: string): P
   return apiFetch<SaveCycleTimeBoundariesResponse>('/settings/cycle-time-boundaries', {
     method: 'PUT',
     body: JSON.stringify({ startStage, endStage })
+  })
+}
+
+// xrayClientSecret: pass the new secret string to update it, or null to leave the existing secret unchanged
+export function saveXraySettings(xrayEnabled: boolean, xrayClientId: string, xrayClientSecret: string | null): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/xray', {
+    method: 'PUT',
+    body: JSON.stringify({ xrayEnabled, xrayClientId, xrayClientSecret })
+  })
+}
+
+export function testXrayConnection(): Promise<TestConnectionResponse> {
+  return apiFetch<TestConnectionResponse>('/xray/test-connection', {
+    method: 'POST'
+  })
+}
+
+export function syncXrayData(sprintIds: number[]): Promise<XraySyncResponse> {
+  return apiFetch<XraySyncResponse>('/xray/sync', {
+    method: 'POST',
+    body: JSON.stringify({ sprintIds })
   })
 }

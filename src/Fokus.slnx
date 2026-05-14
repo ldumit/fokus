@@ -12,6 +12,10 @@
     <Project Path="Modules/Jira/Jira.Contracts/Jira.Contracts.csproj" />
     <Project Path="Modules/Jira/Jira.RestApi/Jira.RestApi.csproj" />
   </Folder>
+  <Folder Name="/Modules/Xray/">
+    <Project Path="Modules/Xray/Xray.Contracts/Xray.Contracts.csproj" />
+    <Project Path="Modules/Xray/Xray.GraphQL/Xray.GraphQL.csproj" />
+  </Folder>
   <Folder Name="/Services/" />
   <Folder Name="/Services/Fokus/">
     <Project Path="Services/Fokus/Fokus.API/Fokus.API.csproj" />

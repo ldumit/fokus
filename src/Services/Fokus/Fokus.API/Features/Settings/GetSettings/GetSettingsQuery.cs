@@ -12,4 +12,7 @@ public class GetSettingsResponse
     public int SyncBackSprintCount { get; set; }
     public int PlanningWindowDays { get; set; }
     public int DefaultSpPerBug { get; set; }
+    public bool XrayEnabled { get; set; }
+    public string? XrayClientId { get; set; }
+    public string? XrayClientSecret { get; set; }
 }

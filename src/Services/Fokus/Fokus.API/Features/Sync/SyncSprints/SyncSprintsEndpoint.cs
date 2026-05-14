@@ -35,13 +35,26 @@ public class SyncSprintsEndpoint(
         var result = await syncService.SyncSprintsFromJiraAsync(
             sprintsInRange, $"Board {boardId}", forcedNotCommitted: false, ct);
 
+        XraySyncSummary? xray = null;
+        if (result.XrayTestExecutionsSynced > 0 || result.XrayTestRunsSynced > 0 || result.XrayTestSetsSynced > 0 || (result.XrayWarnings?.Count > 0))
+        {
+            xray = new XraySyncSummary
+            {
+                TestExecutionsSynced = result.XrayTestExecutionsSynced,
+                TestRunsSynced = result.XrayTestRunsSynced,
+                TestSetsSynced = result.XrayTestSetsSynced,
+                Warnings = result.XrayWarnings?.ToArray() ?? []
+            };
+        }
+
         await SendOkAsync(new SyncSprintsResponse
         {
             SprintsAttempted = sprintsInRange.Count,
             SprintsSynced = result.SprintsSynced,
             TicketsUpserted = result.TicketsUpserted,
             DevelopersDiscovered = result.DevelopersDiscovered,
-            Failures = result.Failures
+            Failures = result.Failures,
+            Xray = xray
         }, ct);
     }
 }

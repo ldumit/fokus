@@ -216,7 +216,7 @@ Tier 11: F27
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F25 | Xray Integration & Ticket Test Enrichment | Planned | — | — |
+| F25 | Xray Integration & Ticket Test Enrichment | Done | [XrayIntegration](specs/F25-XrayIntegration/definition/spec.md) | [plan](specs/F25-XrayIntegration/delivery/plan.md) |
 
 Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, TestRun, TestSet), EF Core migrations, Settings UI (feature flag, credentials, connection test), dual-API sync (Jira issue links + Xray test runs), per-ticket test coverage status and pass/fail enrichment.
 
@@ -226,7 +226,7 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F26 | Sprint Test Coverage | Planned | — | — |
+| F26 | Sprint Test Coverage | Spec Ready | [SprintTestCoverage](specs/F26-SprintTestCoverage/definition/spec.md) | — |
 | F28 | Per-Developer Story Quality | Planned | — | — |
 | F29 | QA Workload & Throughput | Planned | — | — |
 | F30 | Test Execution Timeline | Planned | — | — |

@@ -25,12 +25,25 @@ public class SyncBacklogSprintsEndpoint(
 
         var epicResult = await syncService.SyncEpicDiscoveryAsync(ct);
 
+        SyncSprints.XraySyncSummary? xray = null;
+        if (sprintResult.XrayTestExecutionsSynced > 0 || sprintResult.XrayTestRunsSynced > 0 || sprintResult.XrayTestSetsSynced > 0 || (sprintResult.XrayWarnings?.Count > 0))
+        {
+            xray = new SyncSprints.XraySyncSummary
+            {
+                TestExecutionsSynced = sprintResult.XrayTestExecutionsSynced,
+                TestRunsSynced = sprintResult.XrayTestRunsSynced,
+                TestSetsSynced = sprintResult.XrayTestSetsSynced,
+                Warnings = sprintResult.XrayWarnings?.ToArray() ?? []
+            };
+        }
+
         await SendOkAsync(new SyncBacklogSprintsResponse
         {
             BacklogSprintsSynced = sprintResult.SprintsSynced,
             EpicTicketsDiscovered = epicResult.TicketsDiscovered,
             SprintFailures = sprintResult.Failures.Count,
-            EpicFailures = epicResult.Failures
+            EpicFailures = epicResult.Failures,
+            Xray = xray
         }, ct);
     }
 }

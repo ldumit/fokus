@@ -3,6 +3,8 @@ using Fokus.API;
 using Fokus.API.Auth;
 using Fokus.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Xray.GraphQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,16 @@ using (var scope = app.Services.CreateScope())
     if (!await db.AppSettings.AnyAsync())
     {
         db.AppSettings.Add(AppSettings.CreateDefault());
+        await db.SaveChangesAsync();
+    }
+
+    var xrayOptions = scope.ServiceProvider.GetRequiredService<IOptions<XrayOptions>>().Value;
+    if (!string.IsNullOrEmpty(xrayOptions.ClientId) && !string.IsNullOrEmpty(xrayOptions.ClientSecret))
+    {
+        var settings = await db.AppSettings.FirstAsync();
+        settings.XrayEnabled = true;
+        settings.XrayClientId = xrayOptions.ClientId;
+        settings.XrayClientSecret = xrayOptions.ClientSecret;
         await db.SaveChangesAsync();
     }
 }

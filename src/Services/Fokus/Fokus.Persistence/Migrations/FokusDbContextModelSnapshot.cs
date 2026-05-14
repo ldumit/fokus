@@ -62,6 +62,17 @@ namespace Fokus.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("XrayClientId")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("XrayClientSecret")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("XrayEnabled")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.ToTable("AppSettings");
@@ -363,6 +374,140 @@ namespace Fokus.Persistence.Migrations
                     b.ToTable("StatusTransitions");
                 });
 
+            modelBuilder.Entity("Fokus.Domain.TestExecution", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AssigneeId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IssueKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeId")
+                        .HasDatabaseName("IX_TestExecution_AssigneeId");
+
+                    b.ToTable("TestExecutions");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestExecutionLink", b =>
+                {
+                    b.Property<string>("TestExecutionIssueId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TicketKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LinkType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("TestExecutionIssueId", "TicketKey");
+
+                    b.HasIndex("TicketKey")
+                        .HasDatabaseName("IX_TestExecutionLink_TicketKey");
+
+                    b.ToTable("TestExecutionLinks");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestRun", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExecutedById")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StatusName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TestExecutionIssueId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecutedById")
+                        .HasDatabaseName("IX_TestRun_ExecutedById");
+
+                    b.HasIndex("TestExecutionIssueId")
+                        .HasDatabaseName("IX_TestRun_TestExecutionIssueId");
+
+                    b.ToTable("TestRuns");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestSet", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AssigneeId")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IssueKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeId")
+                        .HasDatabaseName("IX_TestSet_AssigneeId");
+
+                    b.ToTable("TestSets");
+                });
+
             modelBuilder.Entity("Fokus.Domain.Ticket", b =>
                 {
                     b.Property<string>("Id")
@@ -559,6 +704,63 @@ namespace Fokus.Persistence.Migrations
                     b.Navigation("Ticket");
                 });
 
+            modelBuilder.Entity("Fokus.Domain.TestExecution", b =>
+                {
+                    b.HasOne("Fokus.Domain.Developer", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Assignee");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestExecutionLink", b =>
+                {
+                    b.HasOne("Fokus.Domain.TestExecution", "TestExecution")
+                        .WithMany("Links")
+                        .HasForeignKey("TestExecutionIssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fokus.Domain.Ticket", "Ticket")
+                        .WithMany()
+                        .HasForeignKey("TicketKey")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TestExecution");
+
+                    b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestRun", b =>
+                {
+                    b.HasOne("Fokus.Domain.Developer", "ExecutedBy")
+                        .WithMany()
+                        .HasForeignKey("ExecutedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Fokus.Domain.TestExecution", "TestExecution")
+                        .WithMany("TestRuns")
+                        .HasForeignKey("TestExecutionIssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExecutedBy");
+
+                    b.Navigation("TestExecution");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestSet", b =>
+                {
+                    b.HasOne("Fokus.Domain.Developer", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Assignee");
+                });
+
             modelBuilder.Entity("Fokus.Domain.Ticket", b =>
                 {
                     b.HasOne("Fokus.Domain.Developer", "Assignee")
@@ -572,6 +774,13 @@ namespace Fokus.Persistence.Migrations
             modelBuilder.Entity("Fokus.Domain.Sprint", b =>
                 {
                     b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("Fokus.Domain.TestExecution", b =>
+                {
+                    b.Navigation("Links");
+
+                    b.Navigation("TestRuns");
                 });
 
             modelBuilder.Entity("Fokus.Domain.Ticket", b =>

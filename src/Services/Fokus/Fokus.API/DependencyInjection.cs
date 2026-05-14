@@ -4,9 +4,11 @@ using Fokus.API.Features.Analytics;
 using Fokus.API.Features.Auth.Login;
 using Fokus.API.Features.Settings;
 using Fokus.API.Features.Sync;
+using Fokus.API.Features.Xray;
 using Fokus.Persistence;
 using Jira.RestApi;
 using Scalar.AspNetCore;
+using Xray.GraphQL;
 
 namespace Fokus.API;
 
@@ -21,8 +23,10 @@ public static class DependencyInjection
         services.AddOpenApi();
 
         services.AddRestApiJira(configuration);
+        services.AddGraphQLXray(configuration);
 
         services.AddScoped<SprintIssueSyncService>();
+        services.AddScoped<XrayIssueSyncService>();
         services.AddScoped<WorkflowDetectionService>();
         services.AddScoped<SprintSummaryService>();
         services.AddScoped<DeveloperThroughputService>();

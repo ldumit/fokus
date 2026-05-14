@@ -14,6 +14,10 @@ public class FokusDbContext(DbContextOptions<FokusDbContext> options)
     public DbSet<DeveloperSprintCapacity> DeveloperSprintCapacities => Set<DeveloperSprintCapacity>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<Invitation> Invitations => Set<Invitation>();
+    public DbSet<TestExecution> TestExecutions => Set<TestExecution>();
+    public DbSet<TestExecutionLink> TestExecutionLinks => Set<TestExecutionLink>();
+    public DbSet<TestRun> TestRuns => Set<TestRun>();
+    public DbSet<TestSet> TestSets => Set<TestSet>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

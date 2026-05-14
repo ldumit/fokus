@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig } from '../types'
-import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages } from '../api/settings'
+import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages, saveXraySettings } from '../api/settings'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({
@@ -25,7 +25,10 @@ export const useSettingsStore = defineStore('settings', () => {
     bugRatioConsecutiveSprintCount: 2,
     syncBackSprintCount: 20,
     planningWindowDays: 2,
-    defaultSpPerBug: 3
+    defaultSpPerBug: 3,
+    xrayEnabled: false,
+    xrayClientId: null,
+    xrayClientSecret: null
   })
 
   const loading = ref(false)
@@ -137,6 +140,20 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  // xrayClientSecret: pass the new secret to update it, or null to leave the existing secret unchanged
+  async function saveXraySettingsAction(xrayEnabled: boolean, xrayClientId: string, xrayClientSecret: string | null) {
+    saving.value = true
+    error.value = null
+    try {
+      await saveXraySettings(xrayEnabled, xrayClientId, xrayClientSecret)
+      settings.value = { ...settings.value, xrayEnabled, xrayClientId: xrayClientId || null }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save Xray settings'
+    } finally {
+      saving.value = false
+    }
+  }
+
   function clearDetection() {
     detectionResult.value = null
   }
@@ -171,6 +188,7 @@ export const useSettingsStore = defineStore('settings', () => {
     saveHealthConfigAction,
     saveBugRatioAlertsAction,
     saveSyncConfigAction,
+    saveXraySettingsAction,
     runDetectWorkflowStages,
     clearDetection,
     moveSidelinedToStages,

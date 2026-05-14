@@ -20,7 +20,13 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             BugRatioConsecutiveSprintCount = settings.BugRatioConsecutiveSprintCount,
             SyncBackSprintCount = settings.SyncBackSprintCount,
             PlanningWindowDays = settings.PlanningWindowDays,
-            DefaultSpPerBug = settings.DefaultSpPerBug
+            DefaultSpPerBug = settings.DefaultSpPerBug,
+            XrayEnabled = settings.XrayEnabled,
+            XrayClientId = settings.XrayClientId,
+            XrayClientSecret = MaskSecret(settings.XrayClientSecret)
         }, ct);
     }
+
+    private static string? MaskSecret(string? secret) =>
+        string.IsNullOrEmpty(secret) ? string.Empty : "****";
 }

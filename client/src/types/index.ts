@@ -174,6 +174,21 @@ export interface AppSettings {
   syncBackSprintCount: number
   planningWindowDays: number
   defaultSpPerBug: number
+  xrayEnabled: boolean
+  xrayClientId: string | null
+  xrayClientSecret: string | null
+}
+
+export interface XraySyncResponse {
+  testExecutionsSynced: number
+  testRunsSynced: number
+  testSetsSynced: number
+  warnings: string[]
+}
+
+export interface TestConnectionResponse {
+  success: boolean
+  message: string
 }
 
 export type SprintState = 'Active' | 'Closed' | 'Future'
@@ -844,6 +859,7 @@ export interface SyncSprintsResponse {
   ticketsUpserted: number
   developersDiscovered: number
   failures: { sprintId: number; sprintName: string; error: string }[]
+  xray?: XraySyncResponse | null
 }
 
 export interface SyncBacklogResponse {
@@ -851,6 +867,7 @@ export interface SyncBacklogResponse {
   epicTicketsDiscovered: number
   sprintFailures: number
   epicFailures: string[]
+  xray?: XraySyncResponse | null
 }
 
 // Leaderboard types

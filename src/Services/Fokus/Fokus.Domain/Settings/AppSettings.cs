@@ -17,6 +17,9 @@ public class AppSettings
     public int PlanningWindowDays { get; set; } = 2;
     public int DefaultSpPerBug { get; set; } = 3;
     public string? CompanyDomain { get; set; } = null;
+    public bool XrayEnabled { get; set; } = false;
+    public string? XrayClientId { get; set; }
+    public string? XrayClientSecret { get; set; }
 
     public static AppSettings CreateDefault() => new()
     {
@@ -34,6 +37,9 @@ public class AppSettings
         SyncBackSprintCount = 20,
         PlanningWindowDays = 2,
         DefaultSpPerBug = 3,
-        CompanyDomain = null
+        CompanyDomain = null,
+        XrayEnabled = false,
+        XrayClientId = null,
+        XrayClientSecret = null
     };
 }
