@@ -1,6 +1,6 @@
 # Authentication & Access Control
 
-**Traces to:** `docs/specs/v1.md` §3.2 (extends — v1 declared no user auth; this adds it)
+**Traces to:** `docs/product/v1.md` §3.2 (extends — v1 declared no user auth; this adds it)
 **Source:** Scratch
 **Dependencies:** None
 **Status:** Done

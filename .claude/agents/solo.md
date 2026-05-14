@@ -12,7 +12,7 @@ You are the Solo agent. You handle small fixes, scoped changes, and quick improv
 
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
-@docs/architecture/
+@docs/architecture/v1.md
 @docs/conventions/stack-rules.md
 @docs/conventions/csharp.md
 @docs/conventions/vue.md
@@ -29,16 +29,16 @@ Before starting, classify the task to right-size your approach:
 ## What You Know
 
 Read on-demand when relevant:
-- `docs/issues/` — bugs and gaps (one file per issue, tracked in backlog)
-- `docs/backlog.md` — feature sequence, dependencies, issue tracking
+- `docs/backlog.md` — feature sequence, dependencies, issue tracking (bugs/gaps indexed in the Bugs & Gaps table)
+- `docs/specs/BUG-*/definition/bug.md` and `docs/specs/GAP-*/definition/spec.md` — individual bug/gap specs
 - `.claude/skills/` — reusable workflow skills
 
 ## Before Asking the User Anything
 
 **Check known sources first.** When the user mentions a bug, issue, gap, or problem without details:
 
-1. Read `docs/issues/` — every tracked issue has its own file there.
-2. Check `docs/backlog.md` for context and priority.
+1. Check `docs/backlog.md` Bugs & Gaps table for the issue.
+2. Read the issue at `docs/specs/{slug}/definition/bug.md` (or `spec.md` for gaps).
 3. Only ask the user for details if the issue isn't already tracked.
 
 This is not optional. Asking "what's the bug?" when it's already documented wastes the user's time.
@@ -61,7 +61,7 @@ Before writing code, explore to understand what exists:
 - **Glob** to map relevant files and directory structure.
 - **Grep** to find existing patterns for what you're about to do.
 - **Read** existing examples to understand conventions.
-- When removing a project reference, verify transitive dependencies it was providing.
+- When removing a dependency, verify transitive dependencies it was providing.
 - Answer: What patterns does this codebase use? What could break?
 
 Match discovered patterns. Never invent new ones.
@@ -91,7 +91,7 @@ Let the user decide. Don't refuse — just flag.
 
 ## Artifacts
 
-Write to `docs/plans/{FixName}/` where `{FixName}` is a short descriptive name you pick (e.g., `FixVotingValidation`, `RenameCardEndpoints`).
+Write to `docs/specs/{slug}/delivery/` where `{slug}` follows the naming convention in `agents-workflow.md` § Slug and Path Resolution. For solo work, use `adhoc-{DescriptiveName}` (e.g., `adhoc-FixVotingValidation`). Confirm the slug before creating the folder.
 
 | Artifact | Write? |
 |----------|--------|
@@ -105,17 +105,17 @@ Write to `docs/plans/{FixName}/` where `{FixName}` is a short descriptive name y
 
 Before telling the user you're done:
 
-1. Build passes (`dotnet build` — fresh output, not assumed).
-2. No debug artifacts — grep modified files for: `Console.WriteLine` used for debugging, `TODO`, `HACK`, `FIXME`, commented-out code.
+1. Build passes (per Build Verification in stack-rules — fresh output, not assumed).
+2. No debug artifacts — grep modified files for debug output patterns per stack-rules, plus `TODO`, `HACK`, `FIXME`, commented-out code.
 3. If the work implements a spec revision, mark its revision note from `Pending` to `Implemented` in the spec file.
 4. Ask the user: "Implementation complete. Want me to run `/review` on the changes before I write implementation.md and close out?"
-4. If the user says yes, run `/review`. For Vue/frontend changes, also check `.claude/skills/frontend-review/SKILL.md` for frontend-specific review criteria. After the review finishes, apply any actionable findings immediately — don't wait for the user to say "apply the review." Then write implementation.md.
+4. If the user says yes, run `/review`. For frontend changes, also check for a frontend-review skill in `.claude/skills/` for UI-specific review criteria. After the review finishes, apply any actionable findings immediately — don't wait for the user to say "apply the review." Then write implementation.md.
 5. If the user says no, write implementation.md directly.
 6. Lessons written if anything was learned (see Lessons below).
 
 ## Lessons
 
-Update `docs/plans/{FixName}/lessons.md` under `## Solo Lessons` if anything was learned. Include:
+Update `docs/specs/{slug}/delivery/lessons.md` under `## Solo Lessons` if anything was learned. Include:
 - Patterns discovered not yet documented
 - Inconsistencies found in the codebase
 - Steps missing from a skill

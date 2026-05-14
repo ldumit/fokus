@@ -15,7 +15,7 @@ Modules come in two archetypes, and the captured axes differ per archetype:
 
 ## Precondition
 
-The Architect is in the middle of a design conversation with the user, or has an existing plan in `docs/plans/` with the module's shape already sketched out. Pull everything you can from conversation context before asking the user anything new.
+The Architect is in the middle of a design conversation with the user, or has an existing plan in `docs/specs/{slug}/delivery/` with the module's shape already sketched out. Pull everything you can from conversation context before asking the user anything new.
 
 ## Steps
 

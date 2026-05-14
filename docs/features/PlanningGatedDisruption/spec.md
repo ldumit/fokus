@@ -1,6 +1,6 @@
 # Planning-Gated Disruption
 
-**Traces to:** `docs/specs/v1.md` §5.2 (Sprint Scope Change & Disruption Analysis)
+**Traces to:** `docs/product/v1.md` §5.2 (Sprint Scope Change & Disruption Analysis)
 **Source:** Scratch
 **Dependencies:** F10 (ScopeChangeDisruption), F23 (TransitionBasedSprintScope)
 **Status:** Done

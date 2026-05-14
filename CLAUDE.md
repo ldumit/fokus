@@ -1,13 +1,5 @@
 # CLAUDE.md
 
-## Agents
-
-When the user says "be {Agent}", read `.claude/agents/{Agent}.md` and follow it.
-
-## Authority & Spec Files
-
-Spec files (architecture.md, business.md, etc.) describe current state, not rules. I decide changes — flag conflicts, propose options, don't refuse.
-
 ## graphify
 
 This project has a graphify knowledge graph at graphify-out/.
@@ -119,14 +111,7 @@ Example — a service at index `1` with app prefix `44`:
 
 - **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
 - **No repository interfaces** — single implementation, interfaces add zero value. Other components (modules, cross-cutting) do use interfaces where contracts are needed.
-- **No god folders** (`Services/`, `Helpers/`, `Utils/`).
 - **No bypassing domain rules** via EF configs or endpoints.
 - **Domain events** = within service boundary. **Integration events** = cross-service.
-- **No `.gitkeep` files** — don't track empty directories. Directories are created at runtime or when files are added.
-- **No Opus for general-purpose agents** — always set `model: "sonnet"`. General-purpose agents do research and summarization, not deep reasoning.
-- **Never override specialized agent models** — specialized agents (architect, developer, reviewer, etc.) have their model baked into their `.md` frontmatter. Never pass a `model` parameter that overrides it.
-- **Project agents own the pipeline** — for feature pipeline roles (architect, developer, reviewer), always use `.claude/agents/` project agents. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
-- **OMC pipeline orchestration forbidden** — never use OMC's team/pipeline management (oh-my-claudecode:team, oh-my-claudecode:autopilot, oh-my-claudecode:ralph) to replace the project pipeline.
-- **OMC specialists allowed** — OMC specialist agents (oh-my-claudecode:debugger, oh-my-claudecode:security-reviewer, oh-my-claudecode:tracer, oh-my-claudecode:code-simplifier, oh-my-claudecode:designer, etc.) are available for standalone tasks outside the pipeline.
 
 

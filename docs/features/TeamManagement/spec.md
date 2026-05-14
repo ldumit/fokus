@@ -1,6 +1,6 @@
 # Team Management
 
-**Traces to:** `docs/specs/v1.md` §Developer entity, §Settings (sub-team tagging)
+**Traces to:** `docs/product/v1.md` §Developer entity, §Settings (sub-team tagging)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F5 (Sprint Sync), F7 (App Shell & Navigation), F9 (Developer Throughput — DeveloperSprintCapacity entity)
 **Status:** Done

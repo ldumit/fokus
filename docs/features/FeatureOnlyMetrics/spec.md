@@ -1,6 +1,6 @@
 # Feature-Only Delivery Metrics
 
-**Traces to:** `docs/specs/v1.md` §5.1 (Developer Throughput), §5.2 (Scope Change & Disruption), §5.7 (Sprint Summary Card)
+**Traces to:** `docs/product/v1.md` §5.1 (Developer Throughput), §5.2 (Scope Change & Disruption), §5.7 (Sprint Summary Card)
 **Source:** Scratch
 **Dependencies:** F8 (Sprint Summary Card), F9 (Developer Throughput), F10 (Scope Change & Disruption), F16 (Bug Cost & Disruption Split), F17 (Burnup Bug Overlay), F19 (Leaderboard Breakdown)
 **Status:** Done

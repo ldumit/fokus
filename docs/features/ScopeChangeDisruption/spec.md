@@ -1,6 +1,6 @@
 # Scope Change & Disruption
 
-**Traces to:** `docs/specs/v1.md` §5.2 (Sprint Scope Change & Disruption Analysis)
+**Traces to:** `docs/product/v1.md` §5.2 (Sprint Scope Change & Disruption Analysis)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F6 (Workflow Auto-Detection), F7 (App Shell & Navigation), F8 (Sprint Summary Card — establishes cross-cutting patterns)
 **Status:** Done

@@ -1,6 +1,6 @@
 # Cycle Time
 
-**Traces to:** `docs/specs/v1.md` §5.4 (Cycle Time)
+**Traces to:** `docs/product/v1.md` §5.4 (Cycle Time)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F3 (Settings System), F5 (Sprint Sync), F6 (Workflow Auto-Detection), F7 (App Shell & Navigation), F8 (Sprint Summary Card — establishes cross-cutting patterns)
 **Status:** Done

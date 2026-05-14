@@ -15,7 +15,7 @@ A UI for assigning developers to sub-teams. The `SubTeam` field exists on the De
 ## Spec Reference
 
 - `docs/backlog.md` F3 description: "Developer sub-team tagging lives here"
-- `docs/specs/v1.md` §4.2 Developer entity: `SubTeam` field described as "manually tagged in app" with "Managed via a simple admin screen"
+- `docs/product/v1.md` §4.2 Developer entity: `SubTeam` field described as "manually tagged in app" with "Managed via a simple admin screen"
 
 ## User Impact
 

@@ -30,7 +30,7 @@ Applies classified and approved lesson items to their target flow files. Each it
 ### CLAUDE.md
 
 - Guardrails go under `## Guardrails — DO NOT`
-- EF Core / framework gotchas go near related existing sections. Create a subsection only if there's no natural fit.
+- Framework-specific gotchas go near related existing sections. Create a subsection only if there's no natural fit.
 - Conventions go near related existing conventions.
 - Match the existing bullet style (` - **Bold lead** — explanation`).
 

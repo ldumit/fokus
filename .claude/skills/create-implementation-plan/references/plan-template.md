@@ -1,13 +1,13 @@
 # Plan Template
 
-Use this template for every `docs/plans/{Feature}/plan.md` file. This template extends the plan format in `agents-workflow.md`. The Skill Mapping section and anti-pattern rules are additions — all other sections follow the existing format.
+Use this template for every `docs/specs/{slug}/delivery/plan.md` file. This template extends the plan format in `agents-workflow.md`. The Skill Mapping section and anti-pattern rules are additions — all other sections follow the existing format.
 
 ---
 
 ```markdown
 # {Feature Name}
 
-**Feature Spec:** `docs/features/{Feature}/spec.md` | None
+**Feature Spec:** `docs/specs/{slug}/definition/spec.md` | None
 
 ## Context
 What problem this solves. Which service(s) impacted and why.
@@ -54,7 +54,7 @@ For each step:
 gRPC contract changes, integration events, consumers.
 
 ## Migration Notes
-EF Core migration commands. Seed data if needed.
+Migration commands per persistence convention. Seed data if needed.
 
 ## Testing Strategy
 Key scenarios to test.

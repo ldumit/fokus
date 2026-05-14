@@ -1,6 +1,6 @@
 # Help Tooltips
 
-If `docs/features/{Feature}/help.tooltips.md` exists, wire the tooltip text to the corresponding UI elements during implementation.
+If `docs/specs/{slug}/definition/help.tooltips.md` exists, wire the tooltip text to the corresponding UI elements during implementation.
 
 - **Architect:** Include tooltip wiring in plan steps that build the relevant UI components.
 - **Developer:** Read `help.tooltips.md` and add tooltips using the text on each matching element.

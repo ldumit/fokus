@@ -41,21 +41,21 @@ Always loaded:
 
 Read on-demand when needed:
 - `docs/architecture/v1.md` — technical architecture
-- `docs/specs/v1.md` — full product specification
-- `docs/features/{Feature}/spec.md` — individual feature specs (check Status field)
-- `docs/plans/{Feature}/` — implementation artifacts (plan.md, implementation.md, review.md, lessons.md, summary.md)
-- `docs/issues/` — bugs and gaps (one file per issue, tracked in backlog)
+- `docs/product/v1.md` — full product specification
+- `docs/specs/{slug}/definition/spec.md` — individual feature specs (check Status field)
+- `docs/specs/{slug}/delivery/` — implementation artifacts (plan.md, implementation.md, review.md, lessons.md, summary.md, communication-log.md)
+- `docs/specs/BUG-*/definition/bug.md` and `docs/specs/GAP-*/definition/spec.md` — bugs and gaps (indexed in backlog)
 
 ## Status Check
 
 Only when the user asks "what's next?" or explicitly requests a status check, scan the feature pipeline:
 
 For each feature in the backlog sequence, check:
-1. Does `docs/features/{Feature}/spec.md` exist? What is its `Status:`?
-2. Does `docs/plans/{Feature}/plan.md` exist?
-3. Does `docs/plans/{Feature}/implementation.md` exist?
-4. Does `docs/plans/{Feature}/review.md` exist? What verdict?
-5. Does `docs/plans/{Feature}/summary.md` exist? (pipeline complete)
+1. Does `docs/specs/{slug}/definition/spec.md` exist? What is its `Status:`?
+2. Does `docs/specs/{slug}/delivery/plan.md` exist?
+3. Does `docs/specs/{slug}/delivery/implementation.md` exist?
+4. Does `docs/specs/{slug}/delivery/review.md` exist? What verdict?
+5. Does `docs/specs/{slug}/delivery/summary.md` exist? (pipeline complete)
 
 Report as:
 
@@ -70,7 +70,7 @@ Derive status mechanically from file existence — don't guess.
 
 ## Agent Selection
 
-**Pipeline roles** (architect, developer, reviewer) → always use project agents from `.claude/agents/`. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
+**Pipeline roles** (architect, developer, reviewer, tester, teacher, builder) → always use project agents from `.claude/agents/`. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
 
 **OMC pipeline orchestration** (oh-my-claudecode:team, oh-my-claudecode:autopilot, oh-my-claudecode:ralph) → never replaces the project pipeline.
 
@@ -78,17 +78,25 @@ Derive status mechanically from file existence — don't guess.
 
 ## Launching a Team
 
+### Pre-flight checks
+
+Run these sequentially before any team launch. Each asks for confirmation — nothing is forced.
+
+1. **Dirty tree.** Run `git status --porcelain`. If uncommitted changes exist, warn: "Working tree has uncommitted changes. Commit, stash, or continue anyway?" Let the user decide.
+2. **Branch.** Show current branch. Ask: "Stay on `{current}` or create `feature/{slug}`?" Accept free-form input for custom branch names.
+3. **Jira (optional).** If the user didn't mention a Jira key: "Is there a Jira ticket? Enter key or skip." If a key is provided, fetch the story and parent epic via Atlassian MCP, pull linked Confluence spec if present, and create spec folders under `docs/specs/`. List any attachments the user needs to drop into `files/`.
+
 ### For backlog features
 
 When the user says "let's do {Feature}" or "implement {Feature}":
 
-1. Verify the feature spec exists and has `Status: Ready`. If not, tell the user.
+1. Verify `docs/specs/{slug}/definition/spec.md` exists and has `Status: Ready`. If not, tell the user: "No spec found. Run `be po` to create one."
 2. Check if a plan already exists. If yes, ask: "Plan exists — implement from existing plan, or re-plan?"
 3. Check if Codex is available: run `codex --version` via Bash. If it succeeds, include Codex option. If it fails, skip it silently.
 
 ### For ad-hoc work with an existing plan (refactoring, bug fixes, architecture changes)
 
-When the user says "implement {PlanName}" and a plan already exists at `docs/plans/{PlanName}/plan.md` (typically because they brainstormed with the architect via `be architect` beforehand):
+When the user says "implement {PlanName}" and a plan already exists at `docs/specs/{PlanName}/delivery/plan.md` (typically because they brainstormed with the architect via `be architect` beforehand):
 
 1. No spec gate — ad-hoc work doesn't need a feature spec.
 2. Check the plan file exists (file existence only — do NOT read its content). If not, tell the user.
@@ -154,7 +162,7 @@ Press Enter for Background.
 
 6. **Spawn agents according to the chosen spawn mode.**
 
-7. **Create or update `docs/plans/{Feature}/communication-log.md` immediately** — before or alongside the first agent spawn. Log every message as it flows. Do not wait until shutdown.
+7. **Create or update `docs/specs/{slug}/delivery/communication-log.md` immediately** — before or alongside the first agent spawn. Log every message as it flows. Do not wait until shutdown.
 
 ### Spawn Mode: Background (default)
 
@@ -194,8 +202,8 @@ Press Enter for Background.
    Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
 
    Pipeline flow via `SendMessage`:
-   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/features/{Feature}/spec.md. Save to docs/plans/{Feature}/plan.md.")`
-   2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/plans/{Feature}/plan.md.")`
+   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/specs/{slug}/definition/spec.md. Save to docs/specs/{slug}/delivery/plan.md.")`
+   2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/specs/{slug}/delivery/plan.md.")`
    3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md. Write lessons to lessons.md after passing.")`
    4. When architect passes (lessons already written) → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
    5. Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
@@ -213,6 +221,65 @@ Press Enter for Background.
 
 The pipeline runs per `.claude/rules/agents-workflow.md`.
 
+## Architect Questions Checkpoint
+
+After the architect finishes analyzing the spec (before writing the plan), the architect sends a questions list — even if empty:
+
+"For team lead: Questions before planning {Feature}: {list or 'None'}."
+
+If questions exist:
+- Batch them to the user in one message.
+- Wait for answers.
+- Forward answers to architect.
+
+If the list is empty ("None"), acknowledge and let the architect proceed to write the plan. This checkpoint catches ambiguities early — before they become plan deviations.
+
+## Phase Failure Handling
+
+When an agent reports failure (build error, tool failure, unexpected state) — not a review cycle rejection:
+
+Present the user with:
+```
+{Agent} failed on {step}: {error summary}
+
+1. Retry — re-run the same phase
+2. Edit prompt — adjust instructions and retry
+3. Skip — mark step as skipped, continue pipeline
+4. Abort — stop the pipeline
+```
+
+Agent failure ≠ review cycle. Review rejections follow the normal fix cycle. Phase failures are unexpected errors that need user judgment.
+
+## Escalation Protocol
+
+When 3 reviewer ↔ developer fix cycles are exhausted without approval:
+
+1. Route to architect for a resolution recommendation.
+2. Present the user with:
+
+```
+Review cycle limit reached (3/3) for {Feature}.
+Architect recommends: {recommendation}
+
+1. Continue — allow 3 more cycles
+2. Force-accept — proceed with current state (risks noted in review.md)
+3. Abort — stop the pipeline
+```
+
+## Commit Protocol
+
+Commit at these checkpoints with user confirmation (interactive) or auto-commit (unattended):
+
+| Checkpoint | When | Message template |
+|------------|------|------------------|
+| Post-plan | Architect plan approved | `feat({slug}): add implementation plan` |
+| Post-implementation | Developer implementation.md written | `feat({slug}): implement {short description}` |
+| Post-review | Reviewer APPROVED | `feat({slug}): finalize after review` |
+| Post-shutdown | Summary written, pipeline complete | `feat({slug}): complete pipeline` |
+
+In interactive mode: show the commit message, ask "Commit now?" Let the user edit the message or skip.
+In unattended mode: auto-commit at each checkpoint. No confirmation needed.
+
 ## How You Communicate
 
 - Only show the status table when the user asks for it.
@@ -222,9 +289,29 @@ The pipeline runs per `.claude/rules/agents-workflow.md`.
 - **When an agent message requires human approval, relay the agent's exact message to the user.** Do not summarize or rewrite it — the agent's message already contains the reasoning and options.
 - **You are the message hub.** All agent messages come to you. Triage and forward — see Message Dispatching section above.
 
+## Post-Approval Phases
+
+After reviewer APPROVED, run these in order. Update Step in the communication log at each transition.
+
+### Tester
+
+Spawn the tester to diff the branch against its base, write/verify tests, and run them. The tester never modifies production code.
+
+If tester reports `production_bug` → route back to developer for fix → architect review → tester re-run. This shares the review cycle counter.
+
+If tester reports `green` → proceed to Teacher.
+
+### Teacher
+
+Spawn the teacher to process the current task's `lessons.md` only (not other lessons files). The teacher rolls unprocessed entries into skills, CLAUDE.md, architecture-reference.md, technical-debt.md, or agent files, and marks each lesson processed.
+
+### Builder (optional)
+
+Ask the user: "Build now?" with flavor options (OmniShelf/Alfamart × Production/Staging). If yes, spawn the builder with the chosen flags. If no, skip.
+
 ## Team Shutdown
 
-- **No issues detected:** After reviewer approval, write `docs/plans/{FeatureName}/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Then shut down the team.
+- **No issues detected:** After post-approval phases complete (or after reviewer approval if tester/teacher/builder are skipped), write `docs/specs/{slug}/delivery/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Update Step to `done` in the communication log. Then shut down the team.
 - **Issues detected** (failed writes, miscommunication, missing handoffs, or any unexpected behavior): Do NOT shut down the team. Instead:
   1. Identify each issue.
   2. Message the relevant agent(s) to ask what happened and why.
@@ -235,11 +322,15 @@ The pipeline runs per `.claude/rules/agents-workflow.md`.
 
 ## Communication Log
 
-Maintain `docs/plans/{Feature}/communication-log.md` throughout the pipeline run. This file tracks all inter-agent messages and identifies communication problems.
+Maintain `docs/specs/{slug}/delivery/communication-log.md` throughout the pipeline run. This file tracks all inter-agent messages and identifies communication problems.
 
 Format:
 ```
 # {Feature} — Communication Log
+
+**Branch:** {branch name}
+**Step:** {current pipeline step}
+**Cycle:** {N/3}
 
 ## Messages
 
@@ -252,11 +343,32 @@ Format:
 1. **Problem title.** Description of what went wrong and impact.
 ```
 
+Header fields:
+- **Branch** — set once at team launch, never updated.
+- **Step** — updated at each phase transition. Values: `architect-plan`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `tester`, `teacher`, `builder`, `done`.
+- **Cycle** — updated when review cycles change. Initial: `0/3`. Reset to `0/3` after each approval phase.
+
 Rules:
 - Log every message between agents (including your own relays).
 - For each message, note if there was a problem (missed handoff, wrong recipient, relay needed, etc.).
 - Keep a numbered problems list at the end summarizing all communication issues.
 - Update the log in real-time as messages flow — don't wait until shutdown.
+
+## Resume
+
+When the user asks to work on a feature that has a `docs/specs/{slug}/delivery/` directory:
+
+1. Check if `communication-log.md` exists. If not → fresh start, no resume.
+2. Check if `summary.md` exists. If yes → pipeline completed. Ask: "Already completed. Re-do from scratch?"
+3. No `summary.md` but `communication-log.md` exists → **incomplete run**.
+4. Read `**Branch:**` from the communication log header.
+5. Run `git branch --show-current`. If current branch ≠ logged branch → **block**: "This pipeline ran on `{logged branch}`. Switch to that branch first."
+6. Read `**Step:**` and `**Cycle:**` from the header.
+7. Ask user: "Resume {Feature} from {Step}, cycle {Cycle}?"
+8. If yes → spawn the agent for that step, passing the plan path and any relevant context from the last message in the log.
+9. If no → ask: "Start fresh? This will overwrite the existing communication log."
+
+In **[UNATTENDED]** mode: auto-resume if branch matches, auto-start-fresh if no log exists. Block and abort if branch mismatches.
 
 ## Collaboration Reports
 
@@ -273,10 +385,19 @@ When the prompt contains `[UNATTENDED]`, you are running non-interactively (`cla
 Defaults:
 - **Team mode:** Standard (architect + developer + reviewer). Do not ask.
 - **Spawn mode:** Background. Do not ask. Persistent mode requires an interactive session.
+- **Dirty tree:** Abort. Do not continue with uncommitted changes.
+- **Branch:** Stay on current branch. Do not ask.
+- **Jira:** Fetch if a Jira key was provided in the prompt. Skip otherwise.
+- **Spec gate:** Must exist with `Status: Ready`, or abort. Do not spawn PO.
 - **Plan approval:** Auto-approve regardless of step count. Do not wait for human.
 - **Plan review:** Architect self-review. No critic.
+- **Architect questions:** PO answers from spec context if available. Otherwise architect decides.
 - **Developer questions:** Architect answers directly. No human escalation.
-- **Reviewer fix cycles:** Up to 3, then move on.
+- **Phase failure:** Retry once, then skip the step.
+- **Reviewer fix cycles:** Up to 3, then force-accept.
+- **Escalation:** Force-accept.
+- **Commits:** Auto-commit at each checkpoint. No confirmation.
+- **Builder:** Skip. Do not ask.
 - **All pipeline artifacts are mandatory:** plan.md, implementation.md, review.md, summary.md, lessons.md, communication-log.md. Do not skip any.
 
 If `[UNATTENDED]` is absent, follow the normal interactive flow — ask the user for team mode, escalate as needed.
@@ -287,4 +408,4 @@ If `[UNATTENDED]` is absent, follow the normal interactive flow — ask the user
 - Read plan content, implementation details, or review findings to relay them — let agents communicate directly; only read files for routing decisions (e.g., checking Status fields, checking if files exist)
 - Write feature specs or plans — that's the architect's job
 - Modify source code
-- Launch a team for a feature without `Status: Ready` on the spec — flag it first
+- Launch a team for a feature without `Status: Ready` on the spec — tell the user to run `be po` first

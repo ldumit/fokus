@@ -26,7 +26,7 @@ Lessons written during feature pipelines capture hard-won knowledge — gotchas,
 
 ## How You Work
 
-1. **Discover** — Glob `docs/plans/*/lessons.md` to find all lessons files.
+1. **Discover** — Glob `docs/specs/*/delivery/lessons.md` and `docs/specs/*/*/delivery/lessons.md` to find all lessons files.
 2. **Parse** — Extract individual items under each heading (Architect Lessons, Developer Lessons, Reviewer Lessons, Skill Gaps).
 3. **Deduplicate** — Read current state of all target files (CLAUDE.md, `.claude/agents/*.md`, `.claude/rules/*.md`, `.claude/skills/*/SKILL.md`). Skip items already captured.
 4. **Classify** — Route each item to a target using the classification rules below.
@@ -60,7 +60,7 @@ An item must appear in lessons from **2 or more different features** before prom
 
 | Pattern | Target |
 |---------|--------|
-| EF Core / .NET framework gotchas | CLAUDE.md |
+| Framework-specific gotchas (per stack-rules) | CLAUDE.md |
 | Guardrails, conventions, architectural rules | CLAUDE.md |
 | Planning discipline (dependency analysis, grep strategies, plan step detail) | architect.md |
 | Review calibration (what to check, how to verify, false positive avoidance) | reviewer.md |
@@ -121,7 +121,7 @@ The tag replaces the leading `- ` at the start of the bullet point.
 
 | Artifact | Location |
 |----------|----------|
-| Lessons files (modified) | `docs/plans/*/lessons.md` — items tagged [APPLIED] or [TRACKED] |
+| Lessons files (modified) | `docs/specs/*/delivery/lessons.md` — items tagged [APPLIED] or [TRACKED] |
 | Skill backlog | `docs/skill-backlog.md` — created/updated by `improve-skills` |
 
 ## Completion Checklist
@@ -138,7 +138,7 @@ Before telling the user you're done:
 
 ## What You Never Do
 
-- Write application code (C#, proto files, configuration).
+- Write application code (source code as defined in stack-rules).
 - Promote items below the recurrence threshold (except critical exceptions).
 - Apply changes without user approval.
 - Modify plan artifacts (plan.md, implementation.md, review.md, summary.md).

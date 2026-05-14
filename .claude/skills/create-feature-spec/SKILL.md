@@ -1,12 +1,12 @@
 ---
 name: create-feature-spec
-description: Creates a feature specification in docs/features/ — the product definition that precedes implementation planning. Used by the PO agent (primary) or architect. Run this before writing a plan.
+description: Creates a feature specification in docs/specs/{slug}/definition/ — the product definition that precedes implementation planning. Used by the PO agent (primary) or architect. Run this before writing a plan.
 user-invocable: false
 ---
 
 # Create Feature Spec (Architect Reference)
 
-This skill is for the **PO agent** (primary owner) or **architect agent**. It produces `docs/features/{Feature}/spec.md` — the product definition that the implementation plan is built against. The plan in `docs/plans/{Feature}/plan.md` references this spec but does not replace it.
+This skill is for the **PO agent** (primary owner) or **architect agent**. It produces `docs/specs/{slug}/definition/spec.md` — the product definition that the implementation plan is built against. The plan in `docs/specs/{slug}/delivery/plan.md` references this spec but does not replace it.
 
 ## Audience & voice
 
@@ -29,7 +29,7 @@ These belong in the implementation plan, not the feature spec:
 
 ## When to use
 
-Before writing an implementation plan. Every feature needs a spec in `docs/features/{Feature}/spec.md` before `docs/plans/{Feature}/plan.md` is created.
+Before writing an implementation plan. Every feature needs a spec in `docs/specs/{slug}/definition/spec.md` before `docs/specs/{slug}/delivery/plan.md` is created.
 
 ## Reading protocol
 
@@ -37,7 +37,7 @@ Before writing, ensure you have:
 
 1. **Business spec** — read on-demand (project-specific path listed in the Architect agent's "What you know" section)
 2. **Architecture reference** — already loaded via the Architect agent's `@` directives
-3. **Existing feature specs** — read `docs/features/*/spec.md` for format consistency, overlaps, dependencies
+3. **Existing feature specs** — read `docs/specs/*/definition/spec.md` (and `docs/specs/*/*/definition/spec.md` for nested issues) for format consistency, overlaps, dependencies
 4. **Domain source files** — read current aggregates/entities to understand what already exists. Use this to inform your understanding, but do not carry class names or implementation patterns into the spec.
 
 ## Steps
@@ -48,7 +48,7 @@ Before writing, ensure you have:
 
 3. **Ask clarifying questions in one batch.** For anything ambiguous or unspecified in the business spec for this feature — ask once, all together. Do not write the file yet.
 
-4. **Write the spec** — follow `workflows/Template.md`. Output path: `docs/features/{Feature}/spec.md`.
+4. **Write the spec** — follow `workflows/Template.md`. Output path: `docs/specs/{slug}/definition/spec.md` (or `epic.md` for epics, `bug.md` for bugs).
 
 5. **Voice check.** Before telling the user, scan the draft for:
    - Code-formatted identifiers in backticks — for each one, ask: domain term or code artifact? Code artifacts move to the plan.
@@ -62,9 +62,20 @@ Before writing, ensure you have:
 6. **Offer final choices.** Ask the user two things together:
    - **Verification method:** cross-check (quick, same-context) or critic review (thorough, independent)?
    - **Help content:** "Do you want help content files for this feature?" If yes, produce two sibling files in the same folder, both mirroring the spec's section headings:
-     - `docs/features/{Feature}/help.tooltips.md` — one section per UI element, each containing only the tooltip text (under 150 chars).
-     - `docs/features/{Feature}/help.page.md` — one section per UI element, each containing a guide page paragraph explaining interpretation and recommended actions.
+     - `docs/specs/{slug}/definition/help.tooltips.md` — one section per UI element, each containing only the tooltip text (under 150 chars).
+     - `docs/specs/{slug}/definition/help.page.md` — one section per UI element, each containing a guide page paragraph explaining interpretation and recommended actions.
      Write in user-facing language — this content will appear in the app as tooltips and guide page entries.
+
+## Slug Resolution
+
+The `{slug}` is determined by the PO before invoking this skill, following the naming convention in `agents-workflow.md` § Slug and Path Resolution:
+- Internal feature: `F{N}-{Name}` (e.g., `F5-SprintSummaryCard`)
+- Jira issue: `{KEY}-{2-3-words}` (e.g., `PD-5226-split-config`)
+- Jira epic: `{KEY}-{2-3-words}` (e.g., `PD-5234-shelf-compliance-kpis`) — writes `epic.md`, not `spec.md`
+- Bug: `BUG-{N}-{name}` (e.g., `BUG-1-bug-count-zero`) — writes `bug.md`, not `spec.md`
+- Gap: `GAP-{N}-{name}` (e.g., `GAP-3-sub-team-management-ui`)
+
+For an issue nested under an epic, the path becomes `docs/specs/{epic-slug}/{issue-slug}/definition/spec.md`.
 
 ## Arguments
 

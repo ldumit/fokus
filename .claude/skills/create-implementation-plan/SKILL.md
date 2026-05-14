@@ -6,24 +6,24 @@ user-invocable: false
 
 # Create Implementation Plan (Architect Reference)
 
-This skill is for the **architect agent**. It produces `docs/plans/{Feature}/plan.md` — the implementation plan that the developer executes. Each step either references a skill or explicitly justifies inline detail. No freeform plans.
+This skill is for the **architect agent**. It produces `docs/specs/{slug}/delivery/plan.md` — the implementation plan that the developer executes. Each step either references a skill or explicitly justifies inline detail. No freeform plans.
 
 ## Purpose
 
-Generate `docs/plans/{Feature}/plan.md` with a structural guarantee that each step either references a skill or explicitly justifies inline detail. Extends the plan format in `agents-workflow.md` with mandatory skill mapping.
+Generate `docs/specs/{slug}/delivery/plan.md` with a structural guarantee that each step either references a skill or explicitly justifies inline detail. Extends the plan format in `agents-workflow.md` with mandatory skill mapping.
 
 ## When to use
 
-After a feature spec exists (`docs/features/{Feature}/spec.md` with `Status: Ready`). Replaces freeform plan writing.
+After a feature spec exists (`docs/specs/{slug}/definition/spec.md` with `Status: Ready`). Replaces freeform plan writing.
 
 ## Reading protocol
 
 Before writing, ensure you have:
 
-1. **Feature spec** — read `docs/features/{Feature}/spec.md`
+1. **Feature spec** — read `docs/specs/{slug}/definition/spec.md` (or `epic.md` / `bug.md` depending on slug type)
 2. **Architecture doc** — read for system shape and existing decisions
 3. **Skill inventory** — scan `.claude/skills/` — read every `SKILL.md` frontmatter. If the architecture doc has a Skill Inventory section, use it; otherwise build one from scratch.
-4. **Existing plans** — read `docs/plans/*/plan.md` for format consistency
+4. **Existing plans** — read `docs/specs/*/delivery/plan.md` for format consistency
 
 ## Steps
 
@@ -43,7 +43,7 @@ Before writing, ensure you have:
    - A skill dismissed as "too simple" or "not needed for this case" — violation. Skills ensure consistency; complexity is not the criterion.
    - Implementation pattern details restated when a skill exists — over-specification. Delete and reference the skill.
 
-6. **Write the plan** following `references/plan-template.md`. Output: `docs/plans/{Feature}/plan.md`.
+6. **Write the plan** following `references/plan-template.md`. Output: `docs/specs/{slug}/delivery/plan.md`.
 
 7. **Apply the auto-approve gate** from `agents-workflow.md` (<=11 steps, no open questions — auto-approve and message developer).
 

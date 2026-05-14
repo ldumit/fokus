@@ -1,6 +1,6 @@
 # Leaderboard Breakdown
 
-**Traces to:** `docs/specs/v1.md` §5.7 (Sprint Summary Card — Developer leaderboard)
+**Traces to:** `docs/product/v1.md` §5.7 (Sprint Summary Card — Developer leaderboard)
 **Source:** Scratch
 **Dependencies:** F8 (Sprint Summary Card — existing leaderboard), F13 (Bug Ratio — bug/non-bug classification), F9 (Developer Throughput — Developers page structure)
 **Status:** Done

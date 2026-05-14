@@ -4,6 +4,32 @@ Three-agent pipeline for feature development. Agents coordinate through file-bas
 
 **Deploy to:** `.claude/rules/agents-workflow.md` (auto-loads every session)
 
+## Slug and Path Resolution
+
+The `{slug}` identifies a unit of work and follows these conventions:
+- Internal feature: `F{N}-{Name}` — e.g., `F5-SprintSummaryCard`
+- Jira epic: `{KEY}-{2-3-words}` — e.g., `PD-5234-shelf-compliance-kpis`
+- Jira issue: `{KEY}-{2-3-words}` — e.g., `PD-5226-split-config`
+- Ad-hoc: `adhoc-{Name}` — e.g., `adhoc-SyncRefactoring`
+- Bug: `BUG-{N}-{name}` — e.g., `BUG-1-bug-count-zero`
+- Gap: `GAP-{N}-{name}` — e.g., `GAP-3-sub-team-management-ui`
+
+The team lead or PO assigns the slug at the start of each pipeline run and passes it to all downstream agents. Agents never derive the slug — they use exactly what was passed.
+
+Folder layout per slug:
+```
+docs/specs/{slug}/
+  definition/   ← spec.md (or epic.md / bug.md), help.tooltips.md, images
+  delivery/     ← plan.md, implementation.md, review.md, lessons.md, summary.md, communication-log.md
+```
+
+For a Jira issue nested under an epic:
+```
+docs/specs/{epic-slug}/{issue-slug}/definition/
+docs/specs/{epic-slug}/{issue-slug}/delivery/
+```
+Ad-hoc work has no `definition/` folder — only `delivery/`.
+
 ## Communication Model: Hub-and-Spoke
 
 All agent messages go through the team lead. Agents never message each other directly.
@@ -85,8 +111,8 @@ Each handoff: trigger → sender → team lead action → receiver.
 
 ### Architect → Team Lead → Reviewer: Step 1 passed
 **Trigger:** Done check passes.
-**Architect:** Writes lessons to `docs/plans/{FeatureName}/lessons.md` (has full context now — plan vs implementation fresh in mind), then messages team lead.
-**Architect says:** "For reviewer: Step 1 passed for {FeatureName}. Plan: docs/plans/{FeatureName}/plan.md"
+**Architect:** Writes lessons to `docs/specs/{slug}/delivery/lessons.md` (has full context now — plan vs implementation fresh in mind), then messages team lead.
+**Architect says:** "For reviewer: Step 1 passed for {FeatureName}. Plan: docs/specs/{slug}/delivery/plan.md"
 **Team lead:** Forward to reviewer.
 
 ### Reviewer → Team Lead → Developer: Fixes needed
@@ -134,12 +160,12 @@ After escalation to human, agents STOP and wait.
 
 Plans created via the `create-implementation-plan` skill include an additional **Skill Mapping** section before Implementation Steps. See the skill's `references/plan-template.md` for the full template.
 
-Plans saved to `docs/plans/{FeatureName}/plan.md` by architect.
+Plans saved to `docs/specs/{slug}/delivery/plan.md` by architect.
 
 ```
 # {Feature Name}
 
-**Feature Spec:** `docs/features/{Feature}/spec.md` | None
+**Feature Spec:** `docs/specs/{slug}/definition/spec.md` | None
 
 ## Context
 What problem this solves. Which service(s) impacted and why.
@@ -165,8 +191,8 @@ For each step:
 ## Cross-Service Changes (if applicable)
 gRPC contract changes, integration events, consumers.
 
-## Migration Notes
-EF Core migration commands. Seed data if needed.
+## Migration Notes (if applicable)
+Migration commands per relevant persistence convention. Seed data if needed.
 
 ## Testing Strategy
 Key scenarios to test.
@@ -177,16 +203,16 @@ Unresolved decisions needing input.
 
 ## Implementation File Format
 
-Written by developer after each implementation round: `docs/plans/{FeatureName}/implementation.md`.
+Written by developer after each implementation round: `docs/specs/{slug}/delivery/implementation.md`.
 
 ```
 # {Feature Name} — Implementation
 
 ## Files Created
-- `full/path/to/File.cs` — what it does
+- `full/path/to/File` — what it does
 
 ## Files Modified
-- `full/path/to/File.cs` — what changed and why
+- `full/path/to/File` — what changed and why
 
 ## Key Decisions
 - Implementation choices not specified in the plan
@@ -197,7 +223,7 @@ Written by developer after each implementation round: `docs/plans/{FeatureName}/
 
 ## Summary File Format
 
-Written by team lead after reviewer approval: `docs/plans/{FeatureName}/summary.md`. Its existence means the pipeline completed successfully.
+Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summary.md`. Its existence means the pipeline completed successfully.
 
 ```
 # {Feature Name} — Summary
@@ -248,7 +274,7 @@ Written by developer when blocked. Architect answers inline.
 
 ## Lessons File Format
 
-All pipeline agents append under their own heading: `docs/plans/{FeatureName}/lessons.md`. The PO writes lessons during spec shaping (before a plan folder exists) — create the folder and lessons file if needed.
+All pipeline agents append under their own heading: `docs/specs/{slug}/delivery/lessons.md`. The PO writes lessons during spec shaping (before the delivery/ folder exists) — create the folder and lessons file if needed.
 
 ```
 # {Feature Name} — Lessons
@@ -296,7 +322,7 @@ Only add items not already in CLAUDE.md, convention files, skills, or agent file
 - Deviations flagged with verdict: plan wrong or code wrong
 - Security: no hardcoded secrets, inputs validated, no injection vectors
 - Logic: all branches reachable, no off-by-one, null handling correct
-- Performance: no N+1 queries, bulk vs per-entity matches plan
+- Performance: check for performance anti-patterns per loaded conventions
 - Skill mapping verified: any "None" disposition in the Skill Mapping was warranted (no existing skill actually covers the step)
 
 ### Severity Ratings (reviewer)
@@ -312,7 +338,7 @@ Only add items not already in CLAUDE.md, convention files, skills, or agent file
 
 ## Review Output Format
 
-Reviewer saves to `docs/plans/{FeatureName}/review.md`:
+Reviewer saves to `docs/specs/{slug}/delivery/review.md`:
 
 ```
 # {Feature Name} — Review
@@ -328,7 +354,7 @@ Reviewer saves to `docs/plans/{FeatureName}/review.md`:
 ## Findings
 
 ### [SEVERITY] Finding title
-**File:** `path/to/file.cs:line`
+**File:** `path/to/file:line`
 **Issue:** What's wrong
 **Fix:** Specific suggestion
 
@@ -344,7 +370,7 @@ Reviewer saves to `docs/plans/{FeatureName}/review.md`:
 ## Evidence
 | Check | Result | Command | Output |
 |-------|--------|---------|--------|
-| Build | pass/fail | `dotnet build` | [summary] |
+| Build | pass/fail | [per stack-rules] | [summary] |
 ```
 
 ## Skill Authority

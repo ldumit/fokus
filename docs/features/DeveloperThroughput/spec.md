@@ -1,6 +1,6 @@
 # Developer Throughput
 
-**Traces to:** `docs/specs/v1.md` §5.1 (Developer Throughput)
+**Traces to:** `docs/product/v1.md` §5.1 (Developer Throughput)
 **Source:** Scratch
 **Dependencies:** F2 (Domain Model & Persistence), F5 (Sprint Sync)
 **Status:** Done

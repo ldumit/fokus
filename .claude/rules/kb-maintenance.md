@@ -4,12 +4,7 @@ The business knowledge base at `docs/kb/` captures domain rules, computation log
 
 ## When to Update
 
-After implementing a feature that modifies:
-- Domain aggregate properties or invariants -> update `docs/kb/domain/{aggregate}.md`
-- Analytics computation formulas or business rules -> update `docs/kb/analytics/{feature}.md`
-- Cross-cutting rules (excluded statuses, sub-team filter, delta pattern) -> update `docs/kb/cross-cutting.md`
-- Sync flow or Jira integration -> update `docs/kb/jira-sync.md`
-- New views, stores, or API endpoints -> update `docs/kb/frontend-map.md`
+`docs/kb/kb-topics.md` is the topic map — it lists which KB entries exist and what each one covers. After implementing a feature that modifies any concept tracked there, update the corresponding KB entry. If the feature introduces a new tracked concept, add a new entry and register it in the topic map.
 
 ## Who Updates
 
@@ -28,5 +23,5 @@ After implementing a feature that modifies:
 
 - Full property lists (agents read the class file for that)
 - Response DTO shapes (agents read the endpoint for that)
-- UI layout details (agents read the Vue component for that)
+- UI layout details (agents read the UI component source for that)
 - Anything derivable from reading the code itself

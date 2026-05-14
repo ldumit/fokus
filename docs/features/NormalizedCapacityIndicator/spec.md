@@ -1,6 +1,6 @@
 # Normalized Capacity Indicator
 
-**Traces to:** `docs/specs/v1.md` §5.1 (Developer Throughput)
+**Traces to:** `docs/product/v1.md` §5.1 (Developer Throughput)
 **Source:** Scratch
 **Dependencies:** F9 (Developer Throughput), F15 (Team Management), F19 (Leaderboard Breakdown)
 **Status:** Done

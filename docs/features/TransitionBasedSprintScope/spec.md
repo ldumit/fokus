@@ -1,6 +1,6 @@
 # Transition-Based Sprint Scope
 
-**Traces to:** `docs/specs/v1.md` §4.4 (Rev 2 — transition-based sprint attribution), §5.1, §5.2, §5.3, §5.5, §5.6, §5.7
+**Traces to:** `docs/product/v1.md` §4.4 (Rev 2 — transition-based sprint attribution), §5.1, §5.2, §5.3, §5.5, §5.6, §5.7
 **Source:** Scratch
 **Dependencies:** F3 (Settings System), F6 (Workflow Auto-Detection), F12 (Cycle Time — defines boundary settings), F22 (Boundary-Driven Completion — superseded for completion mechanism)
 **Status:** Done

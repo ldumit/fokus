@@ -1,6 +1,6 @@
 # Boundary-Driven Completion
 
-**Traces to:** `docs/specs/v1.md` §4.4 (Rev 1 — Done category definition), §5.1, §5.2, §5.3, §5.4, §5.5, §5.6, §5.7
+**Traces to:** `docs/product/v1.md` §4.4 (Rev 1 — Done category definition), §5.1, §5.2, §5.3, §5.4, §5.5, §5.6, §5.7
 **Source:** Scratch
 **Dependencies:** F3 (Settings System), F6 (Workflow Auto-Detection), F12 (Cycle Time — defines boundary settings)
 **Status:** Done

@@ -194,9 +194,79 @@ Refactors, infrastructure work, and UX tweaks that don't have a feature spec.
 
 ---
 
+## v2 — QA Analytics (Xray Integration)
+
+**Spec:** [v2.md](product/v2.md)  
+**Research:** [Xray QA Integration Research](proposals/xray-qa-integration-research.md)
+
+Extends Fokus with Xray Cloud test management data. Enriches sprint tickets with test coverage and execution results. Gated behind a feature flag — fully optional.
+
+### Sequencing
+
+```
+Tier 9: F25 (Xray Foundation + Ticket Enrichment)
+          │
+    ┌─────┼──────────┬──────────┐
+Tier 10: F26  F28  F29  F30  F31
+          │
+Tier 11: F27
+```
+
+### Tier 9 — QA Foundation
+
+| ID | Feature | Status | Spec | Plan |
+|----|---------|--------|------|------|
+| F25 | Xray Integration & Ticket Test Enrichment | Planned | — | — |
+
+Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, TestRun, TestSet), EF Core migrations, Settings UI (feature flag, credentials, connection test), dual-API sync (Jira issue links + Xray test runs), per-ticket test coverage status and pass/fail enrichment.
+
+---
+
+### Tier 10 — QA Analytics & Dashboard
+
+| ID | Feature | Status | Spec | Plan |
+|----|---------|--------|------|------|
+| F26 | Sprint Test Coverage | Planned | — | — |
+| F28 | Per-Developer Story Quality | Planned | — | — |
+| F29 | QA Workload & Throughput | Planned | — | — |
+| F30 | Test Execution Timeline | Planned | — | — |
+| F31 | Epic Test Health | Planned | — | — |
+
+**F26:** Coverage %, Execution %, Pass Rate % cards on Dashboard. Quality sub-score in sprint health score. Untested/failing ticket lists. Configurable thresholds.
+
+**F28:** Per-developer test coverage of their stories. Coverage %, pass rate, bugs found. Extension to Developers page.
+
+**F29:** New QA sidebar page. Per-person TE assignments, test runs completed, pass/fail split, stories covered. Workload distribution chart. Balance flag when one person handles >50% of executions.
+
+**F30:** When tests were executed relative to sprint lifecycle. Early vs. late testing. Post-sprint testing flag. Correlation with disruption timeline.
+
+**F31:** Bottom-up epic test health from stories → TEs. Coverage %, pass rate, bugs found per epic. Extension to Epics page.
+
+---
+
+### Tier 11 — QA Trends
+
+| ID | Feature | Status | Spec | Plan |
+|----|---------|--------|------|------|
+| F27 | Cross-Sprint QA Trends | Planned | — | — |
+
+**F27:** Coverage rate, pass rate, TE volume, bugs-found-in-testing trended across sprints. Defect correlation overlay (coverage rate vs. bug ratio from F13). Multi-line chart with existing delta/sparkline patterns.
+
+---
+
+### v2 Cross-Cutting Concerns
+
+| ID | Concern | Description |
+|----|---------|-------------|
+| C4 | Xray Feature Flag | Boolean setting gates all QA UI and Xray API calls. When off, Fokus behaves exactly as v1. |
+| C5 | Dual-API Sync | Sprint sync reads Jira issue links (coverage graph + bug links), then Xray GraphQL API (test run results). Graceful degradation if Xray is unreachable. |
+| C6 | QA Delta Pattern | Same as C1 — QA metric endpoints return `{ value, delta, direction }` vs. prior sprint. |
+
+---
+
 ## Bugs & Gaps
 
-Tracked in `docs/issues/`. One file per issue. Gaps are specified features with missing UI or functionality. Bugs are incorrect behavior.
+New issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gaps — see agents-workflow.md § Slug and Path Resolution). Existing issues remain at legacy `docs/issues/` paths until migrated.
 
 | ID | Issue | Type | Severity | Status | Feature | File |
 |----|-------|------|----------|--------|---------|------|

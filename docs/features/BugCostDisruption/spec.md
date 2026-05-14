@@ -1,6 +1,6 @@
 # Bug Cost & Disruption Split
 
-**Traces to:** `docs/specs/v1.md` §5.2 (Disruption Analysis), §5.5 (Bug Ratio), §5.7 (Sprint Summary Card)
+**Traces to:** `docs/product/v1.md` §5.2 (Disruption Analysis), §5.5 (Bug Ratio), §5.7 (Sprint Summary Card)
 **Source:** Scratch
 **Dependencies:** F3 (Settings System), F8 (Sprint Summary Card), F10 (Scope Change & Disruption), F13 (Bug Ratio)
 **Status:** Done

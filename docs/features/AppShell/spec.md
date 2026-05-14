@@ -1,6 +1,6 @@
 # App Shell & Navigation
 
-**Traces to:** `docs/specs/v1.md` §6 (UI Structure), §6.1 (Navigation), §6.2 (Design Direction), §6.3 (Visual References)
+**Traces to:** `docs/product/v1.md` §6 (UI Structure), §6.1 (Navigation), §6.2 (Design Direction), §6.3 (Visual References)
 **Covers:** F7 (App Shell & Navigation)
 **Dependencies:** F1 (Project Scaffolding)
 **Status:** Done
