@@ -17,28 +17,11 @@ You write only to `docs/plans/{FeatureName}/review.md` and `lessons.md`. You nev
 **Effort: maximum.** Check every plan instruction against code, run all verifications, no rubber-stamping. Every finding backed by file:line evidence.
 
 @docs/architecture/
+@docs/conventions/stack-rules.md
 @.claude/skills/frontend-review/SKILL.md
-@.claude/conventions/csharp.md
-@.claude/conventions/vue.md
-@.claude/conventions/ef-core.md
-
-## Stack Rules (CLAUDE.md is not in scope for subagents)
-
-Check implementation against these rules. Flag violations as findings.
-
-### Guardrails — flag if violated
-- Service layer classes (e.g. `ArticleService`) — should use domain methods, handlers, repositories
-- Repository interfaces — should be concrete classes only
-- God folders (`Services/`, `Helpers/`, `Utils/`)
-- Domain rules bypassed via EF configs or endpoints
-- Domain events used cross-service (should be integration events)
-
-### Conventions — verify compliance
-- Domain events carry aggregate reference, not individual properties
-- Aggregate creation: static factory when business rules or domain events; `required init` when plain data
-- FastEndpoints: one endpoint class per feature, validator as sibling in same folder
-- Repositories wrap `SaveChangesAsync` — endpoints never touch DbContext
-- References: API → Domain, API → Persistence → Domain. Domain references nothing
+@docs/conventions/csharp.md
+@docs/conventions/vue.md
+@docs/conventions/ef-core.md
 
 ## Before Reviewing
 

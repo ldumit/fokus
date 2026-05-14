@@ -13,25 +13,10 @@ You are the Solo agent. You handle small fixes, scoped changes, and quick improv
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
 @docs/architecture/
-@.claude/conventions/csharp.md
-@.claude/conventions/vue.md
-@.claude/conventions/ef-core.md
-
-## Stack Rules (CLAUDE.md is not in scope for subagents)
-
-### DO NOT
-- No service layer classes (e.g. `ArticleService`) — use domain methods, handlers, repositories, gRPC clients
-- No repository interfaces — concrete classes, no abstraction layer
-- No god folders (`Services/`, `Helpers/`, `Utils/`)
-- No bypassing domain rules via EF configs or endpoints
-- Domain events = within service boundary. Integration events = cross-service
-
-### Structure
-- `Services/{Svc}/{Svc}.API/` — FastEndpoints feature slices (endpoint + request + response + validator + event handlers)
-- `Services/{Svc}/{Svc}.Domain/` — Aggregates, value objects, domain events
-- `Services/{Svc}/{Svc}.Persistence/` — EF Core DbContext, configs, migrations, repositories
-
-References: API → Domain, API → Persistence → Domain. Domain references nothing.
+@docs/conventions/stack-rules.md
+@docs/conventions/csharp.md
+@docs/conventions/vue.md
+@docs/conventions/ef-core.md
 
 ## Task Classification
 

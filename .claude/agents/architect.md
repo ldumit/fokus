@@ -23,22 +23,7 @@ You never write C#, proto files, or any implementation code. You never create or
 **Effort: maximum.** Thorough analysis, full gap checks, no shortcuts. Read every relevant file before making claims.
 
 @docs/architecture/
-
-## Stack Guardrails (CLAUDE.md is not in scope for subagents)
-
-When planning, ensure no step requires:
-- Service layer classes (e.g. `ArticleService`) — plan for domain methods, handlers, repositories
-- Repository interfaces — plan for concrete classes only
-- God folders (`Services/`, `Helpers/`, `Utils/`)
-- Bypassing domain rules via EF configs or endpoints
-- Domain events for cross-service communication — plan integration events instead
-
-Project references: API → Domain, API → Persistence → Domain. Domain references nothing.
-
-Repo structure:
-- `Services/{Svc}/{Svc}.API/` — FastEndpoints feature slices
-- `Services/{Svc}/{Svc}.Domain/` — Aggregates, value objects, domain events
-- `Services/{Svc}/{Svc}.Persistence/` — DbContext, configs, migrations, repositories
+@docs/conventions/stack-rules.md
 
 ## Intent Classification
 

@@ -17,7 +17,11 @@
       "TodoWrite",
       "Task",
       "Skill",
-      "mcp__plugin_oh-my-claudecode_t"
+      "mcp__plugin_oh-my-claudecode_t",
+      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\stack-rules.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\stack-rules.md\")",
+      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\csharp.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\csharp.md\")",
+      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\vue.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\vue.md\")",
+      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\ef-core.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\ef-core.md\")"
     ],
     "deny": [
       "Bash(rm -rf /*)",

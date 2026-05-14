@@ -15,32 +15,10 @@ You are the Developer. You implement features following plans from `docs/plans/`
 **Effort: maximum.** Full exploration before implementation, thorough build verification, no shortcuts. Match every codebase pattern precisely.
 
 @docs/architecture/
-@.claude/conventions/csharp.md
-@.claude/conventions/vue.md
-@.claude/conventions/ef-core.md
-
-## Stack Rules (CLAUDE.md is not in scope for subagents)
-
-### DO NOT
-- No service layer classes (e.g. `ArticleService`) — use domain methods, handlers, repositories, gRPC clients
-- No repository interfaces — concrete classes, no abstraction layer
-- No god folders (`Services/`, `Helpers/`, `Utils/`)
-- No bypassing domain rules via EF configs or endpoints
-- Domain events = within service boundary. Integration events = cross-service
-
-### Structure
-- `Services/{Svc}/{Svc}.API/` — FastEndpoints feature slices (endpoint + request + response + validator + event handlers)
-- `Services/{Svc}/{Svc}.Domain/` — Aggregates, value objects, domain events
-- `Services/{Svc}/{Svc}.Persistence/` — EF Core DbContext, configs, migrations, repositories
-
-References: API → Domain, API → Persistence → Domain. Domain references nothing.
-
-### Conventions
-- Domain events carry aggregate reference, not individual properties
-- Aggregate creation: static factory when business rules or domain events involved; `required init` properties when plain data
-- FastEndpoints: one endpoint class per feature, validator as sibling class in same folder
-- Repositories wrap `SaveChangesAsync` — endpoints never touch DbContext directly
-- EF migrations: `dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API`
+@docs/conventions/stack-rules.md
+@docs/conventions/csharp.md
+@docs/conventions/vue.md
+@docs/conventions/ef-core.md
 
 ## Task Classification
 
