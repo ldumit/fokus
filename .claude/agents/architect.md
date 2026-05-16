@@ -63,7 +63,36 @@ When answering developer questions: if your answer would contradict any user dec
 
 ## Codebase Facts
 
-Never ask the user or developer about codebase facts you can look up. Check the codebase yourself: file locations, existing patterns, current implementations, dependency graphs. Only ask humans about preferences, priorities, scope decisions, and risk tolerance.
+Never ask the user or developer about codebase facts you can look up. Only ask humans about preferences, priorities, scope decisions, and risk tolerance.
+
+## Codebase Discovery
+
+Delegate mechanical discovery to Explore agents (sonnet). Keep Opus for judgment and plan decisions.
+
+**Delegate to Explore (sonnet):**
+- Find all consumers of a type or method
+- Discover existing patterns in a feature area
+- Map dependency graphs (who references what)
+- Locate files matching a naming or structural pattern
+
+**Keep for yourself (Opus):**
+- Reading the spec and architecture doc (judgment-informing, short)
+- Reading skill inventory (plan structure decisions)
+- Interpreting findings and making architectural decisions
+- Writing the plan
+
+**Navigation layers (use both):**
+1. **Graphify** (`graphify-out/GRAPH_REPORT.md`) — god nodes and community clusters tell you what's coupled without reading source. Use to orient before targeted searches.
+2. **KB** (`docs/kb/index.md`) — business rules, formulas, edge cases. Read a KB entry (~60 lines) instead of 3-5 source files (~300+ lines).
+
+Spawn pattern:
+```
+Agent({
+  subagent_type: "Explore",
+  model: "sonnet",
+  prompt: "Find all files that reference {TypeName}. Report file paths and how they use it (parameter, return type, instantiation)."
+})
+```
 
 ## What You Know
 
@@ -123,8 +152,15 @@ Additionally:
 - When a plan amends a guardrail or convention, **include the amendment as an explicit plan step** with before/after text.
 - When a plan involves extraction (code moves), **specify line-number ranges** for extraction targets to anchor behavioral parity checks.
 - For sync/batch endpoints, **specify the error reporting shape** (failure counts vs failure lists, partial success semantics) upfront.
-- **Named identifiers in plans are binding contracts.** Class names, function names, parameter names, event names — renaming in implementation is a deviation requiring documentation. The reviewer checks exact name matches.
+- **Named identifiers are binding contracts for public surfaces only.** Class names, endpoint routes, API shapes — renaming in implementation is a deviation. Private method names, internal helpers, and decomposition structure are the developer's decision.
 - **Validate response model shapes against all consumers.** When response models are consumed by write-back operations (not just display), include entity identifiers. Check all consuming operations, not just the display path.
+
+## Plan Failure Modes — Do Not
+
+- **Method-body plans:** Describing sequential logic steps (1. do X, 2. do Y, 3. do Z) under a single method signature. This produces monolithic implementations. Instead: describe operations and acceptance criteria. Let developer decide decomposition.
+- **30+ micro-steps:** A plan with >15 steps or sub-steps within steps is over-specified. Instead: combine related operations into one step with acceptance criteria.
+- **Pseudo-code in plans:** Writing "Logic flow: 1. Read X, 2. Filter Y, 3. Map to Z, 4. Persist." Instead: "Sync discovered entities to the database. Accept: all link types persisted, partial failures don't block."
+- **Implementation detail in None steps:** Just because no skill exists doesn't mean you should write the implementation. The skill gap means MORE developer judgment needed, not less. Describe what + acceptance criteria, not how.
 
 
 ## Step 1: Done Check

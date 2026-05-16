@@ -50,6 +50,11 @@ API  ──▶  Domain
 - **Repositories** wrap `SaveChangesAsync` — endpoints never touch DbContext directly.
 - **EF migrations:** `dotnet ef migrations add Name -p Services/{Svc}/{Svc}.Persistence -s Services/{Svc}/{Svc}.API`
 
+## Plan-to-Code Boundary
+
+- **Plan steps describe operations and acceptance criteria — not method body logic flows.** The developer decides internal code structure and decomposition.
+- **When a plan step has >5 sequential sub-operations**, indicate they should be decomposed into private methods — don't describe one monolithic method.
+
 ## Build Verification
 
 - `dotnet build` — run after every implementation step. Fresh output, not assumed.

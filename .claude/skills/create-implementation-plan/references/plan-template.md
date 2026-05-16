@@ -26,7 +26,7 @@ In scope. Explicitly out of scope.
 **Disposition rules:**
 - **Follow** — apply the skill pattern. Adapt implementation specifics (e.g., SQLite instead of SQL Server) but never skip the pattern.
 - **Build** — skill references infrastructure that doesn't exist locally. Build it first, then follow the skill.
-- **None** — no skill covers this step. Full inline detail required. Log the gap.
+- **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Do NOT write method-body logic flows. The developer decides internal decomposition. Log the gap.
 - **Never "Adapt"** — if you're about to write "adapted for this project's needs," you're skipping the skill. Either Follow (the pattern applies, specifics may differ) or Build (the infrastructure is missing).
 
 **Anti-patterns (if any of these appear, revise before proceeding):**
@@ -60,6 +60,9 @@ Migration commands per persistence convention. Seed data if needed.
 
 ## Testing Strategy
 Key scenarios to test.
+
+## KB Impact
+Which `docs/kb/` entries need updating or creating after this feature? (None if purely frontend/infra)
 
 ## Open Questions
 Unresolved decisions needing input.

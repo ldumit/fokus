@@ -27,4 +27,5 @@ Navigate here before reading source files. Find the relevant entry, get business
 ## Integration
 
 - [Jira Sync](jira-sync.md) — sync flow, changelog processing, membership construction
+- [Xray](xray.md) — sync flow, link types, sprint attribution (BR7/BR8/BR9), coverage computation
 - [Frontend Map](frontend-map.md) — view/store/API mapping, data flow

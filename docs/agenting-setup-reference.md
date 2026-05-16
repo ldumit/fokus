@@ -452,7 +452,7 @@ A `PreToolUse` hook runs `.claude/hooks/audit-logger.js` asynchronously on every
 
 ## Knowledge Base (`docs/kb/`)
 
-Domain rules, computation formulas, and data flows that are expensive to re-derive from source code. Agents check `docs/kb/kb-topics.md` (the topic map) before reading source files. A KB entry gives business logic in ~60 lines vs reading 3-5 source files (~300+ lines).
+Domain rules, computation formulas, and data flows that are expensive to re-derive from source code. Agents check `docs/kb/index.md` (the topic map) before reading source files. A KB entry gives business logic in ~60 lines vs reading 3-5 source files (~300+ lines).
 
 - Developer updates KB entries during implementation
 - Reviewer verifies KB entries match implementation (HIGH severity if stale)

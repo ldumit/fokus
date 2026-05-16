@@ -1,8 +1,8 @@
 # Knowledge Base Navigation
 
-Before reading source files for domain, analytics, or feature questions, check `docs/kb/kb-topics.md` first.
+Before reading source files for domain, analytics, or feature questions, check `docs/kb/index.md` first.
 
-1. Read `docs/kb/kb-topics.md` (topic map, ~30 lines)
+1. Read `docs/kb/index.md` (topic map, ~30 lines)
 2. Follow the link to the relevant entry
 3. Get: business rules, computation formulas, edge cases, key file paths
 4. Only then read the specific source files you need

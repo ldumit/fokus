@@ -4,7 +4,7 @@ The business knowledge base at `docs/kb/` captures domain rules, computation log
 
 ## When to Update
 
-`docs/kb/kb-topics.md` is the topic map — it lists which KB entries exist and what each one covers. After implementing a feature that modifies any concept tracked there, update the corresponding KB entry. If the feature introduces a new tracked concept, add a new entry and register it in the topic map.
+`docs/kb/index.md` is the topic map — it lists which KB entries exist and what each one covers. After implementing a feature that modifies any concept tracked there, update the corresponding KB entry. If the feature introduces a new tracked concept, add a new entry and register it in the topic map.
 
 ## Who Updates
 
@@ -25,3 +25,15 @@ The business knowledge base at `docs/kb/` captures domain rules, computation log
 - Response DTO shapes (agents read the endpoint for that)
 - UI layout details (agents read the UI component source for that)
 - Anything derivable from reading the code itself
+
+## On-Demand Update
+
+When the user asks to update the KB for a concept (e.g., "update KB for Xray"):
+
+1. Read the relevant source files (entities, services, repositories for that concept)
+2. Extract: business rules, computation formulas, edge cases, key file paths, relationships
+3. Write or update `docs/kb/{area}/{concept}.md` following the structure above
+4. Update `docs/kb/index.md` if it's a new entry (add a link under the appropriate section)
+5. Apply the "What NOT to Capture" rules — keep it to ~60 lines of what's non-obvious
+
+Any agent can perform this (solo, developer, or the main session directly). No pipeline or plan required.
