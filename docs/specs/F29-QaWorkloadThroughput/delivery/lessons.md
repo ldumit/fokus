@@ -13,6 +13,13 @@
 - The plan's Step 1 record definitions listed "delta pairs for each numeric column: tesOwnedDelta/tesOwnedDirection" — this naming convention implied direction-only. It should have been "tesOwnedDelta/tesOwnedDirection/tesOwnedPolarity" to match the BugRatio pattern. Named identifiers in plans are binding contracts per the architect agent rules.
 - Step 1 done check caught the polarity gap in Cycle 0. Fix was clean and scoped (7 fields added across 5 files). Pre-commitment prediction strategy worked — predicting "delta polarities might not match spec" led directly to the finding. Worth continuing to predict the 2-3 most likely gaps before reading implementation.md.
 
+## Reviewer Lessons
+
+- When a feature uses a reference pattern for error handling (e.g., GetBugRatioEndpoint), check the reference before flagging a deviation from the plan text. The plan said "404" but the reference endpoint uses 400 — the code correctly follows the reference. Flagging this as HIGH would have been wrong; MEDIUM is appropriate since it represents a plan-text deviation even when justified by the codebase pattern.
+- For ApexCharts horizontal bar charts, `xaxis.categories` provides the bar labels (rendered on the Y axis visually). Placing categories in `yaxis` is non-standard. No existing horizontal bar chart in this codebase to confirm; note confidence limitation in the finding.
+- The `sealed record` convention in csharp.md does not match the codebase practice for analytics service records. Before flagging a LOW convention issue, verify whether the entire feature area already deviates from it — if yes, the developer followed the right pattern and the convention file needs updating, not the code.
+- Independent sort computeds for chart series and categories (distributionSeries / distributionCategories) are a subtle data-alignment risk when two items share the same sort key. Flag as a gap rather than a finding when the risk is theoretical with real data.
+
 ## Skill Gaps
 
 - **Missing skill:** No skill for analytics metric computation services (pure computation, multi/single split, delta helpers, sparkline builders). Suggested name: `create-analytics-service`. Coverage: service class skeleton with multi/single methods, DeltaDirection/DeltaPolarity helpers, BuildMetricCard pattern, alert evaluation loop. Reference files: `BugRatioService.cs`, `DeveloperQualityService.cs`, `QaWorkloadService.cs`.

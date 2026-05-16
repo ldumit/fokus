@@ -3,7 +3,7 @@
 **Traces to:** `docs/product/v2.md` §5.5
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment), F26 (Sprint Test Coverage — reuses pass rate RAG thresholds)
-**Status:** Ready
+**Status:** Done
 
 ---
 

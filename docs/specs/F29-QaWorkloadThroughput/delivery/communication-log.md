@@ -1,7 +1,7 @@
 # F29-QaWorkloadThroughput — Communication Log
 
 **Branch:** main
-**Step:** reviewer-review
+**Step:** done
 **Cycle:** 0/3
 
 ## Messages
@@ -19,6 +19,8 @@
 | 9 | team-lead | architect | Re-check Step 1 for F29 | None |
 | 10 | architect | team-lead | Step 1 PASS, lessons written, ready for reviewer | None |
 | 11 | team-lead | reviewer | Step 2 code review for F29 | None |
+| 12 | reviewer | team-lead | APPROVED: F29-QaWorkloadThroughput | None |
+| 13 | team-lead | (self) | Wrote summary.md, updated spec Status=Done, updated backlog | None |
 
 ## Problems
 
