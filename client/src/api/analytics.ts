@@ -1,4 +1,4 @@
-import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse } from '../types'
+import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -129,4 +129,13 @@ export function getDeveloperQuality(sprintId?: number, last?: number, subTeam?: 
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<DeveloperQualityResponse>(`/analytics/developer-quality${query ? `?${query}` : ''}`)
+}
+
+export function getQaWorkload(sprintId?: number, last?: number, subTeam?: string): Promise<QaWorkloadResponse> {
+  const params = new URLSearchParams()
+  if (sprintId !== undefined) params.set('sprintId', String(sprintId))
+  if (last !== undefined) params.set('last', String(last))
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<QaWorkloadResponse>(`/analytics/qa-workload${query ? `?${query}` : ''}`)
 }

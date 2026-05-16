@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState.vue'
 import BugRatioTab from '../components/developers/BugRatioTab.vue'
 import LeaderboardTab from '../components/developers/LeaderboardTab.vue'
 import QualityTab from '../components/developers/QualityTab.vue'
+import QaWorkloadTab from '../components/developers/QaWorkloadTab.vue'
 import InfoTooltip from '../components/InfoTooltip.vue'
 import type { DeveloperThroughputEntry, SprintBreakdown } from '../types'
 
@@ -39,6 +40,8 @@ onMounted(async () => {
     store.activeTab = 'leaderboard'
   } else if (tabParam === 'quality') {
     store.activeTab = 'quality'
+  } else if (tabParam === 'qa-workload') {
+    store.activeTab = 'qaWorkload'
   }
 
   await Promise.all([store.initialize(), settingsStore.fetchSettings()])
@@ -56,6 +59,11 @@ onMounted(async () => {
   // If quality tab was requested and store initialized, load quality data
   if (store.activeTab === 'quality' && store.quality === null) {
     await store.fetchQuality()
+  }
+
+  // If qa-workload tab was requested and store initialized, load QA workload data
+  if (store.activeTab === 'qaWorkload' && store.qaWorkload === null) {
+    await store.fetchQaWorkload()
   }
 })
 
@@ -77,6 +85,8 @@ watch(
       query.tab = 'leaderboard'
     } else if (tab === 'quality') {
       query.tab = 'quality'
+    } else if (tab === 'qaWorkload') {
+      query.tab = 'qa-workload'
     }
 
     router.replace({ query })
@@ -95,7 +105,7 @@ function onSubTeamChange(subTeam: string | null) {
   store.selectSubTeam(subTeam)
 }
 
-function onTabSwitch(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality') {
+function onTabSwitch(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload') {
   store.switchTab(tab)
 }
 
@@ -366,6 +376,18 @@ const sortedMultiSprintDevelopers = computed<DeveloperThroughputEntry[]>(() => {
         >
           Quality
         </button>
+        <button
+          v-if="settingsStore.settings.xrayEnabled"
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            store.activeTab === 'qaWorkload'
+              ? 'border-accent-default text-accent-default'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          ]"
+          @click="onTabSwitch('qaWorkload')"
+        >
+          QA Workload
+        </button>
       </div>
 
       <!-- Throughput tab -->
@@ -592,6 +614,28 @@ const sortedMultiSprintDevelopers = computed<DeveloperThroughputEntry[]>(() => {
         <QualityTab
           v-else-if="store.quality && store.quality.hasQaData"
           :data="store.quality"
+          :sprint-mode="store.sprintMode"
+        />
+      </template>
+
+      <!-- QA Workload tab -->
+      <template v-else-if="store.activeTab === 'qaWorkload'">
+        <div v-if="store.qaWorkloadLoading" class="text-xs text-text-muted">Updating...</div>
+        <div v-if="store.qaWorkloadError" class="text-sm text-status-danger">{{ store.qaWorkloadError }}</div>
+        <EmptyState
+          v-else-if="store.qaWorkload && !store.qaWorkload.hasQaData"
+          title="No QA data available"
+          description="Sync sprint to load QA data."
+        >
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-12 h-12">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+            </svg>
+          </template>
+        </EmptyState>
+        <QaWorkloadTab
+          v-else-if="store.qaWorkload && store.qaWorkload.hasQaData"
+          :data="store.qaWorkload"
           :sprint-mode="store.sprintMode"
         />
       </template>

@@ -1069,3 +1069,101 @@ export interface DeveloperQualityResponse {
 export interface FailingTicketsResponse {
   tickets: FailingTicket[]
 }
+
+// --- QA Workload (F29) ---
+
+export interface WorkloadAlert {
+  isActive: boolean
+  consecutiveSprintCount: number
+  thresholdPercent: number
+}
+
+export interface QaWorkloadSprintBreakdown {
+  sprintId: number
+  sprintName: string
+  tesOwned: number
+  runsCompleted: number
+  passCount: number
+  failCount: number
+  passRate: number
+  storiesCovered: number
+  bugsFound: number
+}
+
+export interface QaWorkloadEntry {
+  accountId: string | null
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  tesOwned: number
+  runsCompleted: number
+  passCount: number
+  failCount: number
+  passRate: number
+  storiesCovered: number
+  bugsFound: number
+  sprintBreakdowns: QaWorkloadSprintBreakdown[]
+  workloadAlert: WorkloadAlert
+}
+
+export interface QaWorkloadTeamMetrics {
+  totalTes: number
+  totalRunsCompleted: number
+  passCount: number
+  failCount: number
+  teamPassRate: number
+}
+
+export interface QaWorkloadMultiSprintResponse {
+  sprints: SprintSummaryItem[]
+  teamMetrics: QaWorkloadTeamMetrics
+  developers: QaWorkloadEntry[]
+}
+
+export interface QaWorkloadSingleTeamMetrics {
+  totalTes: MetricCard
+  totalRunsCompleted: MetricCard
+  teamPassRate: MetricCard
+}
+
+export interface QaWorkloadSingleEntry {
+  accountId: string | null
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  tesOwned: number
+  runsCompleted: number
+  passCount: number
+  failCount: number
+  passRate: number
+  storiesCovered: number
+  bugsFound: number
+  tesOwnedDelta: number | null
+  tesOwnedDirection: string | null
+  runsCompletedDelta: number | null
+  runsCompletedDirection: string | null
+  passCountDelta: number | null
+  passCountDirection: string | null
+  failCountDelta: number | null
+  failCountDirection: string | null
+  passRateDelta: number | null
+  passRateDirection: string | null
+  storiesCoveredDelta: number | null
+  storiesCoveredDirection: string | null
+  bugsFoundDelta: number | null
+  bugsFoundDirection: string | null
+  workloadAlert: WorkloadAlert
+}
+
+export interface QaWorkloadSingleSprintResponse {
+  sprint: SprintSummaryItem
+  teamMetrics: QaWorkloadSingleTeamMetrics
+  developers: QaWorkloadSingleEntry[]
+}
+
+export interface QaWorkloadResponse {
+  hasQaData: boolean
+  mode: 'multi' | 'single'
+  multiSprint: QaWorkloadMultiSprintResponse | null
+  singleSprint: QaWorkloadSingleSprintResponse | null
+}

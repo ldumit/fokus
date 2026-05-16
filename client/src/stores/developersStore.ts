@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse } from '../types'
-import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams, getDeveloperQuality } from '../api/analytics'
+import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse, QaWorkloadResponse } from '../types'
+import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams, getDeveloperQuality, getQaWorkload } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
 
 export const useDevelopersStore = defineStore('developers', () => {
@@ -16,7 +16,7 @@ export const useDevelopersStore = defineStore('developers', () => {
   const initializing = ref(false)
   const error = ref<string | null>(null)
 
-  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard' | 'quality'>('throughput')
+  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload'>('throughput')
   const bugRatio = ref<BugRatioResponse | null>(null)
   const bugRatioLoading = ref(false)
   const bugRatioError = ref<string | null>(null)
@@ -26,6 +26,9 @@ export const useDevelopersStore = defineStore('developers', () => {
   const quality = ref<DeveloperQualityResponse | null>(null)
   const qualityLoading = ref(false)
   const qualityError = ref<string | null>(null)
+  const qaWorkload = ref<QaWorkloadResponse | null>(null)
+  const qaWorkloadLoading = ref(false)
+  const qaWorkloadError = ref<string | null>(null)
 
   async function initialize() {
     initializing.value = true
@@ -61,6 +64,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'quality') {
       await fetchQuality()
     }
+    if (activeTab.value === 'qaWorkload') {
+      await fetchQaWorkload()
+    }
   }
 
   async function selectLastN(n: number | null) {
@@ -77,6 +83,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'quality') {
       await fetchQuality()
     }
+    if (activeTab.value === 'qaWorkload') {
+      await fetchQaWorkload()
+    }
   }
 
   async function selectSubTeam(subTeam: string | null) {
@@ -91,9 +100,12 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'quality') {
       await fetchQuality()
     }
+    if (activeTab.value === 'qaWorkload') {
+      await fetchQaWorkload()
+    }
   }
 
-  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality') {
+  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload') {
     activeTab.value = tab
     if (tab === 'bugRatio') {
       await fetchBugRatio()
@@ -103,6 +115,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     }
     if (tab === 'quality') {
       await fetchQuality()
+    }
+    if (tab === 'qaWorkload') {
+      await fetchQaWorkload()
     }
   }
 
@@ -175,6 +190,30 @@ export const useDevelopersStore = defineStore('developers', () => {
       qualityError.value = e instanceof Error ? e.message : 'Failed to load developer quality data'
     } finally {
       qualityLoading.value = false
+    }
+  }
+
+  async function fetchQaWorkload() {
+    qaWorkloadLoading.value = true
+    qaWorkloadError.value = null
+    try {
+      if (sprintMode.value === 'single') {
+        qaWorkload.value = await getQaWorkload(
+          selectedSprintId.value ?? undefined,
+          undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      } else {
+        qaWorkload.value = await getQaWorkload(
+          undefined,
+          selectedLast.value ?? undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      }
+    } catch (e) {
+      qaWorkloadError.value = e instanceof Error ? e.message : 'Failed to load QA workload data'
+    } finally {
+      qaWorkloadLoading.value = false
     }
   }
 
@@ -252,6 +291,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     quality,
     qualityLoading,
     qualityError,
+    qaWorkload,
+    qaWorkloadLoading,
+    qaWorkloadError,
     initialize,
     selectSprint,
     selectLastN,
@@ -261,6 +303,7 @@ export const useDevelopersStore = defineStore('developers', () => {
     fetchBugRatio,
     fetchLeaderboard,
     fetchQuality,
+    fetchQaWorkload,
     updateCapacity
   }
 })
