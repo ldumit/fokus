@@ -1,7 +1,7 @@
 ---
 name: vue-patterns
 description: Vue 3 Composition API patterns — script setup macros, reactivity, composables, lifecycle, built-in components. Loaded when writing or reviewing Vue SFC files. MUST be used for Vue.js tasks.
-user-invocable: false
+user-invocable: true
 ---
 
 # Vue Patterns

@@ -1,7 +1,7 @@
 ---
 name: authorization-patterns
 description: Two-layer authorization — role gate + resource gate. Loaded when implementing endpoint authorization or access control.
-user-invocable: false
+user-invocable: true
 ---
 
 # Authorization Patterns

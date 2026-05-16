@@ -1,7 +1,7 @@
 ---
 name: error-handling
 description: Exception hierarchy, guard utilities, global error middleware. Loaded when implementing error handling or throwing domain/HTTP exceptions.
-user-invocable: false
+user-invocable: true
 ---
 
 # Error Handling

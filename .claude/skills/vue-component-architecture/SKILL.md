@@ -1,7 +1,7 @@
 ---
 name: vue-component-architecture
 description: Vue 3 component architecture — level hierarchy, split decisions, composable lifecycle, store boundaries, props resolution. Loaded when designing component structure or splitting large components.
-user-invocable: false
+user-invocable: true
 ---
 
 # Vue Component Architecture

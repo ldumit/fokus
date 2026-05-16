@@ -1,7 +1,7 @@
 ---
 name: frontend-review
 description: Frontend code review checklist — accessibility, reactive state, Tailwind tokens, component architecture, error/empty states. Loaded by reviewer agent for Vue/TypeScript features.
-user-invocable: false
+user-invocable: true
 ---
 
 # Frontend Review Checklist

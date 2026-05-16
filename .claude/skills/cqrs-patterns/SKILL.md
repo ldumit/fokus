@@ -1,7 +1,7 @@
 ---
 name: cqrs-patterns
 description: CQRS patterns — commands, queries, handlers, MediatR pipeline behaviors. Loaded when implementing features with MediatR dispatch.
-user-invocable: false
+user-invocable: true
 ---
 
 # CQRS Patterns

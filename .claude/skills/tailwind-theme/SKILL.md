@@ -1,7 +1,7 @@
 ---
 name: tailwind-theme
 description: Tailwind CSS v4 theme patterns — design tokens, @theme directive, dark mode, responsive design, component styling. Loaded when working with styles or theme configuration.
-user-invocable: false
+user-invocable: true
 ---
 
 # Tailwind Theme Patterns

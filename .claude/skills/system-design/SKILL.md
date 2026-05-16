@@ -1,7 +1,7 @@
 ---
 name: system-design
 description: Architect-only skill — system decomposition, domain lifecycle design, service boundary definition, variant axis selection. Loaded by the Architect agent when designing new apps or services.
-user-invocable: false
+user-invocable: true
 ---
 
 # System Design (Architect Reference)

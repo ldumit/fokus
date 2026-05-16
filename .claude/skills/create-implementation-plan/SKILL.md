@@ -1,7 +1,7 @@
 ---
 name: create-implementation-plan
 description: Creates implementation plans with mandatory skill mapping per step. Ensures plan steps reference skills instead of restating patterns. Extends the agents-workflow.md plan format.
-user-invocable: false
+user-invocable: true
 ---
 
 # Create Implementation Plan (Architect Reference)

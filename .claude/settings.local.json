@@ -41,7 +41,9 @@
       "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
       "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
       "mcp__claude_ai_Atlassian__search",
-      "mcp__claude_ai_Atlassian__atlassianUserInfo"
+      "mcp__claude_ai_Atlassian__atlassianUserInfo",
+      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\.claude\\\\hooks\")",
+      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\docs\\\\audit\")"
     ],
     "deny": [
       "Bash(rm -rf /*)",
@@ -68,6 +70,18 @@
           {
             "type": "command",
             "command": "echo \"be $CC_AGENT\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/audit-logger.js",
+            "async": true,
+            "timeout": 10
           }
         ]
       }

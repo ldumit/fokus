@@ -1,7 +1,7 @@
 ---
 name: pinia-patterns
 description: Pinia state management — setup stores, storeToRefs, store vs view state, async patterns, composition. Loaded when creating or modifying Pinia stores.
-user-invocable: false
+user-invocable: true
 ---
 
 # Pinia Patterns

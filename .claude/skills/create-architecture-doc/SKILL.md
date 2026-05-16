@@ -1,7 +1,7 @@
 ---
 name: create-architecture-doc
 description: Generates or updates the project architecture document with mandatory skill inventory and skill-deferred decisions. Ensures implementation details live in skills, not in the architecture doc.
-user-invocable: false
+user-invocable: true
 ---
 
 # Create Architecture Doc (Architect Reference)

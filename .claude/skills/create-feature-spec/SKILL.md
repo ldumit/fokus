@@ -1,7 +1,7 @@
 ---
 name: create-feature-spec
 description: Creates a feature specification in docs/specs/{slug}/definition/ — the product definition that precedes implementation planning. Used by the PO agent (primary) or architect. Run this before writing a plan.
-user-invocable: false
+user-invocable: true
 ---
 
 # Create Feature Spec (Architect Reference)

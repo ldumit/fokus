@@ -1,7 +1,7 @@
 ---
 name: create-module-claude-md
 description: Architect-only. Captures axes for a new module and writes src/Modules/{Name}/CLAUDE.md. Branches on archetype (Component vs Domain). Run before the create-module Developer skill.
-user-invocable: false
+user-invocable: true
 ---
 
 # Create Module CLAUDE.md (Architect)

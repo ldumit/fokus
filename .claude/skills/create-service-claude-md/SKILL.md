@@ -1,7 +1,7 @@
 ---
 name: create-service-claude-md
 description: Architect-only. Captures every axis needed to scaffold a new service and writes src/Services/{Name}/CLAUDE.md. Run this before the Developer's create-service skill.
-user-invocable: false
+user-invocable: true
 ---
 
 # Create Service CLAUDE.md (Architect Reference)
