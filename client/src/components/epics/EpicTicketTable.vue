@@ -3,7 +3,23 @@ import type { EpicProgressTicketEntry } from '../../types'
 
 defineProps<{
   tickets: EpicProgressTicketEntry[]
+  hasQaData: boolean
 }>()
+
+function testStatusClass(status: string | null): string {
+  if (status === 'Passed') return 'bg-status-success/10 text-status-success'
+  if (status === 'Failed') return 'bg-status-danger/10 text-status-danger'
+  if (status === 'InProgress') return 'bg-status-warning/10 text-status-warning'
+  return 'bg-surface-elevated text-text-muted'
+}
+
+function testStatusLabel(status: string | null): string {
+  if (status === 'Passed') return 'Passed'
+  if (status === 'Failed') return 'Failed'
+  if (status === 'InProgress') return 'In Progress'
+  if (status === 'NoTests') return 'No Tests'
+  return '—'
+}
 </script>
 
 <template>
@@ -18,7 +34,10 @@ defineProps<{
           <th class="pb-2 pr-4 font-medium">Type</th>
           <th class="pb-2 pr-4 font-medium text-right">SP</th>
           <th class="pb-2 pr-4 font-medium">Status</th>
-          <th class="pb-2 font-medium">Assignee</th>
+          <th class="pb-2 font-medium" :class="{ 'pr-4': hasQaData }">Assignee</th>
+          <th v-if="hasQaData" class="pb-2 pr-4 font-medium" title="Test status derived from all linked test execution runs.">Test Status</th>
+          <th v-if="hasQaData" class="pb-2 pr-4 font-medium text-right" title="Percentage of PASS runs across this ticket's linked test executions.">Pass Rate</th>
+          <th v-if="hasQaData" class="pb-2 font-medium text-right" title="Unique bugs linked via Blocks from this ticket's test executions.">Bugs Found</th>
         </tr>
       </thead>
       <tbody>
@@ -54,8 +73,29 @@ defineProps<{
               {{ ticket.currentStatus }}
             </span>
           </td>
-          <td class="py-2 text-text-secondary text-xs">
+          <td class="py-2 text-text-secondary text-xs" :class="{ 'pr-4': hasQaData }">
             {{ ticket.assigneeDisplayName ?? 'Unassigned' }}
+          </td>
+
+          <!-- Test Status badge (null for bug tickets) -->
+          <td v-if="hasQaData" class="py-2 pr-4 text-xs">
+            <span
+              v-if="ticket.testStatus !== null"
+              :class="['inline-block rounded px-1.5 py-0.5', testStatusClass(ticket.testStatus)]"
+            >
+              {{ testStatusLabel(ticket.testStatus) }}
+            </span>
+            <span v-else class="text-text-muted">—</span>
+          </td>
+
+          <!-- Pass Rate -->
+          <td v-if="hasQaData" class="py-2 pr-4 text-right tabular-nums text-xs text-text-primary">
+            {{ ticket.testPassRate !== null ? `${ticket.testPassRate.toFixed(1)}%` : '—' }}
+          </td>
+
+          <!-- Bugs Found -->
+          <td v-if="hasQaData" class="py-2 text-right tabular-nums text-xs text-text-primary">
+            {{ ticket.testBugsFound !== null ? ticket.testBugsFound : '—' }}
           </td>
         </tr>
       </tbody>

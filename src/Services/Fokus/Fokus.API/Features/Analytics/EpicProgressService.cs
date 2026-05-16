@@ -7,6 +7,13 @@ public record EpicProgressSummaryMetrics(
     int CompletedEpicCount,
     decimal AverageCompletionPercentage);
 
+public record TestRunSummaryDto(
+    int Passed,
+    int Failed,
+    int Todo,
+    int Executing,
+    int Aborted);
+
 public record EpicProgressTicketEntry(
     string TicketKey,
     string Summary,
@@ -14,7 +21,11 @@ public record EpicProgressTicketEntry(
     decimal? StoryPoints,
     string CurrentStatus,
     string? AssigneeDisplayName,
-    bool IsDone);
+    bool IsDone,
+    string? TestStatus,
+    decimal? TestPassRate,
+    int? TestBugsFound,
+    TestRunSummaryDto? TestRunSummary);
 
 public record EpicProgressEntry(
     string EpicKey,
@@ -35,7 +46,14 @@ public record EpicProgressEntry(
     string? ProjectionConfidence,
     int ActiveSprintCount,
     bool IsCompleted,
-    List<EpicProgressTicketEntry> Tickets);
+    List<EpicProgressTicketEntry> Tickets,
+    decimal? CoverageRate,
+    decimal? PassRate,
+    int BugsFound,
+    int FeatureTicketCount,
+    int CoveredTicketCount,
+    string? CoverageRag,
+    string? PassRateRag);
 
 public record EpicProgressUnlinkedWork(
     int TicketCount,
@@ -44,7 +62,16 @@ public record EpicProgressUnlinkedWork(
 public record EpicProgressResponse(
     EpicProgressSummaryMetrics SummaryMetrics,
     List<EpicProgressEntry> Epics,
-    EpicProgressUnlinkedWork UnlinkedWork);
+    EpicProgressUnlinkedWork UnlinkedWork,
+    bool HasQaData,
+    decimal? AverageTestCoverage);
+
+// --- QA data parameter type ---
+
+public record EpicQaData(
+    Dictionary<string, List<string>> TestsLinksByTicket,
+    Dictionary<string, List<string>> BlocksLinksByTicket,
+    Dictionary<string, List<TestRun>> RunsByTeId);
 
 // --- Service ---
 
@@ -57,7 +84,8 @@ public class EpicProgressService
         AppSettings settings,
         List<StatusTransition> statusTransitions,
         List<Sprint> closedSprints,
-        string? subTeam)
+        string? subTeam,
+        EpicQaData? qaData = null)
     {
         var completedStatuses = CompletionChecker.ResolveCompletedStatuses(settings);
         var defaultSpPerBug = settings.DefaultSpPerBug;
@@ -202,18 +230,15 @@ public class EpicProgressService
             // Is completed (BR11): all tickets have done status
             var isCompleted = tickets.All(t => completedStatuses.Contains(t.CurrentStatus));
 
+            // QA metrics per epic (BR1–BR12, BR20)
+            var (epicCoverageRate, epicPassRate, epicBugsFound, epicFeatureCount, epicCoveredCount, epicCoverageRag, epicPassRateRag) =
+                ComputeEpicQaMetrics(tickets, qaData, settings);
+
             // Ticket list — sort: remaining first (by current status for grouping), then done (BR spec Flow 2 step 3)
             var ticketEntries = remainingTickets
                 .OrderBy(t => t.CurrentStatus)
                 .Concat(doneTickets.OrderBy(t => t.CurrentStatus))
-                .Select(t => new EpicProgressTicketEntry(
-                    t.Id,
-                    t.Summary,
-                    t.IssueType,
-                    t.StoryPoints,
-                    t.CurrentStatus,
-                    t.Assignee?.DisplayName,
-                    completedStatuses.Contains(t.CurrentStatus)))
+                .Select(t => BuildTicketEntry(t, completedStatuses, qaData))
                 .ToList();
 
             epicEntries.Add(new EpicProgressEntry(
@@ -235,7 +260,14 @@ public class EpicProgressService
                 projectionConfidence,
                 activeSprintCount,
                 isCompleted,
-                ticketEntries));
+                ticketEntries,
+                epicCoverageRate,
+                epicPassRate,
+                epicBugsFound,
+                epicFeatureCount,
+                epicCoveredCount,
+                epicCoverageRag,
+                epicPassRateRag));
         }
 
         // BR12: sort — active epics by SP completion % asc (null last), then completed epics by name asc
@@ -294,7 +326,20 @@ public class EpicProgressService
             unlinkedCount,
             Math.Round(unlinkedTotalSp, 1));
 
-        return new EpicProgressResponse(summaryMetrics, sortedEpics, unlinkedWork);
+        // BR16: average test coverage = arithmetic mean of non-null coverage rates (epics with null excluded)
+        var hasQaData = qaData is not null;
+        decimal? averageTestCoverage = null;
+        if (hasQaData)
+        {
+            var coverageRates = sortedEpics
+                .Where(e => e.CoverageRate.HasValue)
+                .Select(e => e.CoverageRate!.Value)
+                .ToList();
+            if (coverageRates.Count > 0)
+                averageTestCoverage = Math.Round(coverageRates.Average(), 1);
+        }
+
+        return new EpicProgressResponse(summaryMetrics, sortedEpics, unlinkedWork, hasQaData, averageTestCoverage);
     }
 
     // --- Effective SP for Ticket entities (mirrors SprintMembership.GetEffectiveSp) ---
@@ -330,5 +375,206 @@ public class EpicProgressService
         return memberships
             .Where(sm => sm.Ticket?.Assignee?.SubTeam == subTeam)
             .ToList();
+    }
+
+    // --- QA computation helpers ---
+
+    /// <summary>
+    /// Computes per-epic QA metrics (BR1–BR4, BR12, BR13, BR20).
+    /// Returns (coverageRate, passRate, bugsFound, featureTicketCount, coveredTicketCount, coverageRag, passRateRag).
+    /// </summary>
+    private static (decimal? CoverageRate, decimal? PassRate, int BugsFound, int FeatureTicketCount,
+        int CoveredTicketCount, string? CoverageRag, string? PassRateRag)
+        ComputeEpicQaMetrics(List<Ticket> epicTickets, EpicQaData? qaData, AppSettings settings)
+    {
+        if (qaData is null)
+            return (null, null, 0, 0, 0, null, null);
+
+        // BR1: feature ticket scope = non-bug tickets
+        var featureTickets = epicTickets.Where(t => t.IssueType != "Bug").ToList();
+
+        // BR13: zero feature tickets → null coverage and pass rate
+        if (featureTickets.Count == 0)
+            return (null, null, 0, 0, 0, null, null);
+
+        var coveredCount = 0;
+        var totalPassRuns = 0;
+        var totalExecutedRuns = 0; // PASS + FAIL only (BR3)
+        var bugKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var ticket in featureTickets)
+        {
+            var ticketKey = ticket.Id;
+
+            // BR2, BR12: get effective TE IDs for coverage (own Tests links, fallback to parent)
+            var ownTeIds = qaData.TestsLinksByTicket.GetValueOrDefault(ticketKey, []);
+            var effectiveTeIds = ownTeIds.Count > 0
+                ? ownTeIds
+                : (!string.IsNullOrEmpty(ticket.ParentTicketKey)
+                    ? qaData.TestsLinksByTicket.GetValueOrDefault(ticket.ParentTicketKey, [])
+                    : []);
+
+            if (effectiveTeIds.Count > 0)
+                coveredCount++;
+
+            // BR3: accumulate pass/fail runs across effective TEs
+            foreach (var teId in effectiveTeIds)
+            {
+                var runs = qaData.RunsByTeId.GetValueOrDefault(teId, []);
+                totalPassRuns += runs.Count(r => r.Status == TestRunStatus.Pass);
+                totalExecutedRuns += runs.Count(r => r.Status == TestRunStatus.Pass || r.Status == TestRunStatus.Fail);
+            }
+
+            // BR4: bugs found via Blocks links from non-cancelled TEs on this ticket's own Tests-linked TEs
+            var blocksTeIds = qaData.BlocksLinksByTicket.GetValueOrDefault(ticketKey, []);
+            foreach (var teId in blocksTeIds)
+            {
+                // The Blocks link TicketKey is the bug ticket key
+                // We already have blocksLinksByTicket keyed by the linked ticket's key
+            }
+        }
+
+        // BR4: collect unique bug keys via Blocks links on all feature tickets' TE IDs
+        // BlocksLinksByTicket: key = bug ticket key, value = list of TE IDs that block it
+        // We need to invert: for each feature ticket's TE (via Tests links), find what bugs they block
+        // The data structure stores: bug ticket key → list of TE IDs that have a Blocks link to that bug
+        // So we need to find all bug keys where at least one of their blocking TE IDs is in our feature epic's TEs
+        var epicTeIds = featureTickets
+            .SelectMany(t =>
+            {
+                var ownTeIds = qaData.TestsLinksByTicket.GetValueOrDefault(t.Id, []);
+                return ownTeIds.Count > 0
+                    ? ownTeIds
+                    : (!string.IsNullOrEmpty(t.ParentTicketKey)
+                        ? qaData.TestsLinksByTicket.GetValueOrDefault(t.ParentTicketKey, [])
+                        : Enumerable.Empty<string>());
+            })
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (bugKey, teIds) in qaData.BlocksLinksByTicket)
+        {
+            if (teIds.Any(id => epicTeIds.Contains(id)))
+                bugKeys.Add(bugKey);
+        }
+
+        var featureCount = featureTickets.Count;
+        var coverageRate = Math.Round((decimal)coveredCount / featureCount * 100, 1);
+        var passRate = totalExecutedRuns > 0
+            ? Math.Round((decimal)totalPassRuns / totalExecutedRuns * 100, 1)
+            : 0m;
+
+        var thresholds = settings.QaHealthThresholds;
+        var coverageRag = HealthScoreCalculator.MetricRag(coverageRate, thresholds.CoverageGreen, thresholds.CoverageAmber, higherIsBetter: true);
+        var passRateRag = HealthScoreCalculator.MetricRag(passRate, thresholds.PassRateGreen, thresholds.PassRateAmber, higherIsBetter: true);
+
+        return (coverageRate, passRate, bugKeys.Count, featureCount, coveredCount, coverageRag, passRateRag);
+    }
+
+    /// <summary>
+    /// Builds a ticket entry with per-ticket QA fields (BR5–BR7).
+    /// Bug tickets get null for all QA fields.
+    /// </summary>
+    private static EpicProgressTicketEntry BuildTicketEntry(
+        Ticket ticket,
+        HashSet<string> completedStatuses,
+        EpicQaData? qaData)
+    {
+        var isDone = completedStatuses.Contains(ticket.CurrentStatus);
+
+        if (qaData is null || ticket.IssueType == "Bug")
+        {
+            return new EpicProgressTicketEntry(
+                ticket.Id,
+                ticket.Summary,
+                ticket.IssueType,
+                ticket.StoryPoints,
+                ticket.CurrentStatus,
+                ticket.Assignee?.DisplayName,
+                isDone,
+                TestStatus: null,
+                TestPassRate: null,
+                TestBugsFound: null,
+                TestRunSummary: null);
+        }
+
+        // BR12: own links first, fallback to parent
+        var ownTeIds = qaData.TestsLinksByTicket.GetValueOrDefault(ticket.Id, []);
+        var effectiveTeIds = ownTeIds.Count > 0
+            ? ownTeIds
+            : (!string.IsNullOrEmpty(ticket.ParentTicketKey)
+                ? qaData.TestsLinksByTicket.GetValueOrDefault(ticket.ParentTicketKey, [])
+                : []);
+
+        if (effectiveTeIds.Count == 0)
+        {
+            return new EpicProgressTicketEntry(
+                ticket.Id,
+                ticket.Summary,
+                ticket.IssueType,
+                ticket.StoryPoints,
+                ticket.CurrentStatus,
+                ticket.Assignee?.DisplayName,
+                isDone,
+                TestStatus: "NoTests",
+                TestPassRate: null,
+                TestBugsFound: 0,
+                TestRunSummary: null);
+        }
+
+        // Aggregate runs across all effective TEs
+        var passCount = 0;
+        var failCount = 0;
+        var todoCount = 0;
+        var executingCount = 0;
+        var abortedCount = 0;
+
+        foreach (var teId in effectiveTeIds)
+        {
+            var runs = qaData.RunsByTeId.GetValueOrDefault(teId, []);
+            passCount += runs.Count(r => r.Status == TestRunStatus.Pass);
+            failCount += runs.Count(r => r.Status == TestRunStatus.Fail);
+            todoCount += runs.Count(r => r.Status == TestRunStatus.Todo);
+            executingCount += runs.Count(r => r.Status == TestRunStatus.Executing);
+            abortedCount += runs.Count(r => r.Status == TestRunStatus.Aborted);
+        }
+
+        // BR5/BR8: derive test status
+        string testStatus;
+        if (failCount > 0)
+            testStatus = "Failed";
+        else if (passCount > 0 && todoCount == 0 && executingCount == 0)
+            testStatus = "Passed";
+        else if (todoCount > 0 || executingCount > 0)
+            testStatus = "InProgress";
+        else
+            testStatus = "Passed"; // all runs are pass (or aborted only)
+
+        // BR6: per-ticket pass rate
+        var executedRuns = passCount + failCount;
+        decimal? testPassRate = executedRuns > 0
+            ? Math.Round((decimal)passCount / executedRuns * 100, 1)
+            : null;
+
+        // BR7: per-ticket bugs found via Blocks links
+        var teIdSet = effectiveTeIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ticketBugKeys = qaData.BlocksLinksByTicket
+            .Where(kvp => kvp.Value.Any(id => teIdSet.Contains(id)))
+            .Select(kvp => kvp.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var runSummary = new TestRunSummaryDto(passCount, failCount, todoCount, executingCount, abortedCount);
+
+        return new EpicProgressTicketEntry(
+            ticket.Id,
+            ticket.Summary,
+            ticket.IssueType,
+            ticket.StoryPoints,
+            ticket.CurrentStatus,
+            ticket.Assignee?.DisplayName,
+            isDone,
+            TestStatus: testStatus,
+            TestPassRate: testPassRate,
+            TestBugsFound: ticketBugKeys.Count,
+            TestRunSummary: runSummary);
     }
 }

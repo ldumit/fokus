@@ -696,6 +696,10 @@ export interface EpicProgressTicketEntry {
   currentStatus: string
   assigneeDisplayName: string | null
   isDone: boolean
+  testStatus: string | null
+  testPassRate: number | null
+  testBugsFound: number | null
+  testRunSummary: { passed: number; failed: number; todo: number; executing: number; aborted: number } | null
 }
 
 export interface EpicProgressEntry {
@@ -718,6 +722,13 @@ export interface EpicProgressEntry {
   activeSprintCount: number
   isCompleted: boolean
   tickets: EpicProgressTicketEntry[]
+  coverageRate: number | null
+  passRate: number | null
+  bugsFound: number
+  featureTicketCount: number
+  coveredTicketCount: number
+  coverageRag: string | null
+  passRateRag: string | null
 }
 
 export interface EpicProgressUnlinkedWork {
@@ -729,6 +740,8 @@ export interface EpicProgressResponse {
   summaryMetrics: EpicProgressSummaryMetrics
   epics: EpicProgressEntry[]
   unlinkedWork: EpicProgressUnlinkedWork
+  hasQaData: boolean
+  averageTestCoverage: number | null
 }
 
 // Cycle Time types

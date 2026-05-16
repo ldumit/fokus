@@ -6,6 +6,7 @@ import EpicTicketTable from './EpicTicketTable.vue'
 const props = defineProps<{
   epics: EpicProgressEntry[]
   expandedEpicKeys: Set<string>
+  hasQaData: boolean
 }>()
 
 const emit = defineEmits<{
@@ -55,6 +56,13 @@ function completionLabel(entry: EpicProgressEntry): string {
   }
   return `${entry.ticketCompletionPercentage.toFixed(1)}%`
 }
+
+function ragClass(rag: string | null | undefined): string {
+  if (rag === 'green') return 'text-status-success'
+  if (rag === 'amber') return 'text-status-warning'
+  if (rag === 'red') return 'text-status-danger'
+  return 'text-text-primary'
+}
 </script>
 
 <template>
@@ -74,7 +82,10 @@ function completionLabel(entry: EpicProgressEntry): string {
             <th class="pb-3 pr-4 font-medium text-right whitespace-nowrap" title="Completed tickets versus total ticket count in the epic.">Tickets</th>
             <th class="pb-3 pr-4 font-medium text-right whitespace-nowrap" title="Average SP completed per sprint (last 3 sprints with progress).">Velocity</th>
             <th class="pb-3 pr-4 font-medium text-right whitespace-nowrap" title="Estimated sprints to completion based on current velocity.">Projected</th>
-            <th class="pb-3 font-medium text-right whitespace-nowrap" title="Number of sprints this epic has had tickets in.">Sprints</th>
+            <th class="pb-3 font-medium text-right whitespace-nowrap" title="Number of sprints this epic has had tickets in." :class="{ 'pr-4': hasQaData }">Sprints</th>
+            <th v-if="hasQaData" class="pb-3 pr-4 font-medium text-right whitespace-nowrap" title="Percentage of feature tickets with at least one linked test execution.">Coverage %</th>
+            <th v-if="hasQaData" class="pb-3 pr-4 font-medium text-right whitespace-nowrap" title="Percentage of PASS test runs across all non-cancelled test executions linked to feature tickets.">Pass Rate %</th>
+            <th v-if="hasQaData" class="pb-3 font-medium text-right whitespace-nowrap" title="Unique bug tickets linked via Blocks from test executions on this epic's feature tickets.">Bugs Found</th>
           </tr>
         </thead>
         <tbody>
@@ -106,21 +117,34 @@ function completionLabel(entry: EpicProgressEntry): string {
                 </div>
               </td>
 
-              <!-- Progress bar -->
+              <!-- Progress bar (dual: SP completion + coverage) -->
               <td class="py-3 pr-4">
                 <div class="flex items-center gap-2">
-                  <div class="flex-1 h-2 rounded-full bg-surface-elevated overflow-hidden flex">
-                    <!-- Actual completion segment -->
+                  <div class="flex-1 flex flex-col gap-1">
+                    <!-- SP completion bar (BR19: unchanged) -->
+                    <div class="h-2 rounded-full bg-surface-elevated overflow-hidden flex">
+                      <!-- Actual completion segment -->
+                      <div
+                        class="h-full bg-accent-default rounded-l-full transition-all"
+                        :style="{ width: completionBarWidth(epic) }"
+                      />
+                      <!-- Imputed SP segment (distinct hatched look via opacity) -->
+                      <div
+                        v-if="epic.imputedSp !== null && epic.imputedSp > 0"
+                        class="h-full bg-accent-default/30 transition-all"
+                        :style="{ width: imputedBarWidth(epic) }"
+                      />
+                    </div>
+                    <!-- Coverage bar (BR18: thinner, distinct color, hidden when null) -->
                     <div
-                      class="h-full bg-accent-default rounded-l-full transition-all"
-                      :style="{ width: completionBarWidth(epic) }"
-                    />
-                    <!-- Imputed SP segment (distinct hatched look via opacity) -->
-                    <div
-                      v-if="epic.imputedSp !== null && epic.imputedSp > 0"
-                      class="h-full bg-accent-default/30 transition-all"
-                      :style="{ width: imputedBarWidth(epic) }"
-                    />
+                      v-if="hasQaData && epic.coverageRate !== null"
+                      class="h-1 rounded-full bg-surface-elevated overflow-hidden"
+                    >
+                      <div
+                        class="h-full bg-emerald-500 rounded-full transition-all"
+                        :style="{ width: `${Math.min(epic.coverageRate, 100)}%` }"
+                      />
+                    </div>
                   </div>
                   <span class="text-xs text-text-secondary tabular-nums whitespace-nowrap w-12 text-right">
                     {{ completionLabel(epic) }}
@@ -157,16 +181,35 @@ function completionLabel(entry: EpicProgressEntry): string {
               </td>
 
               <!-- Active sprint count -->
-              <td class="py-3 text-right tabular-nums text-text-secondary">
+              <td class="py-3 text-right tabular-nums text-text-secondary" :class="{ 'pr-4': hasQaData }">
                 {{ epic.activeSprintCount }}
+              </td>
+
+              <!-- Coverage % (QA) -->
+              <td v-if="hasQaData" class="py-3 pr-4 text-right tabular-nums whitespace-nowrap">
+                <span :class="epic.coverageRate !== null ? ragClass(epic.coverageRag) : 'text-text-muted'">
+                  {{ epic.coverageRate !== null ? `${epic.coverageRate.toFixed(1)}%` : '—' }}
+                </span>
+              </td>
+
+              <!-- Pass Rate % (QA) -->
+              <td v-if="hasQaData" class="py-3 pr-4 text-right tabular-nums whitespace-nowrap">
+                <span :class="epic.passRate !== null ? ragClass(epic.passRateRag) : 'text-text-muted'">
+                  {{ epic.passRate !== null ? `${epic.passRate.toFixed(1)}%` : '—' }}
+                </span>
+              </td>
+
+              <!-- Bugs Found (QA) -->
+              <td v-if="hasQaData" class="py-3 text-right tabular-nums text-text-primary">
+                {{ epic.featureTicketCount > 0 ? epic.bugsFound : '—' }}
               </td>
             </tr>
 
             <!-- Expanded ticket table -->
             <tr v-if="expandedEpicKeys.has(epic.epicKey)" :key="`${epic.epicKey}-tickets`">
-              <td colspan="8" class="px-4 pb-4 bg-surface-elevated/20 border-b border-border-default">
+              <td :colspan="hasQaData ? 11 : 8" class="px-4 pb-4 bg-surface-elevated/20 border-b border-border-default">
                 <div class="pt-3">
-                  <EpicTicketTable :tickets="epic.tickets" />
+                  <EpicTicketTable :tickets="epic.tickets" :has-qa-data="hasQaData" />
                 </div>
               </td>
             </tr>

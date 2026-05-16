@@ -2,8 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { EpicProgressResponse, EpicProgressEntry } from '../types'
 import { getEpicProgress, getSubTeams } from '../api/analytics'
+import { useSettingsStore } from './settingsStore'
 
 export const useEpicsStore = defineStore('epics', () => {
+  const settingsStore = useSettingsStore()
+
   const subTeams = ref<string[]>([])
   const selectedSubTeam = ref<string | null>(null)
   const activeFilter = ref<'active' | 'completed'>('active')
@@ -24,11 +27,23 @@ export const useEpicsStore = defineStore('epics', () => {
     (epicProgress.value?.epics.length ?? 0) > 0
   )
 
+  const isXrayEnabled = computed<boolean>(() =>
+    settingsStore.settings.xrayEnabled
+  )
+
+  const averageTestCoverage = computed<number | null>(() =>
+    epicProgress.value?.averageTestCoverage ?? null
+  )
+
   async function initialize() {
     initializing.value = true
     error.value = null
     try {
-      const [teams] = await Promise.all([getSubTeams(), fetchEpicProgress()])
+      const [teams] = await Promise.all([
+        getSubTeams(),
+        settingsStore.fetchSettings(),
+        fetchEpicProgress()
+      ])
       subTeams.value = teams
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to initialize epics'
@@ -81,6 +96,8 @@ export const useEpicsStore = defineStore('epics', () => {
     error,
     filteredEpics,
     hasEpics,
+    isXrayEnabled,
+    averageTestCoverage,
     initialize,
     fetchEpicProgress,
     selectSubTeam,

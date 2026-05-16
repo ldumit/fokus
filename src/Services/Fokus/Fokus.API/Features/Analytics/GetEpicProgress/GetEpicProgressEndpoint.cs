@@ -6,6 +6,7 @@ public class GetEpicProgressEndpoint(
     AppSettingsRepository appSettingsRepository,
     TicketRepository ticketRepository,
     SprintRepository sprintRepository,
+    TestExecutionRepository testExecutionRepository,
     EpicProgressService epicProgressService)
     : Endpoint<GetEpicProgressRequest, EpicProgressResponse>
 {
@@ -26,7 +27,9 @@ public class GetEpicProgressEndpoint(
             await SendOkAsync(new EpicProgressResponse(
                 new EpicProgressSummaryMetrics(0, 0, 0m),
                 [],
-                new EpicProgressUnlinkedWork(0, 0m)), ct);
+                new EpicProgressUnlinkedWork(0, 0m),
+                HasQaData: false,
+                AverageTestCoverage: null), ct);
             return;
         }
 
@@ -45,9 +48,19 @@ public class GetEpicProgressEndpoint(
         // 8. Load unlinked tickets (in at least one sprint, no epic key)
         var unlinkedTickets = await ticketRepository.GetTicketsWithoutEpicInSprintsAsync(ct);
 
-        // 9. Compute epic progress
+        // 9. Load QA data when Xray is enabled (no extra DB round-trips when disabled)
+        EpicQaData? qaData = null;
+        if (settings.XrayEnabled)
+        {
+            var ticketKeys = epicTickets.Select(t => t.Id).ToList();
+            var (testsLinks, blocksLinks, runsByTeId) =
+                await testExecutionRepository.GetTestExecutionDataForTicketsAsync(ticketKeys, ct);
+            qaData = new EpicQaData(testsLinks, blocksLinks, runsByTeId);
+        }
+
+        // 10. Compute epic progress
         var result = epicProgressService.ComputeEpicProgress(
-            epicTickets, closedMemberships, unlinkedTickets, settings, statusTransitions, closedSprints, subTeam);
+            epicTickets, closedMemberships, unlinkedTickets, settings, statusTransitions, closedSprints, subTeam, qaData);
 
         await SendOkAsync(result, ct);
     }

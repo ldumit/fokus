@@ -292,6 +292,57 @@ public class TestExecutionRepository(FokusDbContext db)
         return [.. result];
     }
 
+    /// <summary>
+    /// Returns TE links and test runs for the given ticket keys, used for epic-level QA metric computation.
+    /// Only non-cancelled TEs are included (Status != "Cancelled").
+    /// Returns:
+    ///   testsLinksByTicket  — Tests links grouped by ticket key (coverage)
+    ///   blocksLinksByTicket — Blocks links grouped by ticket key (bugs found)
+    ///   runsByTeId          — TestRuns grouped by TE issue ID
+    /// </summary>
+    public async Task<(
+        Dictionary<string, List<string>> TestsLinksByTicket,
+        Dictionary<string, List<string>> BlocksLinksByTicket,
+        Dictionary<string, List<TestRun>> RunsByTeId)>
+        GetTestExecutionDataForTicketsAsync(List<string> ticketKeys, CancellationToken ct = default)
+    {
+        if (ticketKeys.Count == 0)
+            return ([], [], []);
+
+        // Load all non-cancelled TE links for these tickets (both Tests and Blocks link types)
+        var teLinks = await DbContext.TestExecutionLinks
+            .Where(l => ticketKeys.Contains(l.TicketKey))
+            .Join(DbContext.TestExecutions.Where(te => te.Status != "Cancelled"),
+                l => l.TestExecutionIssueId,
+                te => te.Id,
+                (l, te) => new { l.TicketKey, l.TestExecutionIssueId, l.LinkType })
+            .ToListAsync(ct);
+
+        // Load test runs for all involved TEs in one query
+        var teIds = teLinks.Select(l => l.TestExecutionIssueId).Distinct().ToList();
+        var testRuns = teIds.Count > 0
+            ? await DbContext.TestRuns
+                .Where(r => teIds.Contains(r.TestExecutionIssueId))
+                .ToListAsync(ct)
+            : new List<TestRun>();
+
+        var testsLinksByTicket = teLinks
+            .Where(l => l.LinkType == TestExecutionLinkType.Tests)
+            .GroupBy(l => l.TicketKey)
+            .ToDictionary(g => g.Key, g => g.Select(l => l.TestExecutionIssueId).Distinct().ToList());
+
+        var blocksLinksByTicket = teLinks
+            .Where(l => l.LinkType == TestExecutionLinkType.Blocks)
+            .GroupBy(l => l.TicketKey)
+            .ToDictionary(g => g.Key, g => g.Select(l => l.TestExecutionIssueId).Distinct().ToList());
+
+        var runsByTeId = testRuns
+            .GroupBy(r => r.TestExecutionIssueId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return (testsLinksByTicket, blocksLinksByTicket, runsByTeId);
+    }
+
     public async Task UpsertTestSetAsync(TestSet testSet, CancellationToken ct = default)
     {
         var existing = DbContext.TestSets.Local.SingleOrDefault(t => t.Id == testSet.Id)

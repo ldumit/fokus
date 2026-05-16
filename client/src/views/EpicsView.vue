@@ -87,6 +87,8 @@ function onSubTeamChange(subTeam: string | null) {
           :summary-metrics="store.epicProgress.summaryMetrics"
           :unlinked-work="store.epicProgress.unlinkedWork"
           :active-filter="store.activeFilter"
+          :has-qa-data="store.epicProgress.hasQaData"
+          :average-test-coverage="store.averageTestCoverage"
         />
 
         <!-- Active/Completed toggle -->
@@ -99,6 +101,7 @@ function onSubTeamChange(subTeam: string | null) {
         <EpicTable
           :epics="store.filteredEpics"
           :expanded-epic-keys="store.expandedEpicKeys"
+          :has-qa-data="store.epicProgress?.hasQaData ?? false"
           @toggle-expand="store.toggleEpicExpanded"
         >
           <template #empty>

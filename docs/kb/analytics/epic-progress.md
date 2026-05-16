@@ -70,3 +70,26 @@ Confidence = "low" if fewer than 3 data points; null otherwise.
 - No sprint selector — epic progress is always cross-sprint
 - Unlinked work: tickets with no EpicKey counted separately
 - Client-side filtering: active vs completed toggle uses `isCompleted` flag
+
+## QA Metrics (F31 — requires Xray enabled)
+
+**Endpoint behavior:** When `settings.XrayEnabled`, the endpoint loads all TE links and runs for epic ticket keys via `TestExecutionRepository.GetTestExecutionDataForTicketsAsync`, passes as `EpicQaData` to service. When disabled, `qaData=null` — no DB round-trip, all QA fields null/0, `hasQaData=false`.
+
+**Feature ticket scope (BR1):** Denominator = tickets where `IssueType != "Bug"`. Bug tickets are never test targets; QA fields are null for bug tickets in ticket detail.
+
+**Coverage Rate (BR2):** `covered feature tickets / total feature tickets * 100`. Covered = has at least one non-cancelled TE via Tests link. Sub-tasks inherit parent ticket's TE links when they have none of their own (BR12).
+
+**Pass Rate (BR3):** `PASS runs / (PASS + FAIL) runs` across all non-cancelled TEs linked via Tests to the epic's feature tickets. TODO/EXECUTING/ABORTED excluded from both numerator and denominator. Returns 0% when no executed runs.
+
+**Bugs Found (BR4):** Count of unique bug ticket keys in `BlocksLinksByTicket` where at least one blocking TE ID is in the epic's feature tickets' TE set.
+
+**Per-ticket Test Status (BR5/BR8):** Failed (any FAIL run) > Passed (all PASS, no TODO/EXECUTING) > InProgress (TODO or EXECUTING, no FAIL) > NoTests (no TEs).
+
+**Summary card (BR16):** Arithmetic mean of non-null `CoverageRate` values across visible (filtered) epics. Null-coverage epics (zero feature tickets) excluded from mean.
+
+**RAG coloring:** Uses `HealthScoreCalculator.MetricRag` with `settings.QaHealthThresholds.CoverageGreen/Amber` and `PassRateGreen/Amber`.
+
+**Key files:**
+- Repository method: `Fokus.Persistence/Repositories/TestExecutionRepository.cs` — `GetTestExecutionDataForTicketsAsync`
+- Service QA helpers: `Fokus.API/Features/Analytics/EpicProgressService.cs` — `ComputeEpicQaMetrics`, `BuildTicketEntry`
+- Store: `client/src/stores/epicsStore.ts` — `isXrayEnabled`, `averageTestCoverage` computed
