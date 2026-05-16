@@ -3,7 +3,7 @@
 **Traces to:** `docs/product/v2.md` §5.6
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment), F26 (Sprint Test Coverage — QA metric cards, health score Quality sub-score), F10 (Scope Change & Disruption — Sprints page, burnup chart, event timeline), F12 (Cycle Time — stage boundary timestamps for dev-done-to-tested gap)
-**Status:** Ready
+**Status:** Done
 **Plan:** `docs/specs/F30-TestExecutionTimeline/delivery/plan.md`
 
 ---

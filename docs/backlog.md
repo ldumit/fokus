@@ -229,7 +229,7 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 | F26 | Sprint Test Coverage | Done | [SprintTestCoverage](specs/F26-SprintTestCoverage/definition/spec.md) | [plan](specs/F26-SprintTestCoverage/delivery/plan.md) |
 | F28 | Per-Developer Story Quality | Done | [PerDeveloperStoryQuality](specs/F28-PerDeveloperStoryQuality/definition/spec.md) | [plan](specs/F28-PerDeveloperStoryQuality/delivery/plan.md) |
 | F29 | QA Workload & Throughput | Done | [QaWorkloadThroughput](specs/F29-QaWorkloadThroughput/definition/spec.md) | [plan](specs/F29-QaWorkloadThroughput/delivery/plan.md) |
-| F30 | Test Execution Timeline | Spec Ready | [TestExecutionTimeline](specs/F30-TestExecutionTimeline/definition/spec.md) | — |
+| F30 | Test Execution Timeline | Done | [TestExecutionTimeline](specs/F30-TestExecutionTimeline/definition/spec.md) | [plan](specs/F30-TestExecutionTimeline/delivery/plan.md) |
 | F31 | Epic Test Health | Spec Ready | [EpicTestHealth](specs/F31-EpicTestHealth/definition/spec.md) | — |
 
 **F26:** Coverage %, Execution %, Pass Rate % cards on Dashboard. Quality sub-score in sprint health score. Untested/failing ticket lists. Configurable thresholds.
