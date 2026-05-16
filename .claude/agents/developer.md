@@ -44,7 +44,7 @@ Before starting, classify the task to right-size your approach:
 4. Execute steps one at a time. Re-read each step from the plan before starting it.
 5. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
 6. After each step, verify the build passes (per Build Verification in stack-rules).
-7. Check `.claude/skills/` for skills matching the current step. If one applies, read it fully and follow it.
+7. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
 8. Don't commit unless asked.
 
 ## Exploration Before Implementation
@@ -58,6 +58,19 @@ For non-trivial tasks, explore before writing code:
 - Answer: What patterns does this codebase use? What tests exist? What could break?
 
 Match discovered patterns. Never invent new ones.
+
+## Skill-First Implementation
+
+When a plan step says `Skill: Follow {name}` or `Skill: Build ... then follow {name}`:
+
+1. **Invoke the skill** using the Skill tool before writing any code for that step: `Skill({ skill: "{name}" })`.
+2. **The skill loads** structural patterns, file placement, naming conventions, and guardrails into your context.
+3. **Implement the step** combining the skill's structural pattern with the plan's feature-specific inputs (entity names, property types, business logic, file paths).
+4. **If the plan and skill conflict** on structural patterns, follow the skill. If on feature-specific decisions, follow the plan. If on architecture, ask the architect.
+
+When a plan step says `Skill: None` — implement from the plan's inline detail. No skill invocation needed.
+
+**This is mandatory.** Every `Follow` or `Build` skill reference in a plan step triggers a Skill tool invocation before that step's code is written. If you're about to write code for a Follow step without having invoked the skill first, stop and invoke it.
 
 ## Circuit Breaker
 

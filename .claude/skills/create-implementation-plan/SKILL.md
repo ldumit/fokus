@@ -42,6 +42,22 @@ Before writing, ensure you have:
    - The word "adapted" or "adapt" near a skill reference — violation. Either Follow or Build, never Adapt.
    - A skill dismissed as "too simple" or "not needed for this case" — violation. Skills ensure consistency; complexity is not the criterion.
    - Implementation pattern details restated when a skill exists — over-specification. Delete and reference the skill.
+   
+   **Over-specification test for Follow steps:** Read the skill's SKILL.md. For each detail in the plan step, ask: "Does the skill already cover this?" If yes, delete it from the plan step. What remains should be ONLY feature-specific inputs the skill can't know:
+   - Entity/type names and their properties ✓
+   - Business rules and computation logic ✓
+   - File paths ✓
+   - Route paths, API shapes ✓
+   - References to existing code for feature-specific patterns ✓
+   
+   Delete from Follow steps — the skill already covers these:
+   - File placement rules ✗
+   - DI registration instructions ✗
+   - Constructor injection patterns ✗
+   - Record/class structural syntax ✗
+   - Boilerplate that the skill's template generates ✗
+   
+   **Content budget:** A Follow step should be ~5-15 lines of feature-specific inputs + a skill reference. If a Follow step exceeds 30 lines, it likely over-specifies. The developer invokes the skill via the Skill tool to get structural patterns — duplicating them in the plan causes the developer to skip skill invocation entirely.
 
 6. **Write the plan** following `references/plan-template.md`. Output: `docs/specs/{slug}/delivery/plan.md`.
 
