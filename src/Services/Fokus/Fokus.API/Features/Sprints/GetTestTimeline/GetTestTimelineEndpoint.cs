@@ -29,10 +29,10 @@ public class GetTestTimelineEndpoint(
             return;
         }
 
-        // 4. Xray disabled — return hasQaData=false
+        // 4. Xray disabled — return hasQaData=false, isXrayEnabled=false
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings), ct);
+            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: false), ct);
             return;
         }
 
@@ -43,21 +43,18 @@ public class GetTestTimelineEndpoint(
         // 6. Load TEs for the sprint
         var sprintTEs = await testExecutionRepository.GetTestExecutionsForSprintAsync(sprint.Id, ct);
 
-        // 7. No TEs → hasQaData=false
+        // 7. No TEs → hasQaData=false, isXrayEnabled=true (Xray on, just not synced)
         var hasAnyRuns = sprintTEs.Any(te => te.TestRuns.Any());
         if (!hasAnyRuns)
         {
-            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings), ct);
+            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: true), ct);
             return;
         }
 
         // 8. Normalize sub-team
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
-        // 9. Load status transitions for sprint tickets
-        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync([sprint.Id], ct);
-
-        // 10. Resolve prior sprint for delta computation
+        // 9. Resolve prior sprint for delta computation
         var selectedIndex = ascending.FindIndex(s => s.Id == sprint.Id);
         Sprint? priorSprint = null;
         List<TestExecution>? priorTEs = null;
@@ -72,6 +69,23 @@ public class GetTestTimelineEndpoint(
             priorMemberships = priorSprint.Memberships.ToList();
         }
 
+        // 10. Load status transitions — current sprint + prior sprint (needed for gap delta)
+        var sprintIdsForTransitions = priorSprint is not null
+            ? new List<int> { sprint.Id, priorSprint.Id }
+            : new List<int> { sprint.Id };
+        var allTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(sprintIdsForTransitions, ct);
+
+        // Split into per-sprint dictionaries by ticket membership
+        var currentTicketIds = sprint.Memberships.Select(m => m.TicketId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var statusTransitions = allTransitions.Where(t => currentTicketIds.Contains(t.TicketId)).ToList();
+
+        List<StatusTransition>? priorStatusTransitions = null;
+        if (priorSprint is not null)
+        {
+            var priorTicketIds = priorSprint.Memberships.Select(m => m.TicketId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            priorStatusTransitions = allTransitions.Where(t => priorTicketIds.Contains(t.TicketId)).ToList();
+        }
+
         // 11. Compute and return
         var result = testTimelineService.ComputeTimeline(
             sprintTEs,
@@ -81,15 +95,17 @@ public class GetTestTimelineEndpoint(
             priorSprint,
             priorTEs,
             priorMemberships,
+            priorStatusTransitions,
             settings,
             subTeam);
 
         await SendOkAsync(result, ct);
     }
 
-    private static TestTimelineResponse BuildEmptyResponse(Sprint sprint, AppSettings settings) =>
+    private static TestTimelineResponse BuildEmptyResponse(Sprint sprint, AppSettings settings, bool isXrayEnabled) =>
         new(
             HasQaData: false,
+            IsXrayEnabled: isXrayEnabled,
             SprintStartDate: sprint.StartDate,
             SprintEndDate: sprint.EndDate,
             PlanningWindowDays: settings.PlanningWindowDays,

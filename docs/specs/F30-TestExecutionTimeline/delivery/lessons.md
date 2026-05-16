@@ -15,6 +15,14 @@
 - Pure computation services with a static helper method for a subset of their logic (ComputeCrunchFlag) is a clean pattern for when multiple endpoints need a slice of the same computation without the full orchestration. Worth noting as a reusable pattern for future features.
 - SprintMembership.AddedAt is non-nullable (DateTime, not DateTime?) — the developer discovered this during implementation. Future plans involving AddedAt should not suggest null-guarding it.
 
+## Reviewer Lessons
+
+- **Shared dictionary aliasing as a prior-sprint bug pattern.** When an endpoint loads transitions for only the current sprint but passes the same dictionary for prior sprint computation, the prior sprint gap will silently under-count. Always trace the full data-loading path when reviewing delta/prior-sprint metrics: what sprint IDs were passed to the repository, and does the computation dictionary cover all needed tickets?
+- **"Xray enabled but not synced" is a distinct empty state from "Xray disabled."** When the API returns `hasQaData: false` for both cases, verify the frontend differentiates them. If the spec requires a sync prompt for case (b), check whether the frontend has access to the `xrayEnabled` flag (via settingsStore or a response field) to render it.
+- **Static method deviation from plan is safe when justified.** The plan said "inject TestTimelineService as a dependency" but the implementation correctly used a static method. This is a valid deviation — always check whether the plan's suggested DI approach was actually the only option, vs a style preference the developer correctly overrode.
+- **Check annotation object construction in ApexCharts carefully.** Object spread with duplicate keys is confusing but can be functionally correct. Step through the actual runtime value rather than assuming a bug from the syntax.
+- **Fix verification in re-review: trace the split, not just the fetch.** For HIGH-1, confirming the fix required checking both that both sprint IDs were fetched AND that the results were split into distinct dictionaries by membership scope. A fix that fetches both but aliases the result would still be wrong. Always verify the full chain end-to-end.
+
 ## Skill Gaps
 
 - **Missing skill: metric computation service pattern.** Steps 1 and 3 had no matching skill. A skill covering the pattern of records-at-top + service class + private helpers for each sub-computation (as used by QaMetricsService, QaWorkloadService, TestTimelineService) would reduce exploration time for future analytics features. Suggested name: `analytics-computation-service`. Reference files: `Features/Analytics/QaMetricsService.cs`, `Features/Analytics/QaWorkloadService.cs`, `Features/Analytics/TestTimelineService.cs`.

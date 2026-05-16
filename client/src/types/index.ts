@@ -1267,6 +1267,7 @@ export interface DevToTestGapResult {
 
 export interface TestTimelineResponse {
   hasQaData: boolean
+  isXrayEnabled: boolean
   sprintStartDate: string
   sprintEndDate: string
   planningWindowDays: number

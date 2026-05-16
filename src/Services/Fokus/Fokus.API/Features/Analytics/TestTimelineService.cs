@@ -2,19 +2,20 @@ namespace Fokus.API.Features.Analytics;
 
 // --- TestTimeline response records ---
 
-public record TestTimelineResponse(
+public sealed record TestTimelineResponse(
     bool HasQaData,
+    bool IsXrayEnabled,
     DateTime SprintStartDate,
     DateTime SprintEndDate,
     int PlanningWindowDays,
-    List<BurnupDayEntry> BurnupData,
-    List<ScopeChangeDayEntry> ScopeChangeOverlay,
+    IReadOnlyList<BurnupDayEntry> BurnupData,
+    IReadOnlyList<ScopeChangeDayEntry> ScopeChangeOverlay,
     TestingCrunchResult TestingCrunch,
     PostSprintTestingResult PostSprintTesting,
     UntestedAtCloseResult UntestedAtClose,
     DevToTestGapResult DevToTestGap);
 
-public record BurnupDayEntry(
+public sealed record BurnupDayEntry(
     int DayNumber,
     DateTime CalendarDate,
     bool IsWithinSprint,
@@ -24,60 +25,60 @@ public record BurnupDayEntry(
     int DailyPass,
     int DailyFail);
 
-public record ScopeChangeDayEntry(
+public sealed record ScopeChangeDayEntry(
     int DayNumber,
     DateTime CalendarDate,
     decimal AddedSp,
     decimal RemovedSp,
     decimal NetSp);
 
-public record TestingCrunchResult(
+public sealed record TestingCrunchResult(
     bool IsCrunchFlagged,
     decimal? CrunchPercentage,
     int CrunchRunCount,
     int TotalRunCount,
-    List<CrunchTicketEntry> CrunchTickets);
+    IReadOnlyList<CrunchTicketEntry> CrunchTickets);
 
-public record CrunchTicketEntry(
+public sealed record CrunchTicketEntry(
     string TicketKey,
     string Summary,
     string? AssigneeName,
     decimal? StoryPoints,
     int LateRunCount);
 
-public record PostSprintTestingResult(
+public sealed record PostSprintTestingResult(
     bool HasPostSprintTesting,
     decimal? PostSprintPercentage,
     int PostSprintRunCount,
     int TotalRunCount,
-    List<PostSprintTicketEntry> PostSprintTickets);
+    IReadOnlyList<PostSprintTicketEntry> PostSprintTickets);
 
-public record PostSprintTicketEntry(
+public sealed record PostSprintTicketEntry(
     string TicketKey,
     string Summary,
     string? AssigneeName,
     decimal? StoryPoints,
     int PostSprintRunCount);
 
-public record UntestedAtCloseResult(
+public sealed record UntestedAtCloseResult(
     bool HasUntestedAtClose,
     int UntestedAtCloseCount,
-    List<UntestedTicketEntry> UntestedAtCloseTickets);
+    IReadOnlyList<UntestedTicketEntry> UntestedAtCloseTickets);
 
-public record UntestedTicketEntry(
+public sealed record UntestedTicketEntry(
     string TicketKey,
     string Summary,
     string? AssigneeName,
     decimal? StoryPoints,
     DateTime DevDoneDate);
 
-public record DevToTestGapResult(
+public sealed record DevToTestGapResult(
     decimal? MedianGapDays,
     decimal? MedianGapDelta,
     string? MedianGapDirection,
-    List<GapTicketEntry> GapTickets);
+    IReadOnlyList<GapTicketEntry> GapTickets);
 
-public record GapTicketEntry(
+public sealed record GapTicketEntry(
     string TicketKey,
     string Summary,
     string? AssigneeName,
@@ -85,7 +86,7 @@ public record GapTicketEntry(
     DateTime FirstTestDate,
     decimal GapDays);
 
-public record TestingCrunchFlag(
+public sealed record TestingCrunchFlag(
     decimal CrunchPercentage,
     int CrunchRunCount,
     int TotalRunCount);
@@ -102,6 +103,7 @@ public class TestTimelineService
         Sprint? priorSprint,
         List<TestExecution>? priorSprintTEs,
         List<SprintMembership>? priorMemberships,
+        List<StatusTransition>? priorStatusTransitions,
         AppSettings settings,
         string? subTeam)
     {
@@ -112,10 +114,17 @@ public class TestTimelineService
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
-        // Build transitions lookup by ticket
+        // Build transitions lookup by ticket (current sprint only)
         var transitionsByTicket = statusTransitions
             .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+        // Build prior sprint transitions lookup (separate — different ticket scope)
+        var priorTransitionsByTicket = priorStatusTransitions is not null
+            ? priorStatusTransitions
+                .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase)
+            : null;
 
         // Collect all terminal runs with effective dates from filtered TEs
         var terminalRuns = CollectTerminalRunsWithDates(sprintTEs, filteredMemberships);
@@ -131,10 +140,11 @@ public class TestTimelineService
         var postSprintResult = ComputePostSprintTesting(withinSprintRuns, postSprintRuns, sprintTEs, filteredMemberships);
         var untestedResult = ComputeUntestedAtClose(sprintTEs, filteredMemberships, transitionsByTicket, sprint, orderedStages, endIndex);
         var gapResult = ComputeDevToTestGap(sprintTEs, filteredMemberships, transitionsByTicket, sprint, orderedStages, endIndex,
-            priorSprint, priorSprintTEs, priorMemberships, settings, subTeam);
+            priorSprint, priorSprintTEs, priorMemberships, priorTransitionsByTicket, settings, subTeam);
 
         return new TestTimelineResponse(
             HasQaData: true,
+            IsXrayEnabled: true,
             SprintStartDate: sprint.StartDate,
             SprintEndDate: sprint.EndDate,
             PlanningWindowDays: settings.PlanningWindowDays,
@@ -502,6 +512,7 @@ public class TestTimelineService
         Sprint? priorSprint,
         List<TestExecution>? priorSprintTEs,
         List<SprintMembership>? priorMemberships,
+        Dictionary<string, List<StatusTransition>>? priorTransitionsByTicket,
         AppSettings settings,
         string? subTeam)
     {
@@ -512,10 +523,10 @@ public class TestTimelineService
         decimal? medianGapDelta = null;
         string? medianGapDirection = null;
 
-        if (priorSprint is not null && priorSprintTEs is not null && priorMemberships is not null)
+        if (priorSprint is not null && priorSprintTEs is not null && priorMemberships is not null
+            && priorTransitionsByTicket is not null)
         {
             var filteredPriorMemberships = FilterMemberships(priorMemberships, subTeam);
-            var priorTransitionsByTicket = transitionsByTicket; // same transitions dictionary loaded for window
             var priorGapTickets = ComputeGapTickets(priorSprintTEs, filteredPriorMemberships, priorTransitionsByTicket, orderedStages, endIndex);
             var priorMedian = ComputeMedian(priorGapTickets.Select(g => g.GapDays).ToList());
 

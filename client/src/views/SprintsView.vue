@@ -252,12 +252,19 @@ const sprintEndDayNumber = computed(() => {
           </template>
         </div>
 
-        <!-- Test Execution Timeline section — single-sprint only -->
-        <div v-if="store.sprintMode === 'single' && store.testTimeline?.hasQaData" class="pt-2">
+        <!-- Test Execution Timeline section — single-sprint only, Xray disabled = hidden -->
+        <div v-if="store.sprintMode === 'single' && store.testTimeline?.isXrayEnabled" class="pt-2">
           <div class="text-base font-semibold text-text-primary mb-4 border-t border-border-default pt-6">
             Test Execution Timeline
           </div>
-          <div class="flex flex-col gap-6">
+
+          <!-- Xray enabled but sprint not yet synced with QA data -->
+          <div v-if="!store.testTimeline.hasQaData" class="text-sm text-text-muted">
+            Sync sprint to load QA data.
+          </div>
+
+          <!-- QA data available -->
+          <div v-else class="flex flex-col gap-6">
             <TestExecutionBurnupChart
               :burnup-data="store.testTimeline.burnupData"
               :scope-change-overlay="store.testTimeline.scopeChangeOverlay"

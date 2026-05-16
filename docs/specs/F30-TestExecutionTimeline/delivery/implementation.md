@@ -20,7 +20,7 @@
 - `client/src/types/index.ts` — added TestingCrunchFlag interface, testingCrunch field to FlagsResult, all 10 F30 TypeScript interfaces (BurnupDayEntry through TestTimelineResponse).
 - `client/src/api/analytics.ts` — added getTestTimeline function calling /sprints/{sprintId}/test-timeline.
 - `client/src/stores/sprintsStore.ts` — added testTimeline ref, fetched in parallel in single-sprint mode, cleared in multi mode, added to return object.
-- `client/src/views/SprintsView.vue` — imported 5 new components, added sprintEndDayNumber computed, added Test Execution Timeline section (single-sprint only, gated on hasQaData).
+- `client/src/views/SprintsView.vue` — imported 5 new components, added sprintEndDayNumber computed, added Test Execution Timeline section (single-sprint only, gated on isXrayEnabled with sync prompt when !hasQaData).
 - `client/src/components/dashboard/SprintFlags.vue` — added Testing Crunch flag block after Zero-SP Developers, shows percentage/counts, InfoTooltip wired from help.tooltips.md.
 - `docs/kb/index.md` — added Test Timeline entry under Analytics section.
 
@@ -34,3 +34,19 @@
 ## Deviations from Plan
 
 - **testTimelineService removed from GetSprintSummaryEndpoint constructor:** Plan said "Add TestTimelineService as a dependency" but ComputeCrunchFlag is static — no instance needed. Removed the injected parameter to eliminate CS9113 compiler warning. Static call is cleaner and correct.
+
+## Review Fixes (Cycle 1)
+
+**HIGH-1 — Prior sprint transitions bug (fixed):**
+- `GetTestTimelineEndpoint.cs` — loads transitions for both sprint IDs in one call (`GetStatusTransitionsForSprintTicketsAsync([sprint.Id, priorSprint.Id])`), splits by ticket membership into separate `statusTransitions` and `priorStatusTransitions` lists.
+- `TestTimelineService.cs` — `ComputeTimeline` signature extended with `List<StatusTransition>? priorStatusTransitions`. Builds a separate `priorTransitionsByTicket` dictionary. `ComputeDevToTestGap` receives this distinct dictionary. Guard extended: delta only computed when `priorTransitionsByTicket is not null`.
+
+**HIGH-2 — Missing "Xray enabled, not synced" empty state (fixed):**
+- `TestTimelineResponse` record — added `IsXrayEnabled` bool field. Set `false` when Xray disabled, `true` otherwise.
+- `BuildEmptyResponse` — accepts `isXrayEnabled` parameter.
+- `SprintsView.vue` — section gates on `isXrayEnabled`. Shows "Sync sprint to load QA data." prompt when `isXrayEnabled && !hasQaData`. Hidden when `!isXrayEnabled`.
+- `types/index.ts` — added `isXrayEnabled: boolean` to `TestTimelineResponse`.
+
+**LOW — sealed records (fixed):** All 11 public response records marked `sealed`.
+
+**LOW — IReadOnlyList<T> (fixed):** Collection properties on all response records changed from `List<T>` to `IReadOnlyList<T>`.
