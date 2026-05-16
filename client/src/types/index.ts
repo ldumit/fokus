@@ -1140,18 +1140,25 @@ export interface QaWorkloadSingleEntry {
   bugsFound: number
   tesOwnedDelta: number | null
   tesOwnedDirection: string | null
+  tesOwnedPolarity: string | null
   runsCompletedDelta: number | null
   runsCompletedDirection: string | null
+  runsCompletedPolarity: string | null
   passCountDelta: number | null
   passCountDirection: string | null
+  passCountPolarity: string | null
   failCountDelta: number | null
   failCountDirection: string | null
+  failCountPolarity: string | null
   passRateDelta: number | null
   passRateDirection: string | null
+  passRatePolarity: string | null
   storiesCoveredDelta: number | null
   storiesCoveredDirection: string | null
+  storiesCoveredPolarity: string | null
   bugsFoundDelta: number | null
   bugsFoundDirection: string | null
+  bugsFoundPolarity: string | null
   workloadAlert: WorkloadAlert
 }
 

@@ -63,18 +63,25 @@ public record QaWorkloadSingleEntry(
     int BugsFound,
     decimal? TesOwnedDelta,
     string? TesOwnedDirection,
+    string? TesOwnedPolarity,
     decimal? RunsCompletedDelta,
     string? RunsCompletedDirection,
+    string? RunsCompletedPolarity,
     decimal? PassCountDelta,
     string? PassCountDirection,
+    string? PassCountPolarity,
     decimal? FailCountDelta,
     string? FailCountDirection,
+    string? FailCountPolarity,
     decimal? PassRateDelta,
     string? PassRateDirection,
+    string? PassRatePolarity,
     decimal? StoriesCoveredDelta,
     string? StoriesCoveredDirection,
+    string? StoriesCoveredPolarity,
     decimal? BugsFoundDelta,
     string? BugsFoundDirection,
+    string? BugsFoundPolarity,
     WorkloadAlert WorkloadAlert);
 
 public record QaWorkloadSingleSprintResponse(
@@ -586,27 +593,34 @@ public class QaWorkloadService
 
             var alert = EvaluateWorkloadAlert(accountId, allClosedSprints, allClosedTesBySprintId);
 
-            // Compute deltas
+            // Compute deltas and polarities
             decimal? tesDelta = prior is not null ? current.TesOwned - prior.TesOwned : null;
             string? tesDir = tesDelta.HasValue ? DeltaDirection(tesDelta.Value) : null;
+            string? tesPol = tesDelta.HasValue ? "neutral" : null;
 
             decimal? runsDelta = prior is not null ? current.RunsCompleted - prior.RunsCompleted : null;
             string? runsDir = runsDelta.HasValue ? DeltaDirection(runsDelta.Value) : null;
+            string? runsPol = runsDelta.HasValue ? "neutral" : null;
 
             decimal? passDelta = prior is not null ? current.PassCount - prior.PassCount : null;
             string? passDir = passDelta.HasValue ? DeltaDirection(passDelta.Value) : null;
+            string? passPol = passDelta.HasValue ? DeltaPolarity(passDelta.Value, positiveUp: true) : null;
 
             decimal? failDelta = prior is not null ? current.FailCount - prior.FailCount : null;
             string? failDir = failDelta.HasValue ? DeltaDirection(failDelta.Value) : null;
+            string? failPol = failDelta.HasValue ? DeltaPolarity(failDelta.Value, positiveUp: false) : null;
 
             decimal? passRateDelta = prior is not null ? current.PassRate - prior.PassRate : null;
             string? passRateDir = passRateDelta.HasValue ? DeltaDirection(passRateDelta.Value) : null;
+            string? passRatePol = passRateDelta.HasValue ? DeltaPolarity(passRateDelta.Value, positiveUp: true) : null;
 
             decimal? storiesDelta = prior is not null ? current.StoriesCovered - prior.StoriesCovered : null;
             string? storiesDir = storiesDelta.HasValue ? DeltaDirection(storiesDelta.Value) : null;
+            string? storiesPol = storiesDelta.HasValue ? DeltaPolarity(storiesDelta.Value, positiveUp: true) : null;
 
             decimal? bugsDelta = prior is not null ? current.BugsFound - prior.BugsFound : null;
             string? bugsDir = bugsDelta.HasValue ? DeltaDirection(bugsDelta.Value) : null;
+            string? bugsPol = bugsDelta.HasValue ? "neutral" : null;
 
             entries.Add(new QaWorkloadSingleEntry(
                 current.AccountId,
@@ -622,18 +636,25 @@ public class QaWorkloadService
                 current.BugsFound,
                 tesDelta.HasValue ? Math.Round(tesDelta.Value, 1) : null,
                 tesDir,
+                tesPol,
                 runsDelta.HasValue ? Math.Round(runsDelta.Value, 1) : null,
                 runsDir,
+                runsPol,
                 passDelta.HasValue ? Math.Round(passDelta.Value, 1) : null,
                 passDir,
+                passPol,
                 failDelta.HasValue ? Math.Round(failDelta.Value, 1) : null,
                 failDir,
+                failPol,
                 passRateDelta.HasValue ? Math.Round(passRateDelta.Value, 1) : null,
                 passRateDir,
+                passRatePol,
                 storiesDelta.HasValue ? Math.Round(storiesDelta.Value, 1) : null,
                 storiesDir,
+                storiesPol,
                 bugsDelta.HasValue ? Math.Round(bugsDelta.Value, 1) : null,
                 bugsDir,
+                bugsPol,
                 alert));
         }
 
@@ -683,6 +704,11 @@ public class QaWorkloadService
 
     private static string DeltaDirection(decimal delta) =>
         delta > 0 ? "up" : delta < 0 ? "down" : "flat";
+
+    private static string DeltaPolarity(decimal delta, bool positiveUp) =>
+        positiveUp
+            ? (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral")
+            : (delta < 0 ? "positive" : delta > 0 ? "negative" : "neutral");
 }
 
 // --- Nullable string key comparer for person dictionaries ---

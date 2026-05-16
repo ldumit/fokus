@@ -147,18 +147,25 @@ public class QaWorkloadSingleEntryDto
     public int BugsFound { get; set; }
     public decimal? TesOwnedDelta { get; set; }
     public string? TesOwnedDirection { get; set; }
+    public string? TesOwnedPolarity { get; set; }
     public decimal? RunsCompletedDelta { get; set; }
     public string? RunsCompletedDirection { get; set; }
+    public string? RunsCompletedPolarity { get; set; }
     public decimal? PassCountDelta { get; set; }
     public string? PassCountDirection { get; set; }
+    public string? PassCountPolarity { get; set; }
     public decimal? FailCountDelta { get; set; }
     public string? FailCountDirection { get; set; }
+    public string? FailCountPolarity { get; set; }
     public decimal? PassRateDelta { get; set; }
     public string? PassRateDirection { get; set; }
+    public string? PassRatePolarity { get; set; }
     public decimal? StoriesCoveredDelta { get; set; }
     public string? StoriesCoveredDirection { get; set; }
+    public string? StoriesCoveredPolarity { get; set; }
     public decimal? BugsFoundDelta { get; set; }
     public string? BugsFoundDirection { get; set; }
+    public string? BugsFoundPolarity { get; set; }
     public WorkloadAlertDto WorkloadAlert { get; set; } = new();
 }
 

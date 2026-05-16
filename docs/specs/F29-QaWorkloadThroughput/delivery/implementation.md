@@ -28,5 +28,16 @@
 
 ## Deviations from Plan
 
-- `deltaClass` in QaWorkloadTab.vue uses neutral `text-text-secondary` for all delta directions. The plan specifies delta polarities per spec (higher-is-better, lower-is-better, neutral) but these polarities are returned from the backend in the `*Direction` fields only (not a separate polarity field in the single entry records). The backend QaWorkloadSingleEntry record stores direction only, not polarity. Delta coloring is uniformly neutral (gray) in the table — consistent with the data available. If colored deltas are needed, the backend record and frontend would need a polarity field added.
-- The `unused` `deltaClass` parameter `direction` is referenced but always returns `text-text-secondary` — this is intentional as the plan's delta polarity info is not included in QaWorkloadSingleEntry (unlike BugRatioDeveloperSingleEntry which has a separate delta polarity). The function signature was kept for future extension.
+None.
+
+## Cycle 1 Fixes (Step 1 done check — HIGH finding)
+
+**Finding:** `QaWorkloadSingleEntry` was missing `*Polarity` fields for all 7 delta metrics, so `deltaClass` always returned gray regardless of direction.
+
+**Files changed:**
+
+- `src/Services/Fokus/Fokus.API/Features/Analytics/QaWorkloadService.cs` — Added 7 polarity fields to `QaWorkloadSingleEntry` record. Added `DeltaPolarity(delta, positiveUp)` static helper matching BugRatioService pattern. Updated `BuildSingleDeveloperEntries` to compute polarities: TesOwned/RunsCompleted/BugsFound → `"neutral"`, PassCount/PassRate/StoriesCovered → `positiveUp: true`, FailCount → `positiveUp: false`.
+- `src/Services/Fokus/Fokus.API/Features/Analytics/GetQaWorkload/GetQaWorkloadQuery.cs` — Added 7 `string?` polarity properties to `QaWorkloadSingleEntryDto`.
+- `src/Services/Fokus/Fokus.API/Features/Analytics/GetQaWorkload/GetQaWorkloadEndpoint.cs` — Updated `MapSingleEntry` to map all 7 polarity fields from record to DTO.
+- `client/src/types/index.ts` — Added 7 polarity fields to `QaWorkloadSingleEntry` TypeScript interface.
+- `client/src/components/developers/QaWorkloadTab.vue` — Updated `deltaClass(polarity, direction)` to use polarity for color resolution. Updated all 7 delta `<span>` elements to pass both polarity and direction arguments.

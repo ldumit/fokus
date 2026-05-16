@@ -29,8 +29,10 @@ function deltaIcon(direction: string | null): string {
   return '—'
 }
 
-function deltaClass(direction: string | null): string {
+function deltaClass(polarity: string | null, direction: string | null): string {
   if (!direction || direction === 'flat') return 'text-text-secondary'
+  if (polarity === 'positive') return 'text-status-success'
+  if (polarity === 'negative') return 'text-status-danger'
   return 'text-text-secondary'
 }
 
@@ -526,49 +528,49 @@ const hasDevelopers = computed(() => {
                 <!-- TEs Owned -->
                 <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                   <span>{{ dev.tesOwned }}</span>
-                  <span v-if="dev.tesOwnedDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.tesOwnedDirection)]">
+                  <span v-if="dev.tesOwnedDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.tesOwnedPolarity, dev.tesOwnedDirection)]">
                     {{ deltaIcon(dev.tesOwnedDirection) }} {{ Math.abs(dev.tesOwnedDelta) }}
                   </span>
                 </td>
                 <!-- Runs Completed -->
                 <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                   <span>{{ dev.runsCompleted }}</span>
-                  <span v-if="dev.runsCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.runsCompletedDirection)]">
+                  <span v-if="dev.runsCompletedDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.runsCompletedPolarity, dev.runsCompletedDirection)]">
                     {{ deltaIcon(dev.runsCompletedDirection) }} {{ Math.abs(dev.runsCompletedDelta) }}
                   </span>
                 </td>
                 <!-- Pass -->
                 <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                   <span>{{ dev.passCount }}</span>
-                  <span v-if="dev.passCountDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.passCountDirection)]">
+                  <span v-if="dev.passCountDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.passCountPolarity, dev.passCountDirection)]">
                     {{ deltaIcon(dev.passCountDirection) }} {{ Math.abs(dev.passCountDelta) }}
                   </span>
                 </td>
                 <!-- Fail -->
                 <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                   <span>{{ dev.failCount }}</span>
-                  <span v-if="dev.failCountDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.failCountDirection)]">
+                  <span v-if="dev.failCountDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.failCountPolarity, dev.failCountDirection)]">
                     {{ deltaIcon(dev.failCountDirection) }} {{ Math.abs(dev.failCountDelta) }}
                   </span>
                 </td>
                 <!-- Pass Rate -->
                 <td class="py-2 pr-4 text-right tabular-nums" :class="passRateRagClass(dev.passRate)">
                   <span>{{ dev.passRate.toFixed(1) }}%</span>
-                  <span v-if="dev.passRateDelta !== null" class="ml-1 text-xs text-text-secondary">
+                  <span v-if="dev.passRateDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.passRatePolarity, dev.passRateDirection)]">
                     {{ deltaIcon(dev.passRateDirection) }} {{ Math.abs(dev.passRateDelta).toFixed(1) }}
                   </span>
                 </td>
                 <!-- Stories Covered -->
                 <td class="py-2 pr-4 text-right tabular-nums text-text-primary">
                   <span>{{ dev.storiesCovered }}</span>
-                  <span v-if="dev.storiesCoveredDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.storiesCoveredDirection)]">
+                  <span v-if="dev.storiesCoveredDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.storiesCoveredPolarity, dev.storiesCoveredDirection)]">
                     {{ deltaIcon(dev.storiesCoveredDirection) }} {{ Math.abs(dev.storiesCoveredDelta) }}
                   </span>
                 </td>
                 <!-- Bugs Found -->
                 <td class="py-2 text-right tabular-nums text-text-primary">
                   <span>{{ dev.bugsFound }}</span>
-                  <span v-if="dev.bugsFoundDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.bugsFoundDirection)]">
+                  <span v-if="dev.bugsFoundDelta !== null" :class="['ml-1 text-xs', deltaClass(dev.bugsFoundPolarity, dev.bugsFoundDirection)]">
                     {{ deltaIcon(dev.bugsFoundDirection) }} {{ Math.abs(dev.bugsFoundDelta) }}
                   </span>
                 </td>
