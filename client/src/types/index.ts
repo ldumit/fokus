@@ -133,11 +133,18 @@ export interface MidSprintDisruption {
   ticketCount: number
 }
 
+export interface TestingCrunchFlag {
+  crunchPercentage: number
+  crunchRunCount: number
+  totalRunCount: number
+}
+
 export interface FlagsResult {
   zombieTickets: ZombieTicket[]
   midSprintDisruption: MidSprintDisruption | null
   zeroSpDevelopers: string[]
   hasAnyFlags: boolean
+  testingCrunch: TestingCrunchFlag | null
 }
 
 export interface SprintSummaryResponse {
@@ -1173,4 +1180,100 @@ export interface QaWorkloadResponse {
   mode: 'multi' | 'single'
   multiSprint: QaWorkloadMultiSprintResponse | null
   singleSprint: QaWorkloadSingleSprintResponse | null
+}
+
+// --- Test Execution Timeline (F30) ---
+
+export interface BurnupDayEntry {
+  dayNumber: number
+  calendarDate: string
+  isWithinSprint: boolean
+  cumulativePass: number
+  cumulativeFail: number
+  cumulativeTotal: number
+  dailyPass: number
+  dailyFail: number
+}
+
+export interface ScopeChangeDayEntry {
+  dayNumber: number
+  calendarDate: string
+  addedSp: number
+  removedSp: number
+  netSp: number
+}
+
+export interface CrunchTicketEntry {
+  ticketKey: string
+  summary: string
+  assigneeName: string | null
+  storyPoints: number | null
+  lateRunCount: number
+}
+
+export interface TestingCrunchResult {
+  isCrunchFlagged: boolean
+  crunchPercentage: number | null
+  crunchRunCount: number
+  totalRunCount: number
+  crunchTickets: CrunchTicketEntry[]
+}
+
+export interface PostSprintTicketEntry {
+  ticketKey: string
+  summary: string
+  assigneeName: string | null
+  storyPoints: number | null
+  postSprintRunCount: number
+}
+
+export interface PostSprintTestingResult {
+  hasPostSprintTesting: boolean
+  postSprintPercentage: number | null
+  postSprintRunCount: number
+  totalRunCount: number
+  postSprintTickets: PostSprintTicketEntry[]
+}
+
+export interface UntestedTicketEntry {
+  ticketKey: string
+  summary: string
+  assigneeName: string | null
+  storyPoints: number | null
+  devDoneDate: string
+}
+
+export interface UntestedAtCloseResult {
+  hasUntestedAtClose: boolean
+  untestedAtCloseCount: number
+  untestedAtCloseTickets: UntestedTicketEntry[]
+}
+
+export interface GapTicketEntry {
+  ticketKey: string
+  summary: string
+  assigneeName: string | null
+  devDoneDate: string
+  firstTestDate: string
+  gapDays: number
+}
+
+export interface DevToTestGapResult {
+  medianGapDays: number | null
+  medianGapDelta: number | null
+  medianGapDirection: string | null
+  gapTickets: GapTicketEntry[]
+}
+
+export interface TestTimelineResponse {
+  hasQaData: boolean
+  sprintStartDate: string
+  sprintEndDate: string
+  planningWindowDays: number
+  burnupData: BurnupDayEntry[]
+  scopeChangeOverlay: ScopeChangeDayEntry[]
+  testingCrunch: TestingCrunchResult
+  postSprintTesting: PostSprintTestingResult
+  untestedAtClose: UntestedAtCloseResult
+  devToTestGap: DevToTestGapResult
 }

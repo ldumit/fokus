@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, ScopeChangeResponse, CarryOverResponse } from '../types'
-import { getScopeChange, getCarryOver, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, ScopeChangeResponse, CarryOverResponse, TestTimelineResponse } from '../types'
+import { getScopeChange, getCarryOver, getClosedSprints, getSubTeams, getTestTimeline } from '../api/analytics'
 
 export const useSprintsStore = defineStore('sprints', () => {
   const closedSprints = ref<ClosedSprintItem[]>([])
@@ -12,6 +12,7 @@ export const useSprintsStore = defineStore('sprints', () => {
   const selectedSubTeam = ref<string | null>(null)
   const scopeChange = ref<ScopeChangeResponse | null>(null)
   const carryOver = ref<CarryOverResponse | null>(null)
+  const testTimeline = ref<TestTimelineResponse | null>(null)
   const loading = ref(false)
   const initializing = ref(false)
   const error = ref<string | null>(null)
@@ -64,13 +65,24 @@ export const useSprintsStore = defineStore('sprints', () => {
       const last = sprintMode.value === 'single' ? undefined : (selectedLast.value === null ? 0 : selectedLast.value)
       const subTeam = selectedSubTeam.value ?? undefined
 
-      const [scopeChangeResult, carryOverResult] = await Promise.all([
-        getScopeChange(sprintId, last, subTeam),
-        getCarryOver(sprintId, last, subTeam)
-      ])
-
-      scopeChange.value = scopeChangeResult
-      carryOver.value = carryOverResult
+      if (sprintMode.value === 'single' && sprintId !== undefined) {
+        const [scopeChangeResult, carryOverResult, testTimelineResult] = await Promise.all([
+          getScopeChange(sprintId, last, subTeam),
+          getCarryOver(sprintId, last, subTeam),
+          getTestTimeline(sprintId, subTeam)
+        ])
+        scopeChange.value = scopeChangeResult
+        carryOver.value = carryOverResult
+        testTimeline.value = testTimelineResult
+      } else {
+        testTimeline.value = null
+        const [scopeChangeResult, carryOverResult] = await Promise.all([
+          getScopeChange(sprintId, last, subTeam),
+          getCarryOver(sprintId, last, subTeam)
+        ])
+        scopeChange.value = scopeChangeResult
+        carryOver.value = carryOverResult
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load analytics data'
     } finally {
@@ -87,6 +99,7 @@ export const useSprintsStore = defineStore('sprints', () => {
     selectedSubTeam,
     scopeChange,
     carryOver,
+    testTimeline,
     loading,
     initializing,
     error,

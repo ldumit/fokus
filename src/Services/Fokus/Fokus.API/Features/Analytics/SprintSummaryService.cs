@@ -79,7 +79,10 @@ public record FlagsResult(
     List<ZombieTicket> ZombieTickets,
     MidSprintDisruption? MidSprintDisruption,
     List<string> ZeroSpDevelopers,
-    bool HasAnyFlags);
+    bool HasAnyFlags)
+{
+    public TestingCrunchFlag? TestingCrunch { get; init; }
+}
 
 public record SprintSummaryResponse(
     SprintInfo? Sprint,
@@ -106,7 +109,8 @@ public class SprintSummaryService
         HashSet<string>? excludedDeveloperIds = null,
         decimal? qualitySubScore = null,
         QualityBreakdownResult? qualityBreakdown = null,
-        bool hasQaData = false)
+        bool hasQaData = false,
+        TestingCrunchFlag? testingCrunch = null)
     {
         // C2: sub-team filtering + cross-cutting exclusion
         var selectedMemberships = FilterMemberships(selectedSprint.Memberships, subTeam, excludedDeveloperIds);
@@ -227,7 +231,8 @@ public class SprintSummaryService
             selectedSprint, selectedMemberships, statusTransitions,
             windowSprints, subTeam, filteredDevelopers,
             orderedStages, endIndex,
-            settings.ExcludedFromScopeStatuses, defaultSpPerBug, settings.PlanningWindowDays, excludedDeveloperIds);
+            settings.ExcludedFromScopeStatuses, defaultSpPerBug, settings.PlanningWindowDays, excludedDeveloperIds,
+            testingCrunch);
 
         var sprintInfo = new SprintInfo(
             selectedSprint.Id,
@@ -812,7 +817,8 @@ public class SprintSummaryService
         List<string> excludedStatuses,
         int defaultSpPerBug,
         int planningWindowDays,
-        HashSet<string>? excludedDeveloperIds = null)
+        HashSet<string>? excludedDeveloperIds = null,
+        TestingCrunchFlag? testingCrunch = null)
     {
         // Zombie tickets (BR16): tickets appearing in 3+ sprints
         var allMembershipsFlat = allSprints
@@ -870,8 +876,11 @@ public class SprintSummaryService
             .OrderBy(n => n)
             .ToList();
 
-        var hasFlags = zombies.Count > 0 || midSprintDisruption is not null || zeroSpDevs.Count > 0;
+        var hasFlags = zombies.Count > 0 || midSprintDisruption is not null || zeroSpDevs.Count > 0 || testingCrunch is not null;
 
-        return new FlagsResult(zombies, midSprintDisruption, zeroSpDevs, hasFlags);
+        return new FlagsResult(zombies, midSprintDisruption, zeroSpDevs, hasFlags)
+        {
+            TestingCrunch = testingCrunch
+        };
     }
 }

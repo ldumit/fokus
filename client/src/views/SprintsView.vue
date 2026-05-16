@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSprintsStore } from '../stores/sprintsStore'
 import PageLayout from '../components/PageLayout.vue'
@@ -20,6 +20,11 @@ import StatusDistributionChart from '../components/sprints/StatusDistributionCha
 import CarryOverDestinationSection from '../components/sprints/CarryOverDestination.vue'
 import CarryOverTicketTable from '../components/sprints/CarryOverTicketTable.vue'
 import ZombieTrajectorySection from '../components/sprints/ZombieTrajectorySection.vue'
+import TestExecutionBurnupChart from '../components/sprints/TestExecutionBurnupChart.vue'
+import TestingCrunchSection from '../components/sprints/TestingCrunchSection.vue'
+import PostSprintTestingSection from '../components/sprints/PostSprintTestingSection.vue'
+import UntestedAtCloseSection from '../components/sprints/UntestedAtCloseSection.vue'
+import DevToTestGapSection from '../components/sprints/DevToTestGapSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -78,6 +83,14 @@ async function onSprintUpdated() {
   await store.refreshSprints()
   await store.fetchAllData()
 }
+
+const sprintEndDayNumber = computed(() => {
+  const tl = store.testTimeline
+  if (!tl) return 0
+  const start = new Date(tl.sprintStartDate)
+  const end = new Date(tl.sprintEndDate)
+  return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+})
 </script>
 
 <template>
@@ -237,6 +250,25 @@ async function onSprintUpdated() {
               />
             </div>
           </template>
+        </div>
+
+        <!-- Test Execution Timeline section — single-sprint only -->
+        <div v-if="store.sprintMode === 'single' && store.testTimeline?.hasQaData" class="pt-2">
+          <div class="text-base font-semibold text-text-primary mb-4 border-t border-border-default pt-6">
+            Test Execution Timeline
+          </div>
+          <div class="flex flex-col gap-6">
+            <TestExecutionBurnupChart
+              :burnup-data="store.testTimeline.burnupData"
+              :scope-change-overlay="store.testTimeline.scopeChangeOverlay"
+              :planning-window-days="store.testTimeline.planningWindowDays"
+              :sprint-end-day-number="sprintEndDayNumber"
+            />
+            <TestingCrunchSection :crunch="store.testTimeline.testingCrunch" />
+            <PostSprintTestingSection :post-sprint="store.testTimeline.postSprintTesting" />
+            <UntestedAtCloseSection :untested="store.testTimeline.untestedAtClose" />
+            <DevToTestGapSection :gap="store.testTimeline.devToTestGap" />
+          </div>
         </div>
 
       </div>

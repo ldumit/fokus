@@ -87,6 +87,7 @@ public class GetSprintSummaryEndpoint(
         // 11. Load QA data and compute quality sub-score when Xray is enabled (BR19)
         decimal? qualitySubScore = null;
         QualityBreakdownResult? qualityBreakdown = null;
+        TestingCrunchFlag? testingCrunch = null;
         var hasQaData = false;
 
         if (settings.XrayEnabled)
@@ -114,10 +115,16 @@ public class GetSprintSummaryEndpoint(
                 qaResult.QualityBreakdown.CoverageWeight,
                 qaResult.QualityBreakdown.PassRateScore,
                 qaResult.QualityBreakdown.PassRateWeight);
+
+            testingCrunch = TestTimelineService.ComputeCrunchFlag(
+                sprintTEs,
+                selectedSprint.Memberships.ToList(),
+                selectedSprint,
+                subTeam);
         }
 
         // 12. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds, qualitySubScore, qualityBreakdown, hasQaData);
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds, qualitySubScore, qualityBreakdown, hasQaData, testingCrunch);
 
         await SendOkAsync(result, ct);
     }

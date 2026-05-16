@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<LeaderboardService>();
         services.AddScoped<DeveloperQualityService>();
         services.AddScoped<QaWorkloadService>();
+        services.AddScoped<TestTimelineService>();
 
         return services;
     }

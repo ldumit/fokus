@@ -1,7 +1,7 @@
 # F30-TestExecutionTimeline — Communication Log
 
 **Branch:** main
-**Step:** developer-impl
+**Step:** architect-review
 **Cycle:** 0/3
 
 ## Messages
@@ -12,6 +12,8 @@
 | 2 | architect | team-lead | Questions before planning: None | None |
 | 3 | architect | team-lead | plan.md complete, 7 steps, auto-approved, ready for developer | None |
 | 4 | team-lead | developer | Implement F30 from plan.md | None |
+| 5 | developer | team-lead | implementation.md written, build clean (0 errors), 1 justified deviation, ready for Step 1 | None |
+| 6 | team-lead | architect | Step 1 done check for F30 | None |
 
 ## Problems
 
