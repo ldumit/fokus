@@ -7,6 +7,7 @@ public partial class Ticket : AggregateRoot<string>
     public decimal? StoryPoints { get; set; }
     public string? EpicKey { get; set; }
     public string? EpicName { get; set; }
+    public string? ParentTicketKey { get; set; }
     public string? AssigneeId { get; set; }
     public required string Priority { get; set; }
     public required string CurrentStatus { get; set; }

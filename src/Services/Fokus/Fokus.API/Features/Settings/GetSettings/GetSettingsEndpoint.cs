@@ -23,7 +23,10 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             DefaultSpPerBug = settings.DefaultSpPerBug,
             XrayEnabled = settings.XrayEnabled,
             XrayClientId = settings.XrayClientId,
-            XrayClientSecret = MaskSecret(settings.XrayClientSecret)
+            XrayClientSecret = MaskSecret(settings.XrayClientSecret),
+            QaHealthThresholds = settings.QaHealthThresholds,
+            QualityHealthWeight = settings.QualityHealthWeight,
+            QualitySubScoreWeights = settings.QualitySubScoreWeights
         }, ct);
     }
 

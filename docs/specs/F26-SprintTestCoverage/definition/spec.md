@@ -3,8 +3,8 @@
 **Traces to:** `docs/product/v2.md` §5.1, §5.2, §6.2, §6.3
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment)
-**Status:** Ready
-**Plan:** None
+**Status:** Done
+**Plan:** `docs/specs/F26-SprintTestCoverage/delivery/plan.md`
 
 ---
 

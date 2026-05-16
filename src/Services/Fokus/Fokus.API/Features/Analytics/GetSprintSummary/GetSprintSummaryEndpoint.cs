@@ -7,7 +7,9 @@ public class GetSprintSummaryEndpoint(
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
     TicketRepository ticketRepository,
-    SprintSummaryService sprintSummaryService)
+    SprintSummaryService sprintSummaryService,
+    TestExecutionRepository testExecutionRepository,
+    QaMetricsService qaMetricsService)
     : Endpoint<GetSprintSummaryRequest, SprintSummaryResponse>
 {
     public override async Task HandleAsync(GetSprintSummaryRequest req, CancellationToken ct)
@@ -82,8 +84,40 @@ public class GetSprintSummaryEndpoint(
         // 10. Load all epic tickets for F8/F14 alignment (BR20)
         var allEpicTickets = await ticketRepository.GetTicketsWithEpicAsync(ct);
 
-        // 11. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds);
+        // 11. Load QA data and compute quality sub-score when Xray is enabled (BR19)
+        decimal? qualitySubScore = null;
+        QualityBreakdownResult? qualityBreakdown = null;
+        var hasQaData = false;
+
+        if (settings.XrayEnabled)
+        {
+            var sprintTEs = await testExecutionRepository.GetTestExecutionsForSprintAsync(selectedSprint.Id, ct);
+            hasQaData = true;
+
+            var qaResult = qaMetricsService.ComputeQaMetrics(
+                sprintTEs,
+                selectedSprint.Memberships.ToList(),
+                statusTransitions,
+                selectedSprint,
+                priorSprint: null,
+                priorSprintTEs: null,
+                priorMemberships: null,
+                sparklineWindow: [],
+                sparklineTEsBySprintId: [],
+                sparklineMembershipsBySprintId: [],
+                settings,
+                subTeam);
+
+            qualitySubScore = qaResult.QualitySubScore;
+            qualityBreakdown = new QualityBreakdownResult(
+                qaResult.QualityBreakdown.CoverageScore,
+                qaResult.QualityBreakdown.CoverageWeight,
+                qaResult.QualityBreakdown.PassRateScore,
+                qaResult.QualityBreakdown.PassRateWeight);
+        }
+
+        // 12. Compute summary (exclusion applied internally via excludedIds)
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds, qualitySubScore, qualityBreakdown, hasQaData);
 
         await SendOkAsync(result, ct);
     }

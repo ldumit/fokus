@@ -6,6 +6,7 @@ import { getBoards, getStatuses, getCycleTimeBoundaries, saveCycleTimeBoundaries
 import { getJiraSprints, syncSprints, syncBacklog } from '../api/sync'
 import { getUsers, getInvitations, createInvitation, updateUserRole, updateUserStatus, revokeInvitation } from '../api/auth'
 import type { AppSettings, BoardOption, StatusOption, SyncSprintsResponse, SyncBacklogResponse, UserEntry, InvitationEntry, CreateInvitationResponse, TestConnectionResponse, XraySyncResponse } from '../types'
+import InfoTooltip from '../components/InfoTooltip.vue'
 
 const store = useSettingsStore()
 const authStore = useAuthStore()
@@ -101,7 +102,13 @@ async function saveHealthConfigPanel() {
   healthConfigError.value = ''
   healthConfigSaving.value = true
   try {
-    await store.saveHealthConfigAction({ ...form.healthThresholds }, { ...form.healthWeights })
+    await store.saveHealthConfigAction(
+      { ...form.healthThresholds },
+      { ...form.healthWeights },
+      { ...form.qaHealthThresholds },
+      form.qualityHealthWeight,
+      { ...form.qualitySubScoreWeights }
+    )
     if (!store.error) {
       healthConfigSaved.value = true
       setTimeout(() => healthConfigSaved.value = false, 3000)
@@ -325,7 +332,20 @@ const form = reactive<AppSettings>({
   defaultSpPerBug: 3,
   xrayEnabled: false,
   xrayClientId: null,
-  xrayClientSecret: null
+  xrayClientSecret: null,
+  qaHealthThresholds: {
+    coverageGreen: 80,
+    coverageAmber: 50,
+    executionGreen: 80,
+    executionAmber: 50,
+    passRateGreen: 90,
+    passRateAmber: 70
+  },
+  qualityHealthWeight: 20,
+  qualitySubScoreWeights: {
+    coverageWeight: 50,
+    passRateWeight: 50
+  }
 })
 
 // Excluded statuses state (GAP-1)
@@ -439,6 +459,9 @@ function syncFromStore() {
   form.xrayEnabled = s.xrayEnabled
   form.xrayClientId = s.xrayClientId
   form.xrayClientSecret = s.xrayClientSecret
+  form.qaHealthThresholds = { ...s.qaHealthThresholds }
+  form.qualityHealthWeight = s.qualityHealthWeight
+  form.qualitySubScoreWeights = { ...s.qualitySubScoreWeights }
 }
 
 // Statuses available to add (not already in doneStatuses), done category first
@@ -570,6 +593,7 @@ function moveStage(index: number, direction: -1 | 1) {
 
 
 const weightsSum = () => form.healthWeights.completion + form.healthWeights.disruption + form.healthWeights.carryOver
+const qualityWeightsSum = () => form.qualitySubScoreWeights.coverageWeight + form.qualitySubScoreWeights.passRateWeight
 const isReadOnly = computed(() => !authStore.isAdmin)
 
 // Cycle time boundary state
@@ -1173,10 +1197,109 @@ async function syncAll() {
           <div class="text-sm" :class="weightsSum() === 100 ? 'text-green-400' : 'text-red-400'">
             Sum: {{ weightsSum() }} / 100
           </div>
+        </section>
+
+        <!-- Quality sub-group (Xray only) -->
+        <section v-if="form.xrayEnabled" class="bg-gray-900 rounded-lg p-6 space-y-4">
+          <h2 class="text-lg font-semibold text-gray-200">Quality Settings</h2>
+          <p class="text-sm text-gray-400">Configure how test quality contributes to the health score. Quality weight is additive to delivery weights.</p>
+
+          <!-- Quality Health Weight -->
+          <div>
+            <label class="flex items-center gap-1 text-sm text-gray-300 mb-1">
+              Quality Health Weight
+              <InfoTooltip text="How much Quality contributes to the health score. Additive to delivery weights. Set 0 to observe without affecting score." />
+            </label>
+            <input
+              v-model.number="form.qualityHealthWeight"
+              type="number"
+              min="0"
+              max="100"
+              :disabled="isReadOnly"
+              class="w-32 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          <!-- QA Thresholds -->
+          <div>
+            <h3 class="text-sm font-medium text-gray-300 mb-2">
+              Coverage Rate Thresholds
+              <InfoTooltip text="Green/amber thresholds for Coverage Rate card coloring. Default: green ≥ 80%, amber ≥ 50%." />
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs text-green-400">Green &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.coverageGreen" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+              <div>
+                <label class="text-xs text-amber-400">Amber &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.coverageAmber" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-medium text-gray-300 mb-2">
+              Execution Rate Thresholds
+              <InfoTooltip text="Green/amber thresholds for Execution Rate card coloring. Default: green ≥ 80%, amber ≥ 50%." />
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs text-green-400">Green &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.executionGreen" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+              <div>
+                <label class="text-xs text-amber-400">Amber &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.executionAmber" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-medium text-gray-300 mb-2">
+              Pass Rate Thresholds
+              <InfoTooltip text="Green/amber thresholds for Pass Rate card coloring. Default: green ≥ 90%, amber ≥ 70%." />
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs text-green-400">Green &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.passRateGreen" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+              <div>
+                <label class="text-xs text-amber-400">Amber &ge;</label>
+                <input v-model.number="form.qaHealthThresholds.passRateAmber" type="number" min="0" max="100" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Coverage / Pass Rate Weights -->
+          <div>
+            <h3 class="flex items-center gap-1 text-sm font-medium text-gray-300 mb-2">
+              Coverage / Pass Rate Weights
+              <InfoTooltip text="How Coverage Rate and Pass Rate combine within the Quality sub-score. Default: 50/50. Minimum 1 each." />
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-gray-300 mb-1">Coverage Rate</label>
+                <input v-model.number="form.qualitySubScoreWeights.coverageWeight" type="number" min="1" max="99" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+              <div>
+                <label class="block text-sm text-gray-300 mb-1">Pass Rate</label>
+                <input v-model.number="form.qualitySubScoreWeights.passRateWeight" type="number" min="1" max="99" :disabled="isReadOnly" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+              </div>
+            </div>
+            <div class="text-sm mt-2" :class="qualityWeightsSum() === 100 ? 'text-green-400' : 'text-red-400'">
+              Sum: {{ qualityWeightsSum() }} / 100
+            </div>
+          </div>
+        </section>
+
+        <!-- Save button shared for all health/quality config -->
+        <section class="bg-gray-900 rounded-lg p-6">
           <div class="flex items-center gap-4">
             <button
               @click="saveHealthConfigPanel"
-              :disabled="healthConfigSaving || weightsSum() !== 100 || isReadOnly"
+              :disabled="healthConfigSaving || weightsSum() !== 100 || (form.xrayEnabled && qualityWeightsSum() !== 100) || isReadOnly"
               class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
             >
               {{ healthConfigSaving ? 'Saving...' : 'Save Health Config' }}

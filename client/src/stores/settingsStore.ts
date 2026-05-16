@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig } from '../types'
+import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig, QaHealthThresholdConfig, QualitySubScoreWeightConfig } from '../types'
 import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages, saveXraySettings } from '../api/settings'
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -28,7 +28,20 @@ export const useSettingsStore = defineStore('settings', () => {
     defaultSpPerBug: 3,
     xrayEnabled: false,
     xrayClientId: null,
-    xrayClientSecret: null
+    xrayClientSecret: null,
+    qaHealthThresholds: {
+      coverageGreen: 80,
+      coverageAmber: 50,
+      executionGreen: 80,
+      executionAmber: 50,
+      passRateGreen: 90,
+      passRateAmber: 70
+    },
+    qualityHealthWeight: 20,
+    qualitySubScoreWeights: {
+      coverageWeight: 50,
+      passRateWeight: 50
+    }
   })
 
   const loading = ref(false)
@@ -89,12 +102,25 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  async function saveHealthConfigAction(healthThresholds: HealthThresholdConfig, healthWeights: HealthWeightConfig) {
+  async function saveHealthConfigAction(
+    healthThresholds: HealthThresholdConfig,
+    healthWeights: HealthWeightConfig,
+    qaHealthThresholds: QaHealthThresholdConfig,
+    qualityHealthWeight: number,
+    qualitySubScoreWeights: QualitySubScoreWeightConfig
+  ) {
     saving.value = true
     error.value = null
     try {
-      await saveHealthConfig(healthThresholds, healthWeights)
-      settings.value = { ...settings.value, healthThresholds: { ...healthThresholds }, healthWeights: { ...healthWeights } }
+      await saveHealthConfig(healthThresholds, healthWeights, qaHealthThresholds, qualityHealthWeight, qualitySubScoreWeights)
+      settings.value = {
+        ...settings.value,
+        healthThresholds: { ...healthThresholds },
+        healthWeights: { ...healthWeights },
+        qaHealthThresholds: { ...qaHealthThresholds },
+        qualityHealthWeight,
+        qualitySubScoreWeights: { ...qualitySubScoreWeights }
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to save health config'
     } finally {

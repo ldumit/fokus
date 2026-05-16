@@ -15,4 +15,7 @@ public class GetSettingsResponse
     public bool XrayEnabled { get; set; }
     public string? XrayClientId { get; set; }
     public string? XrayClientSecret { get; set; }
+    public QaHealthThresholdConfig QaHealthThresholds { get; set; } = new();
+    public int QualityHealthWeight { get; set; }
+    public QualitySubScoreWeightConfig QualitySubScoreWeights { get; set; } = new();
 }

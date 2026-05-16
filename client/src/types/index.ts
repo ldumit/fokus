@@ -64,6 +64,16 @@ export interface HealthScoreResult {
   disruptionRag: string
   carryOverSubScore: number
   carryOverRag: string
+  qualitySubScore: number | null
+  qualityRag: string | null
+  qualityBreakdown: QualityBreakdownResult | null
+}
+
+export interface QualityBreakdownResult {
+  coverageScore: number
+  coverageWeight: number
+  passRateScore: number
+  passRateWeight: number
 }
 
 export interface SparklinePoint {
@@ -79,6 +89,7 @@ export interface MetricCard {
   deltaDirection: string | null
   deltaPolarity: string | null
   sparkline: SparklinePoint[]
+  rag: string | null
 }
 
 export interface MetricsResult {
@@ -163,6 +174,20 @@ export interface HealthWeightConfig {
   carryOver: number
 }
 
+export interface QaHealthThresholdConfig {
+  coverageGreen: number
+  coverageAmber: number
+  executionGreen: number
+  executionAmber: number
+  passRateGreen: number
+  passRateAmber: number
+}
+
+export interface QualitySubScoreWeightConfig {
+  coverageWeight: number
+  passRateWeight: number
+}
+
 export interface AppSettings {
   boardId: number | null
   doneStatuses: string[]
@@ -177,6 +202,9 @@ export interface AppSettings {
   xrayEnabled: boolean
   xrayClientId: string | null
   xrayClientSecret: string | null
+  qaHealthThresholds: QaHealthThresholdConfig
+  qualityHealthWeight: number
+  qualitySubScoreWeights: QualitySubScoreWeightConfig
 }
 
 export interface XraySyncResponse {
@@ -950,4 +978,48 @@ export interface LeaderboardResponse {
   mode: 'multi' | 'single'
   multiSprint: LeaderboardMultiSprintResponse | null
   singleSprint: LeaderboardSingleSprintResponse | null
+}
+
+// QA Metrics types
+export interface QualityBreakdownResponse {
+  coverageScore: number
+  coverageWeight: number
+  passRateScore: number
+  passRateWeight: number
+}
+
+export interface QaMetricsResponse {
+  hasQaData: boolean
+  coverageRate: MetricCard
+  executionRate: MetricCard
+  passRate: MetricCard
+  bugsFound: number
+  untestedCount: number
+  failingCount: number
+  qualitySubScore: number
+  qualityBreakdown: QualityBreakdownResponse
+}
+
+export interface UntestedTicket {
+  ticketKey: string
+  summary: string
+  storyPoints: number | null
+  assigneeName: string | null
+}
+
+export interface FailingTicket {
+  ticketKey: string
+  summary: string
+  storyPoints: number | null
+  assigneeName: string | null
+  failedRunCount: number
+  totalRunCount: number
+}
+
+export interface UntestedTicketsResponse {
+  tickets: UntestedTicket[]
+}
+
+export interface FailingTicketsResponse {
+  tickets: FailingTicket[]
 }

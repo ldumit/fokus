@@ -9,6 +9,8 @@ public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
 
         builder.OwnsOne(s => s.HealthThresholds, b => b.ToJson());
         builder.OwnsOne(s => s.HealthWeights, b => b.ToJson());
+        builder.OwnsOne(s => s.QaHealthThresholds, b => b.ToJson());
+        builder.OwnsOne(s => s.QualitySubScoreWeights, b => b.ToJson());
 
         builder.Property(s => s.DoneStatuses).HasConversion(
             v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),

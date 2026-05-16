@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<XrayIssueSyncService>();
         services.AddScoped<WorkflowDetectionService>();
         services.AddScoped<SprintSummaryService>();
+        services.AddScoped<QaMetricsService>();
         services.AddScoped<DeveloperThroughputService>();
         services.AddScoped<ScopeChangeService>();
         services.AddScoped<CarryOverService>();

@@ -1,4 +1,4 @@
-import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse } from '../types'
+import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -99,4 +99,25 @@ export function getLeaderboard(sprintId?: number, last?: number, subTeam?: strin
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<LeaderboardResponse>(`/analytics/leaderboard${query ? `?${query}` : ''}`)
+}
+
+export function getQaMetrics(sprintId: number, subTeam?: string): Promise<QaMetricsResponse> {
+  const params = new URLSearchParams()
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<QaMetricsResponse>(`/sprints/${sprintId}/qa-metrics${query ? `?${query}` : ''}`)
+}
+
+export function getUntestedTickets(sprintId: number, subTeam?: string): Promise<UntestedTicketsResponse> {
+  const params = new URLSearchParams()
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<UntestedTicketsResponse>(`/sprints/${sprintId}/qa-metrics/untested${query ? `?${query}` : ''}`)
+}
+
+export function getFailingTickets(sprintId: number, subTeam?: string): Promise<FailingTicketsResponse> {
+  const params = new URLSearchParams()
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<FailingTicketsResponse>(`/sprints/${sprintId}/qa-metrics/failing${query ? `?${query}` : ''}`)
 }

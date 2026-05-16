@@ -20,6 +20,9 @@ public class AppSettings
     public bool XrayEnabled { get; set; } = false;
     public string? XrayClientId { get; set; }
     public string? XrayClientSecret { get; set; }
+    public QaHealthThresholdConfig QaHealthThresholds { get; set; } = new();
+    public int QualityHealthWeight { get; set; } = 20;
+    public QualitySubScoreWeightConfig QualitySubScoreWeights { get; set; } = new();
 
     public static AppSettings CreateDefault() => new()
     {
@@ -40,6 +43,9 @@ public class AppSettings
         CompanyDomain = null,
         XrayEnabled = false,
         XrayClientId = null,
-        XrayClientSecret = null
+        XrayClientSecret = null,
+        QaHealthThresholds = new QaHealthThresholdConfig(),
+        QualityHealthWeight = 20,
+        QualitySubScoreWeights = new QualitySubScoreWeightConfig()
     };
 }

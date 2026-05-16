@@ -1,4 +1,4 @@
-import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse, HealthThresholdConfig, HealthWeightConfig, TestConnectionResponse, XraySyncResponse } from '../types'
+import type { AppSettings, BoardOption, DetectionResult, StatusOption, CycleTimeBoundariesResponse, SaveCycleTimeBoundariesResponse, HealthThresholdConfig, HealthWeightConfig, TestConnectionResponse, XraySyncResponse, QaHealthThresholdConfig, QualitySubScoreWeightConfig } from '../types'
 import { apiFetch } from './client'
 
 export function getSettings(): Promise<AppSettings> {
@@ -26,10 +26,16 @@ export function saveWorkflowStages(stages: string[]): Promise<string[]> {
   })
 }
 
-export function saveHealthConfig(healthThresholds: HealthThresholdConfig, healthWeights: HealthWeightConfig): Promise<{ success: boolean }> {
+export function saveHealthConfig(
+  healthThresholds: HealthThresholdConfig,
+  healthWeights: HealthWeightConfig,
+  qaHealthThresholds: QaHealthThresholdConfig,
+  qualityHealthWeight: number,
+  qualitySubScoreWeights: QualitySubScoreWeightConfig
+): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>('/settings/health-config', {
     method: 'PUT',
-    body: JSON.stringify({ healthThresholds, healthWeights })
+    body: JSON.stringify({ healthThresholds, healthWeights, qaHealthThresholds, qualityHealthWeight, qualitySubScoreWeights })
   })
 }
 

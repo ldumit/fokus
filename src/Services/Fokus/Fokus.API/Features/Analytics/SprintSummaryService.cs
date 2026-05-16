@@ -10,6 +10,12 @@ public record SprintInfo(
     int DurationDays,
     DateTime SyncedAt);
 
+public record QualityBreakdownResult(
+    decimal CoverageScore,
+    int CoverageWeight,
+    decimal PassRateScore,
+    int PassRateWeight);
+
 public record HealthScoreResult(
     decimal CompositeScore,
     string CompositeRag,
@@ -18,7 +24,12 @@ public record HealthScoreResult(
     decimal DisruptionSubScore,
     string DisruptionRag,
     decimal CarryOverSubScore,
-    string CarryOverRag);
+    string CarryOverRag)
+{
+    public decimal? QualitySubScore { get; init; }
+    public string? QualityRag { get; init; }
+    public QualityBreakdownResult? QualityBreakdown { get; init; }
+}
 
 public record SparklinePoint(string SprintName, decimal Value);
 
@@ -29,7 +40,10 @@ public record MetricCard(
     decimal? Delta,
     string? DeltaDirection,
     string? DeltaPolarity,
-    List<SparklinePoint> Sparkline);
+    List<SparklinePoint> Sparkline)
+{
+    public string? Rag { get; init; }
+}
 
 public record MetricsResult(
     MetricCard SpCompleted,
@@ -89,7 +103,10 @@ public class SprintSummaryService
         Dictionary<string, Dictionary<int, int>> capacityLookup,
         List<Developer> allDevelopers,
         List<StatusTransition> statusTransitions,
-        HashSet<string>? excludedDeveloperIds = null)
+        HashSet<string>? excludedDeveloperIds = null,
+        decimal? qualitySubScore = null,
+        QualityBreakdownResult? qualityBreakdown = null,
+        bool hasQaData = false)
     {
         // C2: sub-team filtering + cross-cutting exclusion
         var selectedMemberships = FilterMemberships(selectedSprint.Memberships, subTeam, excludedDeveloperIds);
@@ -132,7 +149,8 @@ public class SprintSummaryService
             : null;
 
         // Health score — uses combined DisruptionRate (scope + bug) for continuity
-        var healthScore = ComputeHealthScore(selected, thresholds, weights);
+        var healthScore = ComputeHealthScore(selected, thresholds, weights,
+            qualitySubScore, qualityBreakdown, settings.QualityHealthWeight, hasQaData);
 
         // Sparklines — window of up to 4 sprints ending at selected
         var sparklineWindow = sortedWindow
@@ -514,75 +532,85 @@ public class SprintSummaryService
         return activeSp > 0 ? carryOverSp / activeSp * 100 : 0;
     }
 
-    // --- Health score computation (BR2, BR3, BR4) ---
+    // --- Health score computation (BR2, BR3, BR4, BR16-BR19) ---
 
     private static HealthScoreResult ComputeHealthScore(
         SprintMetrics metrics,
         HealthThresholdConfig thresholds,
-        HealthWeightConfig weights)
+        HealthWeightConfig weights,
+        decimal? qualitySubScore = null,
+        QualityBreakdownResult? qualityBreakdown = null,
+        int qualityWeight = 0,
+        bool hasQaData = false)
     {
         var completionScore = ScoreHigherIsBetter(metrics.CompletionRate, thresholds.CompletionGreen, thresholds.CompletionAmber);
         var disruptionScore = ScoreLowerIsBetter(metrics.DisruptionRate, thresholds.DisruptionGreen, thresholds.DisruptionAmber);
         var carryOverScore = ScoreLowerIsBetter(metrics.CarryOverRate, thresholds.CarryOverGreen, thresholds.CarryOverAmber);
 
-        var totalWeight = weights.Completion + weights.Disruption + weights.CarryOver;
-        var composite = totalWeight > 0
-            ? (completionScore * weights.Completion + disruptionScore * weights.Disruption + carryOverScore * weights.CarryOver) / totalWeight
-            : 0;
+        var deliverySum = weights.Completion + weights.Disruption + weights.CarryOver;
+
+        // BR18 three-way branching:
+        // - hasQaData && qualityWeight > 0: include quality in composite
+        // - hasQaData && qualityWeight == 0 (observation mode): quality computed but not in composite
+        // - !hasQaData: quality null, delivery-only composite
+        decimal totalWeight;
+        decimal compositeNumerator;
+
+        if (hasQaData && qualityWeight > 0 && qualitySubScore.HasValue)
+        {
+            totalWeight = deliverySum + qualityWeight;
+            compositeNumerator = completionScore * weights.Completion
+                + disruptionScore * weights.Disruption
+                + carryOverScore * weights.CarryOver
+                + qualitySubScore.Value * qualityWeight;
+        }
+        else
+        {
+            totalWeight = deliverySum;
+            compositeNumerator = completionScore * weights.Completion
+                + disruptionScore * weights.Disruption
+                + carryOverScore * weights.CarryOver;
+        }
+
+        var composite = totalWeight > 0 ? compositeNumerator / totalWeight : 0;
 
         composite = Math.Round(composite, 1);
         completionScore = Math.Round(completionScore, 1);
         disruptionScore = Math.Round(disruptionScore, 1);
         carryOverScore = Math.Round(carryOverScore, 1);
 
+        // Quality fields: non-null whenever hasQaData (even observation mode), null when !hasQaData
+        decimal? roundedQualitySubScore = null;
+        string? qualityRag = null;
+        if (hasQaData && qualitySubScore.HasValue)
+        {
+            roundedQualitySubScore = Math.Round(qualitySubScore.Value, 1);
+            qualityRag = HealthScoreCalculator.CompositeRag(qualitySubScore.Value);
+        }
+
         return new HealthScoreResult(
             composite, CompositeRag(composite),
             completionScore, MetricRag(metrics.CompletionRate, thresholds.CompletionGreen, thresholds.CompletionAmber, higherIsBetter: true),
             disruptionScore, MetricRag(metrics.DisruptionRate, thresholds.DisruptionGreen, thresholds.DisruptionAmber, higherIsBetter: false),
-            carryOverScore, MetricRag(metrics.CarryOverRate, thresholds.CarryOverGreen, thresholds.CarryOverAmber, higherIsBetter: false));
+            carryOverScore, MetricRag(metrics.CarryOverRate, thresholds.CarryOverGreen, thresholds.CarryOverAmber, higherIsBetter: false))
+        {
+            QualitySubScore = roundedQualitySubScore,
+            QualityRag = qualityRag,
+            QualityBreakdown = hasQaData ? qualityBreakdown : null
+        };
     }
 
-    // Higher is better: >= green -> 100; [amber, green) -> linear 50-99; < amber -> linear 0-49
-    private static decimal ScoreHigherIsBetter(decimal value, decimal green, decimal amber)
-    {
-        if (value >= green) return 100;
-        if (value >= amber)
-        {
-            var range = green - amber;
-            if (range == 0) return 50;
-            return 50 + (value - amber) / range * 49;
-        }
-        // below amber: linear 0-49, where 0=0 and amber=49
-        if (amber == 0) return 0;
-        return Math.Max(0, value / amber * 49);
-    }
+    private static decimal ScoreHigherIsBetter(decimal value, decimal green, decimal amber) =>
+        HealthScoreCalculator.ScoreHigherIsBetter(value, green, amber);
 
-    // Lower is better: <= green -> 100; (green, amber] -> linear 99-50; > amber -> linear 49-0, hitting 0 at 2x amber
-    private static decimal ScoreLowerIsBetter(decimal value, decimal green, decimal amber)
-    {
-        if (value <= green) return 100;
-        if (value <= amber)
-        {
-            var range = amber - green;
-            if (range == 0) return 50;
-            return 99 - (value - green) / range * 49;
-        }
-        // above amber: linear 49-0, where amber=49 and 2*amber=0
-        var cap = amber * 2;
-        if (cap <= amber) return 0;
-        return Math.Max(0, 49 - (value - amber) / (cap - amber) * 49);
-    }
+    private static decimal ScoreLowerIsBetter(decimal value, decimal green, decimal amber) =>
+        HealthScoreCalculator.ScoreLowerIsBetter(value, green, amber);
 
     private static string CompositeRag(decimal score) =>
-        score >= 75 ? "green" : score >= 40 ? "amber" : "red";
+        HealthScoreCalculator.CompositeRag(score);
 
-    private static string MetricRag(decimal value, decimal green, decimal amber, bool higherIsBetter)
-    {
-        if (higherIsBetter)
-            return value >= green ? "green" : value >= amber ? "amber" : "red";
-        else
-            return value <= green ? "green" : value <= amber ? "amber" : "red";
-    }
+    private static string MetricRag(decimal value, decimal green, decimal amber, bool higherIsBetter) =>
+        HealthScoreCalculator.MetricRag(value, green, amber, higherIsBetter);
 
     // --- Sparkline (refactored: carries transitions, sprint object, and settings) ---
 

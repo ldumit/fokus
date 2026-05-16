@@ -50,7 +50,19 @@ function ragBgClass(rag: string): string {
         <span :class="ragClass(healthScore.carryOverRag)">{{ healthScore.carryOverSubScore }}</span>
         <span class="text-text-muted">Carry-Over</span>
       </div>
-      <InfoTooltip text="Individual 0-100 scores for completion, disruption, and carry-over that feed the composite." />
+      <div v-if="healthScore.qualitySubScore !== null" class="flex flex-col items-center gap-1">
+        <span :class="ragClass(healthScore.qualityRag ?? '')">{{ healthScore.qualitySubScore }}</span>
+        <span class="text-text-muted">Quality</span>
+        <InfoTooltip
+          v-if="healthScore.qualityBreakdown"
+          :text="`Coverage: ${healthScore.qualityBreakdown.coverageScore} × ${healthScore.qualityBreakdown.coverageWeight}%, Pass Rate: ${healthScore.qualityBreakdown.passRateScore} × ${healthScore.qualityBreakdown.passRateWeight}%`"
+        />
+      </div>
+      <InfoTooltip
+        :text="healthScore.qualitySubScore !== null
+          ? 'Individual 0-100 scores for completion, disruption, carry-over, and quality that feed the composite.'
+          : 'Individual 0-100 scores for completion, disruption, and carry-over that feed the composite.'"
+      />
     </div>
   </div>
 </template>

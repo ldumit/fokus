@@ -16,6 +16,7 @@ public class TicketConfiguration : AuditedEntityConfiguration<Ticket, string>
         builder.Property(t => t.IssueType).IsRequired().HasMaxLength(64);
         builder.Property(t => t.EpicKey).HasMaxLength(64);
         builder.Property(t => t.EpicName).HasMaxLength(256);
+        builder.Property(t => t.ParentTicketKey).HasMaxLength(64);
         builder.Property(t => t.AssigneeId).HasMaxLength(128);
         builder.Property(t => t.Priority).IsRequired().HasMaxLength(64);
         builder.Property(t => t.CurrentStatus).IsRequired().HasMaxLength(128);

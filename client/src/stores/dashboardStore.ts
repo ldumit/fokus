@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, SprintSummaryResponse } from '../types'
-import { getSprintSummary, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, SprintSummaryResponse, QaMetricsResponse, UntestedTicket, FailingTicket } from '../types'
+import { getSprintSummary, getClosedSprints, getSubTeams, getQaMetrics, getUntestedTickets, getFailingTickets } from '../api/analytics'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const closedSprints = ref<ClosedSprintItem[]>([])
@@ -12,6 +12,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
   const initializing = ref(false)
   const error = ref<string | null>(null)
+
+  const qaMetrics = ref<QaMetricsResponse | null>(null)
+  const untestedTickets = ref<UntestedTicket[]>([])
+  const failingTickets = ref<FailingTicket[]>([])
+  const qaLoading = ref(false)
 
   async function initialize() {
     initializing.value = true
@@ -35,11 +40,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function selectSprint(sprintId: number) {
     selectedSprintId.value = sprintId
+    clearQaState()
     await fetchSummary()
   }
 
   async function selectSubTeam(subTeam: string | null) {
     selectedSubTeam.value = subTeam
+    clearQaState()
     await fetchSummary()
   }
 
@@ -58,6 +65,44 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
+  function clearQaState() {
+    qaMetrics.value = null
+    untestedTickets.value = []
+    failingTickets.value = []
+  }
+
+  async function fetchQaMetrics() {
+    if (selectedSprintId.value === null) return
+    qaLoading.value = true
+    try {
+      qaMetrics.value = await getQaMetrics(selectedSprintId.value, selectedSubTeam.value ?? undefined)
+    } catch {
+      // non-fatal — QA section will remain hidden
+    } finally {
+      qaLoading.value = false
+    }
+  }
+
+  async function fetchUntestedTickets() {
+    if (selectedSprintId.value === null) return
+    try {
+      const result = await getUntestedTickets(selectedSprintId.value, selectedSubTeam.value ?? undefined)
+      untestedTickets.value = result.tickets
+    } catch {
+      // non-fatal
+    }
+  }
+
+  async function fetchFailingTickets() {
+    if (selectedSprintId.value === null) return
+    try {
+      const result = await getFailingTickets(selectedSprintId.value, selectedSubTeam.value ?? undefined)
+      failingTickets.value = result.tickets
+    } catch {
+      // non-fatal
+    }
+  }
+
   return {
     closedSprints,
     subTeams,
@@ -67,9 +112,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loading,
     initializing,
     error,
+    qaMetrics,
+    untestedTickets,
+    failingTickets,
+    qaLoading,
     initialize,
     selectSprint,
     selectSubTeam,
-    fetchSummary
+    fetchSummary,
+    fetchQaMetrics,
+    fetchUntestedTickets,
+    fetchFailingTickets
   }
 })

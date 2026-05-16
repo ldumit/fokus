@@ -2,6 +2,7 @@
 import { onMounted, watch, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDashboardStore } from '../stores/dashboardStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import PageLayout from '../components/PageLayout.vue'
 import PageToolbar from '../components/PageToolbar.vue'
 import BaseCard from '../components/BaseCard.vue'
@@ -10,10 +11,12 @@ import HealthScoreBadge from '../components/dashboard/HealthScoreBadge.vue'
 import MetricCardComponent from '../components/dashboard/MetricCard.vue'
 import SprintFlags from '../components/dashboard/SprintFlags.vue'
 import InfoTooltip from '../components/InfoTooltip.vue'
+import QaMetricsSection from '../components/dashboard/QaMetricsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useDashboardStore()
+const settingsStore = useSettingsStore()
 
 const leaderboardMode = ref<'features' | 'bugs'>('features')
 
@@ -24,7 +27,10 @@ onMounted(async () => {
     store.selectedSprintId = Number(sprintParam)
   }
   leaderboardMode.value = 'features'
-  await store.initialize()
+  await Promise.all([store.initialize(), settingsStore.fetchSettings()])
+  if (settingsStore.settings.xrayEnabled && store.selectedSprintId !== null) {
+    await store.fetchQaMetrics()
+  }
 })
 
 // Keep URL in sync when sprint selection changes
@@ -39,10 +45,16 @@ watch(
 
 async function onSprintChange(id: number) {
   await store.selectSprint(id)
+  if (settingsStore.settings.xrayEnabled && store.selectedSprintId !== null) {
+    await store.fetchQaMetrics()
+  }
 }
 
 async function onSubTeamChange(subTeam: string | null) {
   await store.selectSubTeam(subTeam)
+  if (settingsStore.settings.xrayEnabled && store.selectedSprintId !== null) {
+    await store.fetchQaMetrics()
+  }
 }
 
 function formatDate(dateStr: string): string {
@@ -137,6 +149,17 @@ const bugSpAnnotation = computed(() => {
           <MetricCardComponent :metric="store.summary.metrics.bugDisruptionRate" />
           <MetricCardComponent :metric="store.summary.metrics.carryOverRate" />
         </div>
+
+        <!-- QA metrics section (Xray enabled + data available) -->
+        <QaMetricsSection
+          v-if="settingsStore.settings.xrayEnabled && store.qaMetrics !== null"
+          :qa-metrics="store.qaMetrics!"
+          :untested-tickets="store.untestedTickets"
+          :failing-tickets="store.failingTickets"
+          :qa-loading="store.qaLoading"
+          @load-untested="store.fetchUntestedTickets()"
+          @load-failing="store.fetchFailingTickets()"
+        />
 
         <!-- Top epics -->
         <BaseCard v-if="store.summary.topEpics.length > 0">
