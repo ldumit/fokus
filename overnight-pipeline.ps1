@@ -1,11 +1,9 @@
 $slugs = @(
-    "F29-QaWorkloadThroughput",
     "F30-TestExecutionTimeline",
     "F31-EpicTestHealth",
     "F27-CrossSprintQaTrends"
 )
 $labels = @(
-    "F29 - QA Workload & Throughput",
     "F30 - Test Execution Timeline",
     "F31 - Epic Test Health",
     "F27 - Cross-Sprint QA Trends"
