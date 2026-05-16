@@ -250,6 +250,48 @@ public class TestExecutionRepository(FokusDbContext db)
     private static int GetStageIndex(string status, List<string> orderedStages) =>
         orderedStages.FindIndex(s => string.Equals(s, status, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Returns the set of sprint IDs (from the provided list) that have at least one non-cancelled
+    /// TestExecution attributed to that sprint per BR8 (max-sprint-id tiebreaker).
+    /// Mirrors the semantics of GetTestExecutionsForSprintAsync so that sprint inclusion/exclusion
+    /// decisions are consistent with TE loading.
+    /// </summary>
+    public async Task<HashSet<int>> GetSprintIdsWithQaDataAsync(List<int> sprintIds, CancellationToken ct = default)
+    {
+        if (sprintIds.Count == 0)
+            return [];
+
+        // Step 1: find all TE IDs linked to any ticket in the candidate sprints
+        var teIdsInCandidates = await DbContext.TestExecutionLinks
+            .Where(l => DbContext.SprintMemberships.Any(sm => sprintIds.Contains(sm.SprintId) && sm.TicketId == l.TicketKey))
+            .Select(l => l.TestExecutionIssueId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        if (teIdsInCandidates.Count == 0)
+            return [];
+
+        // Step 2: for each TE, apply BR8 tiebreaker — the TE belongs to the sprint with the
+        // maximum SprintId across all its linked tickets' memberships.
+        // Only include TEs whose max sprint is in the candidate list and is not cancelled.
+        var result = await DbContext.TestExecutionLinks
+            .Where(l => teIdsInCandidates.Contains(l.TestExecutionIssueId))
+            .Join(DbContext.SprintMemberships,
+                l => l.TicketKey,
+                sm => sm.TicketId,
+                (l, sm) => new { l.TestExecutionIssueId, sm.SprintId })
+            .GroupBy(x => x.TestExecutionIssueId)
+            .Where(g => sprintIds.Contains(g.Max(x => x.SprintId)))
+            .Join(DbContext.TestExecutions.Where(te => te.Status != "Cancelled"),
+                g => g.Key,
+                te => te.Id,
+                (g, te) => g.Max(x => x.SprintId))
+            .Distinct()
+            .ToListAsync(ct);
+
+        return [.. result];
+    }
+
     public async Task UpsertTestSetAsync(TestSet testSet, CancellationToken ct = default)
     {
         var existing = DbContext.TestSets.Local.SingleOrDefault(t => t.Id == testSet.Id)

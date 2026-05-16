@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse } from '../types'
-import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse } from '../types'
+import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams, getDeveloperQuality } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
 
 export const useDevelopersStore = defineStore('developers', () => {
@@ -16,13 +16,16 @@ export const useDevelopersStore = defineStore('developers', () => {
   const initializing = ref(false)
   const error = ref<string | null>(null)
 
-  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard'>('throughput')
+  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard' | 'quality'>('throughput')
   const bugRatio = ref<BugRatioResponse | null>(null)
   const bugRatioLoading = ref(false)
   const bugRatioError = ref<string | null>(null)
   const leaderboard = ref<LeaderboardResponse | null>(null)
   const leaderboardLoading = ref(false)
   const leaderboardError = ref<string | null>(null)
+  const quality = ref<DeveloperQualityResponse | null>(null)
+  const qualityLoading = ref(false)
+  const qualityError = ref<string | null>(null)
 
   async function initialize() {
     initializing.value = true
@@ -55,6 +58,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'leaderboard') {
       await fetchLeaderboard()
     }
+    if (activeTab.value === 'quality') {
+      await fetchQuality()
+    }
   }
 
   async function selectLastN(n: number | null) {
@@ -68,6 +74,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'leaderboard') {
       await fetchLeaderboard()
     }
+    if (activeTab.value === 'quality') {
+      await fetchQuality()
+    }
   }
 
   async function selectSubTeam(subTeam: string | null) {
@@ -79,15 +88,21 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'leaderboard') {
       await fetchLeaderboard()
     }
+    if (activeTab.value === 'quality') {
+      await fetchQuality()
+    }
   }
 
-  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard') {
+  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality') {
     activeTab.value = tab
     if (tab === 'bugRatio') {
       await fetchBugRatio()
     }
     if (tab === 'leaderboard') {
       await fetchLeaderboard()
+    }
+    if (tab === 'quality') {
+      await fetchQuality()
     }
   }
 
@@ -136,6 +151,30 @@ export const useDevelopersStore = defineStore('developers', () => {
       bugRatioError.value = e instanceof Error ? e.message : 'Failed to load bug ratio data'
     } finally {
       bugRatioLoading.value = false
+    }
+  }
+
+  async function fetchQuality() {
+    qualityLoading.value = true
+    qualityError.value = null
+    try {
+      if (sprintMode.value === 'single') {
+        quality.value = await getDeveloperQuality(
+          selectedSprintId.value ?? undefined,
+          undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      } else {
+        quality.value = await getDeveloperQuality(
+          undefined,
+          selectedLast.value ?? undefined,
+          selectedSubTeam.value ?? undefined
+        )
+      }
+    } catch (e) {
+      qualityError.value = e instanceof Error ? e.message : 'Failed to load developer quality data'
+    } finally {
+      qualityLoading.value = false
     }
   }
 
@@ -210,6 +249,9 @@ export const useDevelopersStore = defineStore('developers', () => {
     leaderboard,
     leaderboardLoading,
     leaderboardError,
+    quality,
+    qualityLoading,
+    qualityError,
     initialize,
     selectSprint,
     selectLastN,
@@ -218,6 +260,7 @@ export const useDevelopersStore = defineStore('developers', () => {
     fetchThroughput,
     fetchBugRatio,
     fetchLeaderboard,
+    fetchQuality,
     updateCapacity
   }
 })

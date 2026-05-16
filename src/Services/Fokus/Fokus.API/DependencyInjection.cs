@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<EpicProgressService>();
         services.AddScoped<CycleTimeService>();
         services.AddScoped<LeaderboardService>();
+        services.AddScoped<DeveloperQualityService>();
 
         return services;
     }

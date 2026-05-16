@@ -3,8 +3,8 @@
 **Traces to:** `docs/product/v2.md` §5.4
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment), F26 (Sprint Test Coverage — QA metric patterns, health thresholds)
-**Status:** Ready
-**Plan:** None
+**Status:** Done
+**Plan:** `docs/specs/F28-PerDeveloperStoryQuality/delivery/plan.md`
 
 ---
 

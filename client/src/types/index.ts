@@ -1020,6 +1020,52 @@ export interface UntestedTicketsResponse {
   tickets: UntestedTicket[]
 }
 
+// Developer Quality types
+export interface DeveloperQualitySprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface DeveloperQualitySprintBreakdown {
+  sprintId: number
+  stories: number
+  covered: number
+  coveragePercent: number
+  passRatePercent: number
+  untested: number
+  bugsFound: number
+  coverageRag: string | null
+  passRateRag: string | null
+  coveragePercentDelta: number | null
+  coveragePercentDeltaDirection: string | null
+  coveragePercentDeltaPolarity: string | null
+  passRatePercentDelta: number | null
+  passRatePercentDeltaDirection: string | null
+  passRatePercentDeltaPolarity: string | null
+  bugsFoundDelta: number | null
+  bugsFoundDeltaDirection: string | null
+  bugsFoundDeltaPolarity: string | null
+  coverageSparkline: SparklinePoint[] | null
+  passRateSparkline: SparklinePoint[] | null
+}
+
+export interface DeveloperQualityEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  sprintBreakdowns: DeveloperQualitySprintBreakdown[]
+  belowMedianStreak: number | null
+}
+
+export interface DeveloperQualityResponse {
+  hasQaData: boolean
+  sprints: DeveloperQualitySprintInfo[]
+  developers: DeveloperQualityEntry[]
+}
+
 export interface FailingTicketsResponse {
   tickets: FailingTicket[]
 }
