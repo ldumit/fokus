@@ -226,19 +226,19 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F26 | Sprint Test Coverage | Spec Ready | [SprintTestCoverage](specs/F26-SprintTestCoverage/definition/spec.md) | — |
-| F28 | Per-Developer Story Quality | Planned | — | — |
-| F29 | QA Workload & Throughput | Planned | — | — |
-| F30 | Test Execution Timeline | Planned | — | — |
-| F31 | Epic Test Health | Planned | — | — |
+| F26 | Sprint Test Coverage | Done | [SprintTestCoverage](specs/F26-SprintTestCoverage/definition/spec.md) | [plan](specs/F26-SprintTestCoverage/delivery/plan.md) |
+| F28 | Per-Developer Story Quality | Spec Ready | [PerDeveloperStoryQuality](specs/F28-PerDeveloperStoryQuality/definition/spec.md) | — |
+| F29 | QA Workload & Throughput | Spec Ready | [QaWorkloadThroughput](specs/F29-QaWorkloadThroughput/definition/spec.md) | — |
+| F30 | Test Execution Timeline | Spec Ready | [TestExecutionTimeline](specs/F30-TestExecutionTimeline/definition/spec.md) | — |
+| F31 | Epic Test Health | Spec Ready | [EpicTestHealth](specs/F31-EpicTestHealth/definition/spec.md) | — |
 
 **F26:** Coverage %, Execution %, Pass Rate % cards on Dashboard. Quality sub-score in sprint health score. Untested/failing ticket lists. Configurable thresholds.
 
 **F28:** Per-developer test coverage of their stories. Coverage %, pass rate, bugs found. Extension to Developers page.
 
-**F29:** New QA sidebar page. Per-person TE assignments, test runs completed, pass/fail split, stories covered. Workload distribution chart. Balance flag when one person handles >50% of executions.
+**F29:** QA Workload tab on Developers page (4th tab). Per-person TE ownership, run throughput, pass/fail split, stories covered, bugs found. Workload distribution chart + throughput trend line. Balance flag when one person handles >50% of executions for 2+ consecutive sprints.
 
-**F30:** When tests were executed relative to sprint lifecycle. Early vs. late testing. Post-sprint testing flag. Correlation with disruption timeline.
+**F30:** Test execution burnup chart on Sprints page single-sprint detail. Testing crunch flag (>50% runs in last 2 days) on Dashboard + Sprints page. Post-sprint testing indicator. Completed-but-untested tickets list. Dev-done-to-tested gap metric (median days, delta). Scope disruption correlation overlay on burnup chart.
 
 **F31:** Bottom-up epic test health from stories → TEs. Coverage %, pass rate, bugs found per epic. Extension to Epics page.
 
@@ -248,9 +248,9 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F27 | Cross-Sprint QA Trends | Planned | — | — |
+| F27 | Cross-Sprint QA Trends | Spec Ready | [CrossSprintQaTrends](specs/F27-CrossSprintQaTrends/definition/spec.md) | — |
 
-**F27:** Coverage rate, pass rate, TE volume, bugs-found-in-testing trended across sprints. Defect correlation overlay (coverage rate vs. bug ratio from F13). Multi-line chart with existing delta/sparkline patterns.
+**F27:** Dedicated QA sidebar page with cross-sprint trend charts. Quality Trends panel (coverage rate, pass rate, execution rate as percentage lines). Testing Volume panel (TE count, bugs found as grouped bars). Defect Correlation section with N+1 lag (coverage in sprint N vs bug ratio in sprint N+1) and Pearson r badge. Default last 10 sprints. Sub-team filterable.
 
 ---
 
