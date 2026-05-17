@@ -425,13 +425,6 @@ public class EpicProgressService
                 totalExecutedRuns += runs.Count(r => r.Status == TestRunStatus.Pass || r.Status == TestRunStatus.Fail);
             }
 
-            // BR4: bugs found via Blocks links from non-cancelled TEs on this ticket's own Tests-linked TEs
-            var blocksTeIds = qaData.BlocksLinksByTicket.GetValueOrDefault(ticketKey, []);
-            foreach (var teId in blocksTeIds)
-            {
-                // The Blocks link TicketKey is the bug ticket key
-                // We already have blocksLinksByTicket keyed by the linked ticket's key
-            }
         }
 
         // BR4: collect unique bug keys via Blocks links on all feature tickets' TE IDs
@@ -547,7 +540,7 @@ public class EpicProgressService
         else if (todoCount > 0 || executingCount > 0)
             testStatus = "InProgress";
         else
-            testStatus = "Passed"; // all runs are pass (or aborted only)
+            testStatus = "NoTests"; // TEs exist but all runs are aborted — no effective test results
 
         // BR6: per-ticket pass rate
         var executedRuns = passCount + failCount;

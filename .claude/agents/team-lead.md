@@ -88,6 +88,7 @@ Run these sequentially before any team launch. Apply defaults silently — infor
 3. **Jira.** If the user mentioned a Jira key, fetch it. Otherwise skip silently.
 4. **Team mode.** Standard (architect + developer + reviewer). Inform: "Standard mode, background spawn."
 5. **Spawn mode.** Background.
+6. **Commit strategy.** 2 commits (default). Inform: "2-commit strategy (plan + final)."
 
 The user can override any default by stating a preference in their launch message (e.g., "implement F26 on a new branch" or "fast mode"). Otherwise, no questions asked.
 
@@ -252,16 +253,18 @@ Architect recommends: {recommendation}
 
 ## Commit Protocol
 
-Commit at these checkpoints with user confirmation (interactive) or auto-commit (unattended):
+Default: **2 commits** per feature. The user can override (e.g., "single commit", "4 commits") in their launch message.
 
-| Checkpoint | When | Message template |
-|------------|------|------------------|
-| Post-plan | Architect plan approved | `feat({slug}): add implementation plan` |
-| Post-implementation | Developer implementation.md written | `feat({slug}): implement {short description}` |
-| Post-review | Reviewer APPROVED | `feat({slug}): finalize after review` |
-| Post-shutdown | Summary written, pipeline complete | `feat({slug}): complete pipeline` |
+| Strategy | Commits | When |
+|----------|---------|------|
+| **2 commits** (default) | Post-plan: `feat({slug}): add implementation plan` | After architect plan approved |
+| | Post-shutdown: `feat({slug}): implement {short description}` | After pipeline complete (includes code, review fixes, docs) |
+| 1 commit | Post-shutdown: `feat({slug}): implement {short description}` | Single squash at pipeline end |
+| 4 commits | Post-plan, Post-implementation, Post-review, Post-shutdown | At each pipeline phase boundary |
 
-Auto-commit at each checkpoint. No confirmation needed. The user can review commits in git history after the pipeline completes.
+**Why 2 commits:** The plan commit preserves the design if implementation needs to be reverted. Everything else (code + review fixes + docs) goes in one final commit — intermediate states aren't useful to revert independently.
+
+Auto-commit at each checkpoint. No confirmation needed.
 
 ## How You Communicate
 
@@ -379,7 +382,7 @@ Defaults:
 - **Phase failure:** Retry once, then skip the step.
 - **Reviewer fix cycles:** Up to 3, then force-accept.
 - **Escalation:** Force-accept.
-- **Commits:** Auto-commit at each checkpoint. No confirmation.
+- **Commits:** 2-commit strategy (plan + final). Auto-commit, no confirmation.
 - **Builder:** Skip. Do not ask.
 - **All pipeline artifacts are mandatory:** plan.md, implementation.md, review.md, summary.md, lessons.md, communication-log.md. Do not skip any.
 

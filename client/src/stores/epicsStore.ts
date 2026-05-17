@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
 import type { EpicProgressResponse, EpicProgressEntry } from '../types'
 import { getEpicProgress, getSubTeams } from '../api/analytics'
@@ -6,6 +6,7 @@ import { useSettingsStore } from './settingsStore'
 
 export const useEpicsStore = defineStore('epics', () => {
   const settingsStore = useSettingsStore()
+  const { settings } = storeToRefs(settingsStore)
 
   const subTeams = ref<string[]>([])
   const selectedSubTeam = ref<string | null>(null)
@@ -28,7 +29,7 @@ export const useEpicsStore = defineStore('epics', () => {
   )
 
   const isXrayEnabled = computed<boolean>(() =>
-    settingsStore.settings.xrayEnabled
+    settings.value.xrayEnabled
   )
 
   const averageTestCoverage = computed<number | null>(() =>

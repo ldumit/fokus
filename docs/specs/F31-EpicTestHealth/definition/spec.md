@@ -3,7 +3,7 @@
 **Traces to:** `docs/product/v2.md` §5.7
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment), F14 (Epic Progress — existing Epics page), F26 (Sprint Test Coverage — QA metric patterns, health thresholds)
-**Status:** Ready
+**Status:** Done
 **Plan:** `docs/specs/F31-EpicTestHealth/delivery/plan.md`
 
 ---
