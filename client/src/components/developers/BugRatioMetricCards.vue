@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BugRatioMultiSprintResponse, BugRatioSingleSprintResponse } from '../../types'
+import { useDeltaDisplay } from '../../composables/useDeltaDisplay'
 import BaseCard from '../BaseCard.vue'
 
 defineProps<{
@@ -8,18 +9,7 @@ defineProps<{
   single?: BugRatioSingleSprintResponse
 }>()
 
-function deltaIcon(direction: string | null): string {
-  if (direction === 'up') return '▲'
-  if (direction === 'down') return '▼'
-  return '—'
-}
-
-function deltaClass(polarity: string | null, direction: string | null): string {
-  if (direction === 'flat' || !direction) return 'text-text-secondary'
-  if (polarity === 'positive') return 'text-status-success'
-  if (polarity === 'negative') return 'text-status-danger'
-  return 'text-text-secondary'
-}
+const { deltaIcon, deltaClass } = useDeltaDisplay()
 </script>
 
 <template>
