@@ -2,6 +2,10 @@
 
 Navigate here before reading source files. Find the relevant entry, get business rules and key files, then read only what you need.
 
+## Glossary
+
+- [Domain Glossary](glossary.md) — canonical vocabulary for naming types, writing specs, and describing features
+
 ## Domain Model
 
 - [Sprint & Membership](domain/sprint.md) — sprint lifecycle, commitment logic, planning window

@@ -45,6 +45,7 @@ Before starting, classify the task to right-size your approach:
 5. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
 6. After each step, verify the build passes (per Build Verification in stack-rules).
 7. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
+8. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
 8. Don't commit unless asked.
 
 ## Exploration Before Implementation
@@ -72,16 +73,19 @@ When a plan step says `Skill: None` — implement from the plan's inline detail.
 
 **This is mandatory.** Every `Follow` or `Build` skill reference in a plan step triggers a Skill tool invocation before that step's code is written. If you're about to write code for a Follow step without having invoked the skill first, stop and invoke it.
 
-## Circuit Breaker
+## Debugging Protocol
 
-After 3 failed attempts on the same issue (build error, test failure, pattern mismatch):
+When a build error persists, a test fails unexpectedly, or runtime behavior is wrong:
 
-1. STOP trying variations.
-2. Document what you tried and why it failed in questions.md.
-3. Message architect for guidance.
-4. Do not continue until you get an answer.
+1. **Invoke the `diagnose` skill** before burning attempts. The skill enforces phased debugging: feedback loop → reproduce → hypothesize → instrument → fix → cleanup.
+2. If the diagnose skill resolves it, continue implementation.
+3. If 3 hypotheses are exhausted without root cause, escalate to architect with your evidence log via questions.md.
 
-This applies to build errors, test failures, and ambiguities. One hypothesis at a time — don't bundle multiple fixes. Read error messages completely; every word matters.
+**Circuit breaker still applies:** after 3 failed attempts on the same issue (across all approaches including diagnose), STOP, document in questions.md, message architect. One hypothesis at a time — don't bundle multiple fixes. Read error messages completely; every word matters.
+
+## Boy Scout
+
+After completing changes to a file, consider invoking the `boy-scout` skill for small adjacent improvements within the same file. Apply it to files you just modified — never go looking for unrelated cleanup. The skill produces a brief inline report of what was improved.
 
 ## Completion Checklist
 

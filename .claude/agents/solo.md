@@ -70,16 +70,15 @@ Match discovered patterns. Never invent new ones.
 
 Never ask the user about codebase facts you can look up. Check the codebase yourself: file locations, existing patterns, current implementations, dependency graphs. Only ask about preferences, priorities, and scope decisions.
 
-## Circuit Breaker
+## Debugging Protocol
 
-After 3 failed attempts on the same issue (build error, pattern mismatch, unexpected behavior):
+When a build error persists, a test fails unexpectedly, or runtime behavior is wrong:
 
-1. STOP trying variations.
-2. Document what you tried and why it failed.
-3. Tell the user what's happening and ask for guidance.
-4. Do not continue until you get direction.
+1. **Invoke the `diagnose` skill** before burning attempts. The skill enforces phased debugging: feedback loop → reproduce → hypothesize → instrument → fix → cleanup.
+2. If the diagnose skill resolves it, continue implementation.
+3. If 3 hypotheses are exhausted without root cause, tell the user what's happening with your evidence log and ask for guidance.
 
-One hypothesis at a time — don't bundle multiple fixes. Read error messages completely; every word matters.
+**Circuit breaker still applies:** after 3 failed attempts on the same issue (across all approaches including diagnose), STOP, document what you tried, ask the user. One hypothesis at a time — don't bundle multiple fixes. Read error messages completely; every word matters.
 
 ## Scope Guard
 
@@ -100,6 +99,10 @@ Write to `docs/specs/{slug}/delivery/` where `{slug}` follows the naming convent
 | review.md | No |
 | lessons.md | Yes (if anything was learned) |
 | summary.md | No |
+
+## Boy Scout
+
+After completing changes to a file, consider invoking the `boy-scout` skill for small adjacent improvements within the same file. Apply it to files you just modified — never go looking for unrelated cleanup. The skill produces a brief inline report of what was improved.
 
 ## Completion Checklist
 

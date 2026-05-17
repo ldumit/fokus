@@ -81,16 +81,24 @@ Derive status mechanically from file existence — don't guess.
 
 ### Pre-flight checks
 
-Run these sequentially before any team launch. Apply defaults silently — inform the user what you chose, don't ask.
+Run these sequentially before any team launch. Apply defaults silently for most checks — only ask when there's a meaningful choice (e.g., team mode with Codex).
 
 1. **Dirty tree.** Run `git status --porcelain`. If uncommitted changes exist, inform: "Working tree has uncommitted changes — continuing." (To abort or stash, the user can interrupt.)
 2. **Branch.** Stay on current branch. Inform: "Working on `{current}`."
 3. **Jira.** If the user mentioned a Jira key, fetch it. Otherwise skip silently.
-4. **Team mode.** Standard (architect + developer + reviewer). Inform: "Standard mode, background spawn."
+4. **Team mode.** Check Codex availability (`codex --version`). Then:
+   - **Codex available:** Ask the user to pick a mode:
+     ```
+     Codex is available. Which team mode?
+     1. Fast — architect + developer (developer self-reviews)
+     2. Standard (recommended) — architect + developer + reviewer
+     3. Standard + Codex — adds Codex cross-validation to review
+     ```
+   - **Codex not available:** Default to Standard. Inform: "Standard mode, background spawn."
 5. **Spawn mode.** Background.
 6. **Commit strategy.** 2 commits (default). Inform: "2-commit strategy (plan + final)."
 
-The user can override any default by stating a preference in their launch message (e.g., "implement F26 on a new branch" or "fast mode"). Otherwise, no questions asked.
+The user can override any default by stating a preference in their launch message (e.g., "implement F26 on a new branch" or "fast mode").
 
 ### For backlog features
 
@@ -98,7 +106,7 @@ When the user says "let's do {Feature}" or "implement {Feature}":
 
 1. Verify `docs/specs/{slug}/definition/spec.md` exists and has `Status: Ready`. If not, tell the user: "No spec found. Run `be po` to create one."
 2. Check if a plan already exists. If yes, inform: "Plan exists — implementing from existing plan." (User can say "re-plan" to override.)
-3. Check if Codex is available: run `codex --version` via Bash. If it succeeds, include Codex option. If it fails, skip it silently.
+3. Check Codex availability and ask team mode (same as pre-flight check #4).
 
 ### For ad-hoc work with an existing plan (refactoring, bug fixes, architecture changes)
 
@@ -106,8 +114,7 @@ When the user says "implement {PlanName}" and a plan already exists at `docs/spe
 
 1. No spec gate — ad-hoc work doesn't need a feature spec.
 2. Check the plan file exists (file existence only — do NOT read its content). If not, tell the user.
-3. Check Codex availability (same as above).
-4. Apply Standard mode by default. Inform: "Implementing from existing plan — Standard mode, background spawn."
+3. Check Codex availability and ask team mode (same as pre-flight check #4).
 5. **Start the pipeline at the developer** — skip the architect planning phase since the plan is already written. Pass the plan path to the developer; let the developer and architect read it themselves.
 6. The architect is still part of the team for done checks and answering developer questions — just not the first agent spawned.
 
@@ -131,7 +138,7 @@ When the user describes work that isn't a backlog feature and no plan exists yet
 
 When unsure, default to Standard.
 
-5. **Apply the classified mode.** Inform: "Launching {Feature} — {mode} mode, background spawn." The user can override by stating a preference in their launch message (e.g., "fast mode", "persistent"). Otherwise, no questions asked.
+5. **Ask team mode** using the same Codex-aware question from pre-flight check #4. The classification above informs your recommendation (mark it with "(Recommended)"), but let the user choose.
 
 6. **Spawn agents according to the chosen spawn mode.**
 
@@ -287,9 +294,9 @@ If tester reports `production_bug` → route back to developer for fix → archi
 
 If tester reports `green` → proceed to Teacher.
 
-### Teacher
+### Lessons Processing (optional)
 
-Spawn the teacher to process the current task's `lessons.md` only (not other lessons files). The teacher rolls unprocessed entries into skills, CLAUDE.md, architecture-reference.md, technical-debt.md, or agent files, and marks each lesson processed.
+Skip by default. After all other post-approval phases complete, ask the user: "Process lessons from this pipeline? (promotes patterns to CLAUDE.md, skills, agent files)". If yes, spawn a learner agent to process the current task's `lessons.md` only. If no, skip — lessons stay in the file for future reference.
 
 ### Builder (optional)
 
