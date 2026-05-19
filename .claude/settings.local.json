@@ -1,6 +1,6 @@
 {
   "env": {
-    "DISABLE_OMC": "true"
+    "OMC_SKIP_HOOKS": "keyword-detector"
   },
   "permissions": {
     "allow": [

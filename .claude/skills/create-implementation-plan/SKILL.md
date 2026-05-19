@@ -61,7 +61,7 @@ Before writing, ensure you have:
 
 6. **Write the plan** following `references/plan-template.md`. Output: `docs/specs/{slug}/delivery/plan.md`.
 
-7. **Apply the auto-approve gate** from `agents-workflow.md` (<=11 steps, no open questions — auto-approve and message developer).
+7. **Apply the auto-approve gate** from `agents-workflow.md` (always auto-approve; if >10 steps, consider splitting into sub-plans where each has >= 2 steps). Message team lead, never developer directly.
 
 ## Arguments
 

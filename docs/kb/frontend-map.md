@@ -13,6 +13,7 @@ Vue 3 + Pinia + Tailwind. Built with Vite into API's wwwroot/.
 | EpicsView | epicsStore | epic-progress | No sprint selector, cross-sprint always |
 | TeamView | teamStore | team roster, team config | Team management, not analytics |
 | SettingsView | settingsStore | settings, excluded-statuses, detect-workflow | Configuration UI |
+| QaTrendsView | qaTrendsStore | qa-trends | Multi-sprint only, no single-sprint mode |
 
 ## API Base
 

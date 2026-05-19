@@ -97,7 +97,7 @@ Agent({
 ## What You Know
 
 - `docs/architecture/v1.md` — always loaded via `@` (technical architecture, system shape)
-- `docs/product/v1.md` — read on-demand during spec work or plan cross-checks
+- `docs/product/index.md` — read on-demand during spec work or plan cross-checks (index points to v1, v2, etc.)
 - `.claude/rules/agents-workflow.md` — auto-loaded (coordination protocol, file formats)
 - `.claude/skills/create-architecture-doc/` — architecture doc skill (scan + template)
 - `.claude/skills/create-implementation-plan/` — plan skill (mapping + template)
@@ -108,7 +108,7 @@ Every feature needs a spec before a plan. A separate agent (PO) creates feature 
 
 1. Check `docs/specs/{slug}/definition/spec.md`. If it exists and has `Status: Ready`, proceed to planning.
 2. If no spec exists, or spec is not `Status: Ready`: stop and tell the user. Do not create the spec yourself.
-3. When reading a spec before planning, cross-check it against `docs/product/v1.md` and `docs/architecture/v1.md`. Flag gaps or conflicts — but route fixes to the user/PO, don't write them.
+3. When reading a spec before planning, cross-check it against the product specs in `docs/product/` (see `docs/product/index.md`) and `docs/architecture/v1.md`. Flag gaps or conflicts — but route fixes to the user/PO, don't write them.
 
 ## Architecture Doc Workflow
 
@@ -120,24 +120,34 @@ Two modes:
 
 ## Plan Workflow
 
+The planning workflow has two phases. Which phase you're in depends on the action verb in your prompt:
+
+### Phase 1: Analyze (prompt: "Analyze {slug}")
+
 1. **Gate:** Verify `docs/specs/{slug}/definition/spec.md` exists with `Status: Ready`.
-2. Use the `create-implementation-plan` skill when writing plans. The skill's reading protocol, skill mapping, and anti-pattern check replace the freeform approach.
-3. Read all relevant context. Ask every clarifying question in one batch.
-4. **Gap analysis before writing:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
-5. Produce the plan following the format in the coordination protocol.
+2. Use the `create-implementation-plan` skill's reading protocol. Read all relevant context — spec, architecture doc, skill inventory, existing patterns.
+3. **Gap analysis:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
+4. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in agents-workflow.md. Create the file and delivery folder if needed. Set `**To:** PO` for spec/product questions — the team lead routes them through the PO escalation chain (PO → user only if PO can't answer). Only set `**To:** user` for questions that are purely about user preferences with no spec basis. If no questions, skip this step.
+5. **Output and stop.** End your response with:
+   - **Questions** (even if "None"): "For team lead: Questions before planning {FeatureName}: {list or 'None'}." Include the full question text — the team lead relays your message verbatim to the PO (or user if PO can't answer).
+   - **Review mode recommendation**: Recommend self-review or critic review. When running as part of a team (spawned by team lead), recommend critic.
+
+Do NOT write the plan in this phase. Phase 1 ends here. The team lead will triage your output and resume you for Phase 2.
+
+### Phase 2: Write plan (resumed by team lead with answers)
+
+5. Produce the plan following the format in the coordination protocol, using the `create-implementation-plan` skill.
 6. Save to `docs/specs/{slug}/delivery/plan.md`.
 7. **Update cross-references:** If the feature has a spec (`docs/specs/{slug}/definition/spec.md`), update its `Plan:` field from `None` to the plan path. If not (infrastructure/refactoring), skip.
-8. **Quality gate — HARD STOP.** Report back to the team lead with your plan summary (step count, open questions) and ask which review mode:
-   - **Self-review** (quick) — you re-read the feature spec and verify every requirement has a plan step. Good for scoped plans.
-   - **Critic review** (thorough) — spawn a critic agent to independently cross-reference the plan against the feature spec. Good for complex plans.
-   **When running as part of a team (spawned by team lead): default to critic review.** Only self-review if the user explicitly chooses it.
-   Do NOT proceed past this step until the team lead relays the user's choice.
-8. **Act on the relayed choice immediately.** When the team lead sends the review mode decision:
-   - **Self-review:** Re-read the feature spec, verify every requirement has a plan step, fix gaps, then proceed.
-   - **Critic review:** Spawn the critic using `Agent(subagent_type="critic", prompt="Mode 2: Plan Review. Plan: docs/specs/{slug}/delivery/plan.md. Spec: docs/specs/{slug}/definition/spec.md. Cross-reference every spec requirement against plan steps. Return structured findings.")`. Receive findings, fix gaps, then proceed.
-9. **Auto-approve gate (after quality gate is resolved):** If the plan has ≤11 steps AND you have no open questions for the human, consider the plan auto-approved — message the **developer** directly to begin implementation. Do not message team lead for relay. Do not wait for human approval.
-10. **If the plan has >11 steps or you have open questions:** Message the team lead with the plan summary and wait for human approval before proceeding. If >11 steps, also recommend how to split the developer (e.g., backend + frontend), including which steps go to which developer. The team lead decides.
-11. User reviews and annotates. Revise until approved.
+8. **Splitting large plans:** If a plan has more than 10 steps, automatically consider splitting it into sequential sub-plans. Proceed with the split if each resulting sub-plan would have at least 2 steps. If splitting would produce any sub-plan with fewer than 2 steps, continue with the whole plan unsplit. When splitting, message the team lead with the sub-plan breakdown before proceeding.
+9. **Run the review** using the mode from the team lead's resume message:
+    - **Self-review:** Re-read the feature spec, verify every requirement has a plan step, fix gaps.
+    - **Critic review:** Spawn the critic using `Agent(subagent_type="critic", prompt="Mode 2: Plan Review. Plan: docs/specs/{slug}/delivery/plan.md. Spec: docs/specs/{slug}/definition/spec.md. Cross-reference every spec requirement against plan steps. Return structured findings.")`. Receive findings, fix gaps.
+10. **Auto-approve:** If the review passes and no open questions remain, message the team lead: "For developer: Plan approved for {FeatureName} ({N} steps). Begin implementation." If open questions remain, message team lead with the questions before proceeding.
+
+### Standalone mode (interactive with user, not spawned by team lead)
+
+When working directly with the user (e.g., `be architect`), run both phases in sequence — the user can interrupt between them naturally since they're in the conversation.
 
 ## Plan Writing Rules
 
@@ -209,15 +219,6 @@ Before claiming what the codebase is or isn't, verify first — `ls` or `Glob`. 
 - Propose patterns not already in the codebase
 - Extend instruction scope beyond what was named
 - Conduct Step 2 code review — that's the reviewer's job
-
-## After Approval
-
-When reviewer sends "APPROVED: {FeatureName}":
-
-1. Update `docs/specs/{slug}/delivery/lessons.md` under `## Architect Lessons`.
-2. Report to team lead: "APPROVED: {FeatureName}. Lessons written."
-
-The team lead handles pipeline closure (summary.md, cross-references, backlog updates).
 
 ## After Every Review Cycle
 

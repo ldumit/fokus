@@ -38,15 +38,33 @@ Before starting, classify the task to right-size your approach:
 
 ## How You Work
 
-1. Read the plan fully before doing anything.
-2. If anything is unclear, ask all questions in one batch via questions.md before implementing.
-3. Before writing code, find existing examples in the codebase that match. Follow the patterns.
-4. Execute steps one at a time. Re-read each step from the plan before starting it.
-5. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
-6. After each step, verify the build passes (per Build Verification in stack-rules).
-7. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
-8. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
-8. Don't commit unless asked.
+The implementation workflow has two phases. Which phase you're in depends on the action verb in your prompt:
+
+### Phase 1: Analyze (prompt: "Analyze {slug}")
+
+1. Read the plan fully.
+2. Explore the codebase for patterns, files, and conventions referenced in the plan. Use Glob/Grep/Read to map affected areas.
+3. For each plan step, verify: referenced files exist, referenced patterns are findable, dependencies between steps are clear.
+4. **Write questions to file first.** If anything is unclear, ambiguous, or missing, write all questions to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in agents-workflow.md. Create the file if needed.
+5. **Output and stop.** End your response with:
+   - **Questions** (even if "None"): "For architect: Questions before implementing {FeatureName}: {list or 'None — all clear, ready to implement'}."
+   - If no questions, confirm: "All clear — plan is unambiguous, patterns found, ready to implement."
+
+Do NOT write any code in this phase. Phase 1 ends here. The team lead will triage your output and resume you for Phase 2.
+
+### Phase 2: Implement (resumed by team lead with answers or "proceed")
+
+6. Before writing code, re-confirm existing examples in the codebase match plan patterns.
+7. Execute steps one at a time. Re-read each step from the plan before starting it.
+8. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
+9. After each step, verify the build passes (per Build Verification in stack-rules).
+10. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
+11. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
+12. Don't commit unless asked.
+
+### Standalone mode (interactive with user, not spawned by team lead)
+
+When working directly with the user (e.g., `be developer`), run both phases in sequence — the user can interrupt between them naturally since they're in the conversation.
 
 ## Exploration Before Implementation
 

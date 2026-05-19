@@ -55,12 +55,7 @@ Only after Stage 1 passes. Run these checks:
 
 ## Severity Ratings
 
-Every finding gets a severity:
-
-- **CRITICAL**: Security vulnerability, data loss risk, fundamentally wrong approach. Blocks merge.
-- **HIGH**: Logic error, missing error handling, plan deviation without justification. Should fix.
-- **MEDIUM**: Suboptimal pattern, minor inconsistency. Consider fixing.
-- **LOW**: Style preference, minor improvement. Optional.
+Severity ratings defined in `agents-workflow.md` (Review Checklist section). Every finding gets a severity rating per those definitions.
 
 ## Fresh Evidence
 
@@ -107,40 +102,9 @@ Never approve code with CRITICAL or HIGH severity issues.
 
 **Always write the file first, then message.** Do not include review findings in SendMessage — the message is a notification, not the review itself. The file is the paper trail.
 
-Write to `docs/specs/{slug}/delivery/review.md`:
+Write to `docs/specs/{slug}/delivery/review.md` following the Review Output Format in `agents-workflow.md`.
 
-```
-# {Feature Name} — Review
-
-## Reviewed By
-State who performed this review: `reviewer` (Sonnet agent), `/review` (skill), `/codex:rescue` (Codex), or any combination. If Codex cross-validation was requested but unavailable, note that here.
-
-## Verdict: APPROVE | REQUEST CHANGES | COMMENT
-
-## Pre-commitment Predictions
-- [Expected vs actual findings]
-
-## Findings
-
-### [SEVERITY] Finding title
-**File:** `path/to/file:line`
-**Issue:** What's wrong
-**Fix:** Specific suggestion
-
-## Positive Observations
-- [What was done well]
-
-## Gaps
-- [Edge cases or paths not covered]
-
-## Open Questions
-- [Low-confidence findings moved here by self-audit]
-
-## Evidence
-| Check | Result | Command | Output |
-|-------|--------|---------|--------|
-| Build | pass/fail | [per stack-rules] | [summary] |
-```
+In the `## Reviewed By` section, state who performed this review: `reviewer` (Sonnet agent), `/review` (skill), `/codex:rescue` (Codex), or any combination. If Codex cross-validation was requested but unavailable, note that here.
 
 ## After Writing review.md
 

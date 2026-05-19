@@ -16,8 +16,9 @@ The `{slug}` identifies a unit of work and follows these conventions:
 
 The team lead or PO assigns the slug at the start of each pipeline run and passes it to all downstream agents. Agents never derive the slug — they use exactly what was passed.
 
-Folder layout per slug:
+Standard paths:
 ```
+docs/backlog.md                              ← feature sequence, dependencies, status
 docs/specs/{slug}/
   definition/   ← spec.md (or epic.md / bug.md), help.tooltips.md, images
   delivery/     ← plan.md, implementation.md, review.md, lessons.md, summary.md, communication-log.md
@@ -77,7 +78,11 @@ Human → PO (shape feature → write spec)
           ↓                     ↓ findings
      Status: Ready         PO fixes gaps → Status: Ready
                     ↓
-Human → architect (plan)
+Human → architect (analyze — Phase 1)
+                    ↓
+              questions checkpoint (team lead triages)
+                    ↓
+         architect (write plan — Phase 2)
                     ↓
          architect offers: self-review or critic?
           ↓ self                ↓ critic
@@ -85,9 +90,13 @@ Human → architect (plan)
           ↓                     ↓ findings
      plan approved         architect fixes gaps → plan approved
                     ↓
-         auto-approve if ≤11 steps & no open questions, else human approves
+         auto-approve always (split if >10 steps and each sub-plan >= 2 steps)
                     ↓
-              developer (implement → implementation.md)
+              developer (analyze plan — Phase 1)
+                    ↓
+              questions checkpoint (team lead triages)
+                    ↓
+              developer (implement — Phase 2 → implementation.md)
                     ↓
               architect (Step 1: done check + write lessons)
                ↓ fail          ↓ pass
@@ -102,6 +111,11 @@ Human → architect (plan)
 ## Message Handoffs (all via team lead)
 
 Each handoff: trigger → sender → team lead action → receiver.
+
+### Developer → Team Lead: Analysis complete (Phase 1)
+**Trigger:** Developer finishes reading plan and exploring codebase.
+**Developer says:** "For architect: Questions before implementing {FeatureName}: {list}" OR "All clear — plan is unambiguous, patterns found, ready to implement."
+**Team lead:** If questions → forward to architect. If architect's answer would reverse a user decision → ask user first. If "all clear" → resume developer with "Implement."
 
 ### Developer → Team Lead → Architect: Ready for review
 **Trigger:** Any implementation round complete — implementation.md written/updated.
@@ -247,16 +261,18 @@ Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summar
 
 ## Questions File Format
 
-Written by developer when blocked. Architect answers inline.
+Written by any agent when blocked or needing clarification. The recipient answers inline. All questions go in one file — `docs/specs/{slug}/delivery/questions.md`.
+
+**Write first, message second.** Every agent must write its questions to the file before sending them as a message. The file is the log; the message is the notification.
 
 ```
 # {Feature Name} — Questions
 
 ## Q1: [Short title]
-**From:** developer
-**To:** architect
+**From:** [agent role]
+**To:** [agent role, "PO", or "user" — see routing below]
 **Status:** Open | Answered | Resolved
-**Step:** [Plan step number and name]
+**Step:** [Plan step number and name, or "Phase 1 analysis" if pre-plan]
 **File:** [File being worked on, if relevant]
 
 **Context:** [What was being done, what was tried, what is unclear]
@@ -264,13 +280,15 @@ Written by developer when blocked. Architect answers inline.
 **Question:** [Specific question or decision needed]
 
 ### Answer
-[Architect fills this in, sets Status → Answered]
+[Recipient fills this in, sets Status → Answered]
 ```
 
 **Rules:**
 - One question per section. Multiple blockers = multiple sections.
-- Include enough context that architect can answer without reading developer's work.
+- Include enough context that the recipient can answer without reading the sender's work.
 - If the answer changes the plan, architect updates the plan. Plan stays source of truth.
+- Questions are numbered sequentially across the entire file (Q1, Q2, Q3...) regardless of sender.
+- **To field routing:** Set `To: PO` for spec/product questions (the team lead routes through the PO escalation chain: PO answers from spec → user only if PO can't cite a section). Set `To: architect` for technical/plan questions from the developer. Set `To: user` only for pure preference questions with no spec or technical basis.
 
 ## Lessons File Format
 

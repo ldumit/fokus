@@ -71,11 +71,7 @@ Derive status mechanically from file existence — don't guess.
 
 ## Agent Selection
 
-**Pipeline roles** (architect, developer, reviewer, tester, teacher, builder) → always use project agents from `.claude/agents/`. Never substitute OMC equivalents (oh-my-claudecode:planner, oh-my-claudecode:executor, oh-my-claudecode:architect) for pipeline work.
-
-**OMC pipeline orchestration** (oh-my-claudecode:team, oh-my-claudecode:autopilot, oh-my-claudecode:ralph) → never replaces the project pipeline.
-
-**OMC specialists** (oh-my-claudecode:debugger, oh-my-claudecode:security-reviewer, oh-my-claudecode:tracer, oh-my-claudecode:code-simplifier, oh-my-claudecode:designer, etc.) → available for standalone tasks outside the pipeline when the user requests them or the task benefits from specialized analysis.
+Follow the agent selection rules in `pipeline-guardrails.md` (auto-loaded).
 
 ## Launching a Team
 
@@ -95,7 +91,13 @@ Run these sequentially before any team launch. Apply defaults silently for most 
      3. Standard + Codex — adds Codex cross-validation to review
      ```
    - **Codex not available:** Default to Standard. Inform: "Standard mode, background spawn."
-5. **Spawn mode.** Background.
+5. **Spawn mode.** Ask the user to pick a spawn mode:
+     ```
+     Which spawn mode?
+     1. Background (recommended) — agents spawned in background, resumed via SendMessage.
+     2. Foreground — agents run in foreground, blocking until complete. Simpler flow, results inline.
+     ```
+     Neither mode survives `/resume`, `/compact`, or session restarts — agents are killed. Resume across sessions uses the communication log (see Resume section).
 6. **Commit strategy.** 2 commits (default). Inform: "2-commit strategy (plan + final)."
 
 The user can override any default by stating a preference in their launch message (e.g., "implement F26 on a new branch" or "fast mode").
@@ -150,46 +152,49 @@ When unsure, default to Standard.
 
    **Why resume-first:** Resumed agents retain their full transcript/context from prior work — cheaper, faster, and more consistent. Fresh spawns lose all prior context and re-read everything.
 
-   Start with the architect:
-   ```
-   Agent(subagent_type="architect", run_in_background=true, name="architect",
-         prompt="You are the architect on team {Feature}. Read .claude/agents/architect.md. {task}")
-   ```
+   Start with the architect using a minimal prompt (see Message Templates below).
 
-   **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent.
+   **Track agent IDs throughout the pipeline run.** When an agent completes, note the agent ID from the launch result. Use that ID for all subsequent `SendMessage` calls to that agent. **Never use the agent name** — name-based addressing has a known bug (silently fails for completed agents).
 
    Spawn the next agent type only when the current one completes and you've triaged its output. The pipeline is sequential — architect → developer → architect (done check) → reviewer.
 
-   When an agent completes (you get the background notification), read its output, triage any messages it produced, then decide:
-   - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **resume the same agent** via `SendMessage(to: agentId)` with the answer.
-   - If the agent wrote implementation.md → **resume the next agent** via `SendMessage(to: agentId)` if it was already spawned, or spawn it for the first time if not.
-   - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
+   When an agent completes (you get the background notification):
+   1. **Relay the agent's full output to the user verbatim.** The user cannot see agent messages — you are their only window. Show the output first, before any routing or triage.
+   2. Triage any messages the agent produced, then decide:
+      - If the agent wrote questions.md → read it, check if it needs user input, handle accordingly. Then **resume the same agent** via `SendMessage(to: agentId)` with the answer.
+      - If the agent wrote implementation.md → **resume the next agent** via `SendMessage(to: agentId)` if it was already spawned, or spawn it for the first time if not.
+      - If the agent's output contains a decision that contradicts user requirements → ask the user before proceeding.
 
    **Key:** Use `SendMessage` to resume agents across ALL phases (same phase and cross-phase). Only use `Agent` to spawn the first instance of each agent type. Fall back to a fresh `Agent` spawn only if `SendMessage` returns "not addressable."
+
+### Spawn Mode: Foreground
+
+   Spawn agents using the `Agent` tool without `run_in_background` (default). The call blocks until the agent completes or times out. Results are returned inline.
+
+   **Agent IDs still matter.** Every `Agent` call returns an `agentId` in its result. Track it — you need it to resume the agent later. **Do not use the agent name** for `SendMessage` after a foreground agent completes — name-based addressing silently fails for completed foreground agents. Always use the agent ID.
+
+   **Resume via SendMessage works.** After a foreground agent completes (or times out), resume it with `SendMessage(to: agentId)`. The agent retains its full conversation history — same as background mode.
+
+   **Timeout recovery.** Foreground agents can stall on large tasks (stream idle timeout after ~10 min, or watchdog kill after 600s of no progress). When this happens:
+   1. Check what work was completed: `git diff --name-only`, check for output files.
+   2. Resume via `SendMessage(to: agentId)` with a message describing what's done and what's remaining.
+   3. If resume stalls again, spawn a fresh agent with explicit context: list completed steps, list remaining steps, reference the plan.
+   4. For tasks touching 20+ files, proactively split into multiple agent runs (e.g., "implement Steps 1-4" then "implement Steps 5-8").
+
+   **Pipeline flow:** Same sequential pipeline as Background mode. The only difference is blocking vs non-blocking execution.
 
 ### Spawn Mode: Persistent
 
    Use `TeamCreate` to create a persistent team. All agents spawn once and stay alive — use `SendMessage` to hand off between phases instead of respawning.
 
-   Create the team with all required agents upfront:
-   ```
-   TeamCreate(name="{Feature}", teammates=[
-     { name: "architect", agentType: "architect", prompt: "You are the architect on team {Feature}. Read .claude/agents/architect.md. Wait for your task." },
-     { name: "developer", agentType: "developer", prompt: "You are the developer on team {Feature}. Read .claude/agents/developer.md. Wait for your task." },
-     { name: "reviewer", agentType: "reviewer", prompt: "You are the reviewer on team {Feature}. Read .claude/agents/reviewer.md. Wait for your task." }
-   ])
-   ```
-   Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
+   Create the team with all required agents upfront (use minimal prompts — see Message Templates below). Omit reviewer for Fast mode. Add Codex instructions to reviewer prompt for Standard + Codex.
 
-   Pipeline flow via `SendMessage`:
-   1. `SendMessage(to: "architect", message: "Plan {Feature}. Spec: docs/specs/{slug}/definition/spec.md. Save to docs/specs/{slug}/delivery/plan.md.")`
-   2. When architect reports done → `SendMessage(to: "developer", message: "Implement {Feature}. Plan: docs/specs/{slug}/delivery/plan.md.")`
-   3. When developer reports done → `SendMessage(to: "architect", message: "Step 1 done check for {Feature}. Plan + implementation.md. Write lessons to lessons.md after passing.")`
-   4. When architect passes (lessons already written) → `SendMessage(to: "reviewer", message: "Step 2 code review for {Feature}.")`
-   5. Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
-   6. When approved → team lead writes summary.md and updates cross-references directly. No architect wake-up needed.
+   Pipeline flow via `SendMessage` using the message templates:
+   1. Architect plans → 2. Developer implements → 3. Architect done check → 4. Reviewer reviews.
+   Fix cycles: `SendMessage` to developer, then back to reviewer — same agents, no respawn.
+   When approved → team lead writes summary.md and updates cross-references directly. No architect wake-up needed.
 
-   **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. Use Background mode for unattended/overnight runs.
+   **Limitations:** Persistent teammates do not survive `/resume`, `/compact`, or session restarts. No spawn mode survives these — use the communication log Resume flow to continue across sessions.
 
    **How to start:** Use `TeamCreate` directly — it spawns agents in-process. Do NOT pass tmux-related flags or attempt to use a tmux backend; in-process is the correct mode for persistent teams.
 
@@ -201,24 +206,59 @@ When unsure, default to Standard.
 
 The pipeline runs per `.claude/rules/agents-workflow.md`.
 
+## Message Templates
+
+Agents already know their job from their agent files. **Do not restate their instructions, steps, or file conventions in the prompt.** Only pass what they can't derive: the slug and the spec/plan path.
+
+**First spawn:** `{action} {slug}.` — e.g., `Analyze F30-OpenActions.`, `Implement F30-OpenActions.`, `Review F30-OpenActions.`
+
+**Resume:** `{action}.` — e.g., `Write the plan. Answers: {answers}. Review mode: critic.`, `Implement. Answers: {answers or "None"}.`, `Step 1 done check.`, `Fix findings in review.md.`, `Re-review after fixes.`
+
+The architect planning phase always uses two spawns: first spawn with `Analyze {slug}` (Phase 1), then resume with `Write the plan.` (Phase 2) after triaging questions. See Architect Questions Checkpoint below.
+
+The developer implementation phase always uses two spawns: first spawn with `Analyze {slug}` (Phase 1), then resume with `Implement.` (Phase 2) after triaging questions. See Developer Questions Checkpoint below.
+
+All paths (spec, plan, delivery artifacts, backlog) are derivable from the slug via the standard paths in agents-workflow.md. Resumed agents already have the slug and full context from their previous work.
+
+**Why minimal:** Over-specifying overrides the agent's built-in flow — checkpoints get skipped, review mode choices get pre-decided, and the agent loses its ability to stop and ask. Trust the agent file.
+
 ## Architect Questions Checkpoint
 
-After the architect finishes analyzing the spec (before writing the plan), the architect sends a questions list — even if empty:
+The architect planning phase is always two invocations — this is how the questions checkpoint is enforced, since agents cannot pause mid-execution.
 
-"For team lead: Questions before planning {Feature}: {list or 'None'}."
+**Phase 1: Analyze.** Spawn architect with `Analyze {slug}.` The architect reads the spec, does gap analysis, and outputs questions + review mode recommendation. It does NOT write the plan.
 
-If the list is empty ("None"), acknowledge and let the architect proceed to write the plan.
+**Triage.** When Phase 1 completes, read the architect's output:
+- If questions exist → route them to the **PO agent** for answers:
+  1. Spawn the PO in question-answering mode (see PO agent docs) with the questions and the spec path.
+  2. The PO must cite a specific spec section for each answer. If the PO cannot find a citation → the PO escalates to the user.
+  3. Collect the PO's answers for the review mode question below.
+- **Ask the user for review mode** (attended mode). Relay the architect's output, then ask: critic or self-review? In `[UNATTENDED]` mode, auto-default to self-review without asking.
 
-If questions exist, route them to the **PO agent** for answers:
-1. Spawn the PO in question-answering mode (see PO agent docs) with the questions and the spec path.
-2. The PO must cite a specific spec section for each answer. If the PO cannot find a citation → the PO escalates to the user.
-3. Forward the PO's answers to the architect.
+**Phase 2: Write plan.** Resume the architect via `SendMessage` (same agent ID from Phase 1): `Write the plan. Answers: {answers or "None — no questions"}. Review mode: {critic or self-review}.`
+
+The architect writes the plan, runs the review, and auto-approves if no open questions remain.
 
 **The same routing applies to critic ambiguities.** If the critic finds spec ambiguities or gaps that need product decisions, route them to the PO before escalating to the user.
 
 **Escalation chain:** Architect/Critic question → PO (answers from spec) → User (only if PO can't answer with a citation).
 
 This checkpoint catches ambiguities early — before they become plan deviations.
+
+## Developer Questions Checkpoint
+
+The developer implementation phase is always two invocations — same reasoning as the architect: agents cannot pause mid-execution.
+
+**Phase 1: Analyze.** Spawn developer with `Analyze {slug}.` The developer reads the plan, explores the codebase for referenced patterns and files, and outputs questions or "all clear." It does NOT write any code.
+
+**Triage.** When Phase 1 completes, read the developer's output:
+- If questions exist → route them to the **architect** for answers. Resume the architect via `SendMessage` with the developer's questions. The architect answers inline and updates the plan if needed.
+- If the architect's answer would reverse a user decision, change scope, or remove a plan step → **ask the user first** before forwarding.
+- If "all clear" → proceed directly to Phase 2.
+
+**Phase 2: Implement.** Resume the developer via `SendMessage` (same agent ID from Phase 1): `Implement. Answers: {answers or "None — all clear"}.`
+
+The developer implements the plan steps, writes implementation.md, and messages the team lead when done.
 
 ## Plan Approval
 
@@ -228,7 +268,25 @@ The user can request to review the plan by saying so in their launch message. Ot
 
 ## Phase Failure Handling
 
-When an agent reports failure (build error, tool failure, unexpected state) — not a review cycle rejection:
+### Agent Timeout / Stall Recovery
+
+When an agent times out (stream idle timeout) or stalls (watchdog kill after 600s of no progress):
+
+1. **Assess progress.** Run `git diff --name-only` and check for output files (implementation.md, questions.md). Map completed work to plan steps.
+2. **Resume first.** Use `SendMessage(to: agentId)` — the agent retains full context. Tell it what's done and what remains:
+   ```
+   You timed out. Completed: Steps 1-6 (list files). Remaining: Steps 7-8 (list files). Continue from Step 7.
+   ```
+3. **If resume stalls again**, the task is too large for one agent run. Spawn a fresh agent scoped to just the remaining steps:
+   ```
+   Implement Steps 7-8 of F31-DarkLightTheme. Plan: docs/specs/{slug}/delivery/plan.md.
+   Steps 1-6 are already done. Only do Steps 7-8: {brief description}. Files to modify: {list}.
+   ```
+4. **Proactive splitting.** For plans touching 20+ files, split the developer work upfront into 2-3 agent runs by step ranges. Don't wait for a timeout — prevent it.
+
+### Other Phase Failures
+
+When an agent reports failure (build error, tool failure, unexpected state) — not a review cycle rejection or timeout:
 
 Present the user with:
 ```
@@ -279,7 +337,7 @@ Auto-commit at each checkpoint. No confirmation needed.
 - When the user asks "what's next?", give direct recommendations based on the dependency order in the backlog.
 - If the user wants to skip ahead in the sequence, flag missing dependencies but don't refuse.
 - Keep it concise. You're a decision-making aid, not a narrator.
-- **When an agent message requires human approval, relay the agent's exact message to the user.** Do not summarize or rewrite it — the agent's message already contains the reasoning and options.
+- **In attended mode, always relay agent messages verbatim to the user.** Do not summarize, rewrite, or add your own analysis. The agents' messages already contain the reasoning and context. Your role is communication, not interpretation — the user decides, agents auto-decide within their scope, you route.
 - **You are the message hub.** All agent messages come to you. Triage and forward — see Message Dispatching section above.
 
 ## Post-Approval Phases
@@ -338,7 +396,7 @@ Format:
 
 Header fields:
 - **Branch** — set once at team launch, never updated.
-- **Step** — updated at each phase transition. Values: `architect-plan`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `tester`, `teacher`, `builder`, `done`.
+- **Step** — updated at each phase transition. Values: `architect-plan`, `developer-analyze`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `tester`, `teacher`, `builder`, `done`.
 - **Cycle** — updated when review cycles change. Initial: `0/3`. Reset to `0/3` after each approval phase.
 
 Rules:
@@ -385,7 +443,8 @@ Defaults:
 - **Plan approval:** Auto-approve regardless of step count. Do not wait for human.
 - **Plan review:** Architect self-review. No critic.
 - **Architect questions:** PO answers from spec context if available. Otherwise architect decides.
-- **Developer questions:** Architect answers directly. No human escalation.
+- **Developer questions (Phase 1):** Architect answers directly. No human escalation. If "all clear," proceed to Phase 2 immediately.
+- **Developer questions (mid-implementation):** Architect answers directly. No human escalation.
 - **Phase failure:** Retry once, then skip the step.
 - **Reviewer fix cycles:** Up to 3, then force-accept.
 - **Escalation:** Force-accept.
@@ -397,6 +456,7 @@ If `[UNATTENDED]` is absent, follow the **autonomous interactive flow** — appl
 
 ## What You Never Do
 
+- **Make decisions in attended mode.** You are a router, not a decision-maker. Never decide on behalf of the user: review mode, scope, approach, priorities, plan approval, or any choice an agent presents. Never auto-proceed past a checkpoint. Never summarize, rewrite, or add your own analysis to agent messages — relay them verbatim and wait. The user decides. Agents auto-decide within their defined scope. You route.
 - Participate in the implementation pipeline (no coding, no reviewing, no planning)
 - Read plan content, implementation details, or review findings to relay them — let agents communicate directly; only read files for routing decisions (e.g., checking Status fields, checking if files exist)
 - Write feature specs or plans — that's the architect's job
