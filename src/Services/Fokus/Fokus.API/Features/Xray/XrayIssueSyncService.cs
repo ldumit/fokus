@@ -13,11 +13,12 @@ public class XrayIssueSyncService(
     IXrayClient xrayClient,
     AppSettingsRepository appSettingsRepository,
     TestExecutionRepository testExecutionRepository,
+    TicketRepository ticketRepository,
     DeveloperRepository developerRepository,
     ILogger<XrayIssueSyncService> logger)
 {
-    public async Task<XraySyncResult> SyncXrayForIssuesAsync(
-        IReadOnlyList<JiraIssue> jiraIssues,
+    public async Task<XraySyncResult> SyncTestExecutionsForProjectAsync(
+        string projectKey,
         CancellationToken ct)
     {
         var warnings = new List<string>();
@@ -26,29 +27,61 @@ public class XrayIssueSyncService(
         if (!settings.XrayEnabled || string.IsNullOrEmpty(settings.XrayClientId) || string.IsNullOrEmpty(settings.XrayClientSecret))
             return new XraySyncResult(0, 0, 0, warnings);
 
-        var linked = ExtractLinkedIssues(jiraIssues);
-        if (linked.TeIssueKeys.Count == 0 && linked.TestSets.Count == 0)
-            return new XraySyncResult(0, 0, 0, warnings);
-
         var bearerToken = await AuthenticateAsync(settings, warnings, ct);
         if (bearerToken is null)
             return new XraySyncResult(0, 0, 0, warnings);
 
-        var xrayResult = await FetchTestExecutionsAsync(bearerToken, linked.TeIssueKeys, warnings, ct);
+        XrayTestExecutionResult xrayResult;
+        try
+        {
+            xrayResult = await xrayClient.GetAllProjectTestExecutionsAsync(bearerToken, projectKey, ct);
+        }
+        catch (Exception ex)
+        {
+            var warning = $"Xray project TE fetch failed: {ex.Message}";
+            logger.LogWarning(warning);
+            warnings.Add(warning);
+            return new XraySyncResult(0, 0, 0, warnings);
+        }
+
+        if (xrayResult.TestExecutions.Count == 0)
+            return new XraySyncResult(0, 0, 0, warnings);
+
+        // Collect all candidate ticket keys referenced in issuelinks across TEs and their test cases
+        var candidateKeys = xrayResult.TestExecutions
+            .SelectMany(te => te.IssueLinks.Select(l => l.OutwardIssueKey ?? l.InwardIssueKey)
+                .Concat(te.TestCases.SelectMany(tc => tc.IssueLinks.Select(l => l.OutwardIssueKey ?? l.InwardIssueKey))))
+            .Where(k => !string.IsNullOrEmpty(k))
+            .Select(k => k!)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        var knownTicketKeys = await ticketRepository.GetExistingKeysAsync(candidateKeys, ct);
+
+        var teLinkMap = BuildLinkMap(xrayResult.TestExecutions, knownTicketKeys);
+
+        var teIssueKeys = xrayResult.TestExecutions
+            .Select(te => te.IssueKey ?? te.IssueId)
+            .Where(k => !string.IsNullOrEmpty(k))
+            .ToList();
+
         var xrayTeByKey = xrayResult.TestExecutions.ToDictionary(t => t.IssueKey ?? t.IssueId, t => t);
 
         var (testExecutionsSynced, testRunsSynced) = await SyncTestExecutionsAsync(
-            linked.TeIssueKeys, jiraIssues, linked.TeLinkMap, xrayTeByKey, warnings, ct);
+            teIssueKeys, teLinkMap, xrayTeByKey, warnings, ct);
 
-        var testSetsSynced = await SyncTestSetsAsync(linked.TestSets, warnings, ct);
-
-        return new XraySyncResult(testExecutionsSynced, testRunsSynced, testSetsSynced, warnings);
+        return new XraySyncResult(testExecutionsSynced, testRunsSynced, 0, warnings);
     }
 
-    private static LinkedIssues ExtractLinkedIssues(IReadOnlyList<JiraIssue> jiraIssues)
+    public async Task<int> SyncTestSetsFromIssuesAsync(
+        List<JiraIssue> jiraIssues,
+        CancellationToken ct)
     {
-        var teIssueKeys = new List<string>();
-        var teLinkMap = new Dictionary<string, List<(string TicketKey, TestExecutionLinkType LinkType)>>();
+        var warnings = new List<string>();
+
+        var settings = await appSettingsRepository.GetAsync(ct);
+        if (!settings.XrayEnabled)
+            return 0;
+
         var testSets = new Dictionary<string, (string Id, string Key, string Summary, string? AssigneeId, string Status)>();
 
         foreach (var issue in jiraIssues)
@@ -58,59 +91,75 @@ public class XrayIssueSyncService(
             foreach (var link in issue.Fields.Issuelinks)
             {
                 var linkTypeName = link.Type?.Name ?? "";
-
-                // "Test" link type covers "Tests"/"is tested by"
-                // "Blocks" link type covers "blocks"/"is blocked by"
-                var isTestLink = linkTypeName.Equals("Test", StringComparison.OrdinalIgnoreCase);
-                var isBlocksLink = linkTypeName.Equals("Blocks", StringComparison.OrdinalIgnoreCase);
-
-                if (!isTestLink && !isBlocksLink) continue;
+                if (!linkTypeName.Equals("Test", StringComparison.OrdinalIgnoreCase)) continue;
 
                 var linkedIssue = link.OutwardIssue ?? link.InwardIssue;
                 if (linkedIssue is null) continue;
 
                 var linkedType = linkedIssue.Fields.Issuetype?.Name ?? "";
+                if (!linkedType.Equals("Test Set", StringComparison.OrdinalIgnoreCase)) continue;
 
-                if (isTestLink && linkedType.Equals("Test Execution", StringComparison.OrdinalIgnoreCase))
+                var tsKey = linkedIssue.Key;
+                if (!testSets.ContainsKey(tsKey))
                 {
-                    var teKey = linkedIssue.Key;
-                    if (!teIssueKeys.Contains(teKey))
-                        teIssueKeys.Add(teKey);
-
-                    if (!teLinkMap.ContainsKey(teKey))
-                        teLinkMap[teKey] = [];
-
-                    teLinkMap[teKey].Add((issue.Key, TestExecutionLinkType.Tests));
-                }
-                else if (isTestLink && linkedType.Equals("Test Set", StringComparison.OrdinalIgnoreCase))
-                {
-                    var tsKey = linkedIssue.Key;
-                    if (!testSets.ContainsKey(tsKey))
-                    {
-                        testSets[tsKey] = (
-                            linkedIssue.Id,
-                            tsKey,
-                            linkedIssue.Fields.Summary,
-                            linkedIssue.Fields.Assignee?.AccountId,
-                            linkedIssue.Fields.Status?.Name ?? "Unknown"
-                        );
-                    }
-                }
-                else if (isBlocksLink && linkedType.Equals("Test Execution", StringComparison.OrdinalIgnoreCase))
-                {
-                    var teKey = linkedIssue.Key;
-                    if (!teIssueKeys.Contains(teKey))
-                        teIssueKeys.Add(teKey);
-
-                    if (!teLinkMap.ContainsKey(teKey))
-                        teLinkMap[teKey] = [];
-
-                    teLinkMap[teKey].Add((issue.Key, TestExecutionLinkType.Blocks));
+                    testSets[tsKey] = (
+                        linkedIssue.Id,
+                        tsKey,
+                        linkedIssue.Fields.Summary,
+                        linkedIssue.Fields.Assignee?.AccountId,
+                        linkedIssue.Fields.Status?.Name ?? "Unknown"
+                    );
                 }
             }
         }
 
-        return new LinkedIssues(teIssueKeys, teLinkMap, testSets);
+        return await SyncTestSetsAsync(testSets, warnings, ct);
+    }
+
+    private static Dictionary<string, List<(string TicketKey, TestExecutionLinkType LinkType)>> BuildLinkMap(
+        List<XrayTestExecutionDto> executions,
+        HashSet<string> knownTicketKeys)
+    {
+        var linkMap = new Dictionary<string, List<(string TicketKey, TestExecutionLinkType LinkType)>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var te in executions)
+        {
+            var teKey = te.IssueKey ?? te.IssueId;
+            if (string.IsNullOrEmpty(teKey)) continue;
+
+            if (!linkMap.ContainsKey(teKey))
+                linkMap[teKey] = [];
+
+            // Test case issuelinks: "Test" link type → Tests (test-case-mediated coverage)
+            foreach (var tc in te.TestCases)
+            {
+                foreach (var link in tc.IssueLinks)
+                {
+                    if (!link.LinkTypeName.Equals("Test", StringComparison.OrdinalIgnoreCase)) continue;
+                    var ticketKey = link.OutwardIssueKey ?? link.InwardIssueKey;
+                    if (string.IsNullOrEmpty(ticketKey) || !knownTicketKeys.Contains(ticketKey)) continue;
+                    if (!linkMap[teKey].Any(l => l.TicketKey == ticketKey && l.LinkType == TestExecutionLinkType.Tests))
+                        linkMap[teKey].Add((ticketKey, TestExecutionLinkType.Tests));
+                }
+            }
+
+            // TE-level issuelinks: "Test" → Tests, "Blocks" → Blocks
+            foreach (var link in te.IssueLinks)
+            {
+                var isTest = link.LinkTypeName.Equals("Test", StringComparison.OrdinalIgnoreCase);
+                var isBlocks = link.LinkTypeName.Equals("Blocks", StringComparison.OrdinalIgnoreCase);
+                if (!isTest && !isBlocks) continue;
+
+                var ticketKey = link.OutwardIssueKey ?? link.InwardIssueKey;
+                if (string.IsNullOrEmpty(ticketKey) || !knownTicketKeys.Contains(ticketKey)) continue;
+
+                var linkType = isTest ? TestExecutionLinkType.Tests : TestExecutionLinkType.Blocks;
+                if (!linkMap[teKey].Any(l => l.TicketKey == ticketKey && l.LinkType == linkType))
+                    linkMap[teKey].Add((ticketKey, linkType));
+            }
+        }
+
+        return linkMap;
     }
 
     private async Task<string?> AuthenticateAsync(AppSettings settings, List<string> warnings, CancellationToken ct)
@@ -128,25 +177,8 @@ public class XrayIssueSyncService(
         }
     }
 
-    private async Task<XrayTestExecutionResult> FetchTestExecutionsAsync(
-        string bearerToken, List<string> teIssueKeys, List<string> warnings, CancellationToken ct)
-    {
-        try
-        {
-            return await xrayClient.GetTestExecutionsAsync(bearerToken, teIssueKeys, ct);
-        }
-        catch (Exception ex)
-        {
-            var warning = $"Xray GraphQL query failed: {ex.Message}";
-            logger.LogWarning(warning);
-            warnings.Add(warning);
-            return new XrayTestExecutionResult();
-        }
-    }
-
     private async Task<(int TestExecutionsSynced, int TestRunsSynced)> SyncTestExecutionsAsync(
         List<string> teIssueKeys,
-        IReadOnlyList<JiraIssue> jiraIssues,
         Dictionary<string, List<(string TicketKey, TestExecutionLinkType LinkType)>> teLinkMap,
         Dictionary<string, XrayTestExecutionDto> xrayTeByKey,
         List<string> warnings,
@@ -162,9 +194,6 @@ public class XrayIssueSyncService(
                 xrayTeByKey.TryGetValue(teKey, out var xrayTe);
 
                 var issueId = xrayTe?.IssueId;
-                if (string.IsNullOrEmpty(issueId))
-                    issueId = FindTeIssueId(jiraIssues, teKey);
-
                 if (string.IsNullOrEmpty(issueId))
                 {
                     warnings.Add($"Could not determine issue ID for Test Execution {teKey} — skipped.");
@@ -280,21 +309,6 @@ public class XrayIssueSyncService(
         return testSetsSynced;
     }
 
-    private static string? FindTeIssueId(IReadOnlyList<JiraIssue> jiraIssues, string teKey)
-    {
-        foreach (var issue in jiraIssues)
-        {
-            if (issue.Fields.Issuelinks is null) continue;
-            foreach (var link in issue.Fields.Issuelinks)
-            {
-                var linked = link.OutwardIssue ?? link.InwardIssue;
-                if (linked?.Key == teKey)
-                    return linked.Id;
-            }
-        }
-        return null;
-    }
-
     private async Task UpsertDeveloperFromIdAsync(string accountId, CancellationToken ct)
     {
         var existing = await developerRepository.GetByIdAsync(accountId, ct);
@@ -320,9 +334,4 @@ public class XrayIssueSyncService(
             "ABORTED" or "ABANDONED" => TestRunStatus.Aborted,
             _ => TestRunStatus.Todo
         };
-
-    private record LinkedIssues(
-        List<string> TeIssueKeys,
-        Dictionary<string, List<(string TicketKey, TestExecutionLinkType LinkType)>> TeLinkMap,
-        Dictionary<string, (string Id, string Key, string Summary, string? AssigneeId, string Status)> TestSets);
 }

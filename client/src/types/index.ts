@@ -156,8 +156,8 @@ export interface SprintSummaryResponse {
   flags: FlagsResult
 }
 
-// Closed sprints list
-export interface ClosedSprintItem {
+// Sprint selector list (active + closed)
+export interface SprintItem {
   id: number
   name: string
   startDate: string
@@ -1290,4 +1290,52 @@ export interface TestTimelineResponse {
   postSprintTesting: PostSprintTestingResult
   untestedAtClose: UntestedAtCloseResult
   devToTestGap: DevToTestGapResult
+}
+
+// QA Trends types
+export interface QaTrendsSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface QualityTrendEntry {
+  sprintId: number
+  sprintName: string
+  coverageRate: number
+  passRate: number
+  executionRate: number
+  coverageRag: string
+  passRateRag: string
+  executionRag: string
+}
+
+export interface TestingVolumeEntry {
+  sprintId: number
+  sprintName: string
+  teCount: number
+  bugsFound: number
+}
+
+export interface DefectCorrelationDataPoint {
+  sprintId: number
+  sprintName: string
+  coverageRate: number
+  nextSprintBugRatio: number | null
+  nextSprintName: string | null
+}
+
+export interface DefectCorrelationResult {
+  dataPoints: DefectCorrelationDataPoint[]
+  pearsonR: number | null
+  dataPointCount: number
+}
+
+export interface QaTrendsResponse {
+  hasQaData: boolean
+  sprints: QaTrendsSprintInfo[]
+  qualityTrends: QualityTrendEntry[]
+  testingVolume: TestingVolumeEntry[]
+  defectCorrelation: DefectCorrelationResult | null
 }

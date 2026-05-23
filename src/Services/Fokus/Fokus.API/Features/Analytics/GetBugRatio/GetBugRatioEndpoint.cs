@@ -12,9 +12,9 @@ public class GetBugRatioEndpoint(
 {
     public override async Task HandleAsync(GetBugRatioRequest req, CancellationToken ct)
     {
-        // 1. Load all closed sprints lightweight
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 1. Load analytics sprints — alert baseline uses closed sprints only; multi-sprint averaging is closed-only
+        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
@@ -47,17 +47,20 @@ public class GetBugRatioEndpoint(
         // 9. Determine mode
         if (req.SprintId.HasValue)
         {
-            // Single-sprint mode
-            var target = allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            // Single-sprint mode — accept active or closed sprint
+            var target = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (target is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
 
+            // Prior sprint is the last closed sprint before the target (by start date)
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
-            var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
+            var priorSprint = targetIndex > 0
+                ? allSprints[targetIndex - 1]
+                : (target.State == SprintState.Active && allSprints.Count > 0 ? allSprints[^1] : null);
 
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
                 target, allDevelopers, capacityRecords, statusTransitions, settings);

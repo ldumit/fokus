@@ -14,9 +14,9 @@ public class SprintRepository(FokusDbContext db)
     public async Task<List<Sprint>> GetAllAsync(CancellationToken ct = default) =>
         await Entity.OrderByDescending(s => s.EndDate).ToListAsync(ct);
 
-    public async Task<List<Sprint>> GetClosedSprintsAsync(CancellationToken ct = default) =>
+    public async Task<List<Sprint>> GetAnalyticsSprintsAsync(CancellationToken ct = default) =>
         await Entity
-            .Where(s => s.State == SprintState.Closed)
+            .Where(s => s.State == SprintState.Closed || s.State == SprintState.Active)
             .OrderByDescending(s => s.StartDate)
             .ToListAsync(ct);
 
@@ -35,9 +35,9 @@ public class SprintRepository(FokusDbContext db)
                     .ThenInclude(t => t.Assignee)
             .ToListAsync(ct);
 
-    public async Task<List<SprintMembership>> GetAllClosedSprintMembershipsAsync(CancellationToken ct = default) =>
+    public async Task<List<SprintMembership>> GetAllAnalyticsSprintMembershipsAsync(CancellationToken ct = default) =>
         await DbContext.SprintMemberships
-            .Where(sm => sm.Sprint.State == SprintState.Closed)
+            .Where(sm => sm.Sprint.State == SprintState.Closed || sm.Sprint.State == SprintState.Active)
             .Include(sm => sm.Sprint)
             .Include(sm => sm.Ticket)
                 .ThenInclude(t => t.Assignee)

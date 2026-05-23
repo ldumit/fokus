@@ -14,11 +14,11 @@ public class GetSprintSummaryEndpoint(
 {
     public override async Task HandleAsync(GetSprintSummaryRequest req, CancellationToken ct)
     {
-        // 1. Load all closed sprints (lightweight, no memberships)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
+        // 1. Load all analytics sprints (lightweight, no memberships)
+        var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
 
-        // 2. No closed sprints — return empty response
-        if (closedSprints.Count == 0)
+        // 2. No sprints — return empty response
+        if (sprints.Count == 0)
         {
             await SendOkAsync(new SprintSummaryResponse(null, null, null, [], [], new FlagsResult([], null, [], false)), ct);
             return;
@@ -28,10 +28,10 @@ public class GetSprintSummaryEndpoint(
         Sprint selectedSprintInfo;
         if (req.SprintId.HasValue)
         {
-            var match = closedSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            var match = sprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (match is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
@@ -39,17 +39,24 @@ public class GetSprintSummaryEndpoint(
         }
         else
         {
-            selectedSprintInfo = closedSprints[0]; // most recent (sorted descending)
+            selectedSprintInfo = sprints[0]; // most recent (sorted descending)
         }
 
-        // 4. Build sparkline window: up to 4 sprints ending at selected, from ascending list
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 4. Build sparkline window: up to 4 closed sprints ending at selected, from ascending list
+        // Sparklines use closed sprints only — active sprint is not a data point
+        var ascending = sprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
         var selectedIndex = ascending.FindIndex(s => s.Id == selectedSprintInfo.Id);
+        // If selected is active (not in closed list), use last closed sprint as anchor for sparkline
+        var sparklineAnchorIndex = selectedIndex >= 0 ? selectedIndex : ascending.Count - 1;
         var windowIds = ascending
-            .Take(selectedIndex + 1)
+            .Take(sparklineAnchorIndex + 1)
             .TakeLast(4)
             .Select(s => s.Id)
             .ToList();
+
+        // Always include the selected sprint even when it's active (not in the closed list)
+        if (!windowIds.Contains(selectedSprintInfo.Id))
+            windowIds.Add(selectedSprintInfo.Id);
 
         // 5. Bulk load sprints with memberships for the window
         var windowSprints = await sprintRepository.GetSprintsWithMembershipsAsync(windowIds, ct);

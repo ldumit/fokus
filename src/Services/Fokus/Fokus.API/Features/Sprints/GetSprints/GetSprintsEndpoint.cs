@@ -1,15 +1,15 @@
-namespace Fokus.API.Features.Sprints.GetClosedSprints;
+namespace Fokus.API.Features.Sprints.GetSprints;
 
-[HttpGet("/api/sprints/closed")]
+[HttpGet("/api/sprints")]
 [Tags("Sprints")]
-public class GetClosedSprintsEndpoint(SprintRepository sprintRepository)
-    : EndpointWithoutRequest<List<ClosedSprintItem>>
+public class GetSprintsEndpoint(SprintRepository sprintRepository)
+    : EndpointWithoutRequest<List<SprintItem>>
 {
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var sprints = await sprintRepository.GetClosedSprintsAsync(ct);
+        var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
 
-        var response = sprints.Select(s => new ClosedSprintItem
+        var response = sprints.Select(s => new SprintItem
         {
             Id = s.Id,
             Name = s.Name,

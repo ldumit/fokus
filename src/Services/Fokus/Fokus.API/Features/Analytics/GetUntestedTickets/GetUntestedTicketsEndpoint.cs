@@ -14,8 +14,8 @@ public class GetUntestedTicketsEndpoint(
         var settings = await appSettingsRepository.GetAsync(ct);
 
         // 2. Load the sprint (lightweight, no memberships needed for existence check)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var sprintInfo = closedSprints.FirstOrDefault(s => s.Id == req.SprintId);
+        var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var sprintInfo = sprints.FirstOrDefault(s => s.Id == req.SprintId);
         if (sprintInfo is null)
         {
             await SendNotFoundAsync(ct);

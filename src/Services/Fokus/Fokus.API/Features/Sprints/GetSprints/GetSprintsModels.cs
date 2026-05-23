@@ -1,6 +1,6 @@
-namespace Fokus.API.Features.Sprints.GetClosedSprints;
+namespace Fokus.API.Features.Sprints.GetSprints;
 
-public class ClosedSprintItem
+public class SprintItem
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

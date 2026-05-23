@@ -12,9 +12,9 @@ public class GetDeveloperThroughputEndpoint(
 {
     public override async Task HandleAsync(GetDeveloperThroughputRequest req, CancellationToken ct)
     {
-        // 1. Load all closed sprints (lightweight, ordered ascending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 1. Load analytics sprints — last-N and rolling average window use closed sprints only
+        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         // 2. No closed sprints — return empty response
         if (ascending.Count == 0)
@@ -28,11 +28,11 @@ public class GetDeveloperThroughputEndpoint(
 
         if (req.SprintId.HasValue)
         {
-            // Single sprint mode — validate it exists
-            var match = ascending.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            // Single sprint mode — accept active or closed sprint
+            var match = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (match is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
@@ -40,7 +40,7 @@ public class GetDeveloperThroughputEndpoint(
         }
         else if (req.Last.HasValue)
         {
-            // Last N sprints
+            // Last N closed sprints
             targetSprintIds = ascending
                 .TakeLast(req.Last.Value)
                 .Select(s => s.Id)
@@ -52,10 +52,12 @@ public class GetDeveloperThroughputEndpoint(
             targetSprintIds = ascending.Select(s => s.Id).ToList();
         }
 
-        // 4. Rolling average window expansion: need up to 2 extra sprints before the earliest target
+        // 4. Rolling average window expansion: need up to 2 extra closed sprints before the earliest target
+        // For an active sprint target, all closed sprints are available as rolling window candidates
         var earliestTargetIndex = ascending.FindIndex(s => s.Id == targetSprintIds[0]);
+        var rollingWindowBase = earliestTargetIndex >= 0 ? earliestTargetIndex : ascending.Count;
         var extraSprintIds = ascending
-            .Take(earliestTargetIndex)
+            .Take(rollingWindowBase)
             .TakeLast(2)
             .Select(s => s.Id)
             .ToList();

@@ -12,9 +12,9 @@ public class GetCycleTimeEndpoint(
 {
     public override async Task HandleAsync(GetCycleTimeRequest req, CancellationToken ct)
     {
-        // 1. Load all closed sprints (lightweight, ordered descending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 1. Load analytics sprints — multi-sprint averaging uses closed sprints only
+        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
@@ -35,18 +35,20 @@ public class GetCycleTimeEndpoint(
         // 5. Determine mode
         if (req.SprintId.HasValue)
         {
-            // Single-sprint mode
-            var match = ascending.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            // Single-sprint mode — accept active or closed sprint
+            var match = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (match is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
 
-            // Identify prior sprint (next-earlier by start date)
-            var targetIndex = ascending.FindIndex(s => s.Id == match.Id);
-            var priorSprintLightweight = targetIndex > 0 ? ascending[targetIndex - 1] : null;
+            // Identify prior sprint (last closed sprint before target by start date)
+            var closedIndex = ascending.FindIndex(s => s.Id == match.Id);
+            var priorSprintLightweight = closedIndex > 0
+                ? ascending[closedIndex - 1]
+                : (match.State == SprintState.Active && ascending.Count > 0 ? ascending[^1] : null);
 
             // Bulk load target and prior sprints with memberships
             var sprintIdsToLoad = new List<int> { match.Id };

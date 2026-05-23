@@ -14,6 +14,8 @@ public class XrayTestExecutionDto
     public string? AssigneeId { get; set; }
     public DateTime? CreatedDate { get; set; }
     public List<XrayTestRunDto> TestRuns { get; set; } = [];
+    public List<XrayTestCaseDto> TestCases { get; set; } = [];
+    public List<XrayJiraIssueLinkDto> IssueLinks { get; set; } = [];
 }
 
 public class XrayTestRunDto
@@ -23,4 +25,17 @@ public class XrayTestRunDto
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
     public string? ExecutedById { get; set; }
+}
+
+public class XrayTestCaseDto
+{
+    public string? IssueKey { get; set; }
+    public List<XrayJiraIssueLinkDto> IssueLinks { get; set; } = [];
+}
+
+public class XrayJiraIssueLinkDto
+{
+    public string LinkTypeName { get; set; } = string.Empty;
+    public string? OutwardIssueKey { get; set; }
+    public string? InwardIssueKey { get; set; }
 }

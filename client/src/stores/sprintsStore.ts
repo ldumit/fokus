@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, ScopeChangeResponse, CarryOverResponse, TestTimelineResponse } from '../types'
-import { getScopeChange, getCarryOver, getClosedSprints, getSubTeams, getTestTimeline } from '../api/analytics'
+import type { SprintItem, ScopeChangeResponse, CarryOverResponse, TestTimelineResponse } from '../types'
+import { getScopeChange, getCarryOver, getSprints, getSubTeams, getTestTimeline } from '../api/analytics'
 
 export const useSprintsStore = defineStore('sprints', () => {
-  const closedSprints = ref<ClosedSprintItem[]>([])
+  const sprints = ref<SprintItem[]>([])
   const subTeams = ref<string[]>([])
   const selectedSprintId = ref<number | null>(null)
   const selectedLast = ref<number | null>(5)
@@ -21,8 +21,8 @@ export const useSprintsStore = defineStore('sprints', () => {
     initializing.value = true
     error.value = null
     try {
-      const [sprints, teams] = await Promise.all([getClosedSprints(), getSubTeams()])
-      closedSprints.value = sprints
+      const [sprintList, teams] = await Promise.all([getSprints(), getSubTeams()])
+      sprints.value = sprintList
       subTeams.value = teams
 
       await fetchAllData()
@@ -53,8 +53,8 @@ export const useSprintsStore = defineStore('sprints', () => {
   }
 
   async function refreshSprints() {
-    const sprints = await getClosedSprints()
-    closedSprints.value = sprints
+    const sprintList = await getSprints()
+    sprints.value = sprintList
   }
 
   async function fetchAllData() {
@@ -91,7 +91,7 @@ export const useSprintsStore = defineStore('sprints', () => {
   }
 
   return {
-    closedSprints,
+    sprints,
     subTeams,
     selectedSprintId,
     selectedLast,

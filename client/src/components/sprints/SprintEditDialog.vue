@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { reactive, ref, computed, watch } from 'vue'
-import type { ClosedSprintItem } from '../../types'
+import type { SprintItem } from '../../types'
 import { updateSprint } from '../../api/analytics'
 import type { UpdateSprintResponse } from '../../api/analytics'
 
 const props = defineProps<{
-  sprint: ClosedSprintItem
+  sprint: SprintItem
   open: boolean
 }>()
 
@@ -23,7 +23,7 @@ const form = reactive({
 
 const saving = ref(false)
 const error = ref<string | null>(null)
-const isClosed = computed(() => props.sprint.state === 'closed')
+const isClosed = computed(() => props.sprint.state === 'Closed')
 
 function toDateInput(isoString: string): string {
   return isoString.slice(0, 10)

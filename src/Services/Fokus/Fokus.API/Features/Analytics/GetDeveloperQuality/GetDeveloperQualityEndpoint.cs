@@ -23,9 +23,9 @@ public class GetDeveloperQualityEndpoint(
             return;
         }
 
-        // 3. Load all closed sprints (lightweight, ascending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 3. Load analytics sprints — multi-sprint averaging, sparkline, and streak use closed sprints only
+        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = allSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         if (ascending.Count == 0)
         {
@@ -39,10 +39,11 @@ public class GetDeveloperQualityEndpoint(
 
         if (req.SprintId.HasValue)
         {
-            var match = ascending.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            // Single sprint — accept active or closed
+            var match = allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (match is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
@@ -50,7 +51,7 @@ public class GetDeveloperQualityEndpoint(
         }
         else if (req.Last.HasValue)
         {
-            // Multi-sprint: last N sprints, filtered to only those with QA data
+            // Multi-sprint: last N closed sprints, filtered to only those with QA data
             var lastN = ascending.TakeLast(req.Last.Value).Select(s => s.Id).ToList();
             var withQaData = await testExecutionRepository.GetSprintIdsWithQaDataAsync(lastN, ct);
             targetSprintIds = lastN.Where(id => withQaData.Contains(id)).ToList();
@@ -84,11 +85,16 @@ public class GetDeveloperQualityEndpoint(
         {
             var targetSprintId = targetSprintIds[0];
             var targetIndex = ascending.FindIndex(s => s.Id == targetSprintId);
+            // When active sprint is selected, it is not in the closed ascending list (targetIndex == -1).
+            // Use ascending.Count as the anchor so all closed sprints are candidates for sparkline/streak.
+            var closedAnchorIndex = targetIndex >= 0 ? targetIndex : ascending.Count - 1;
 
-            // Find prior sprint (closed sprint immediately before target)
-            if (targetIndex > 0)
+            // Find prior sprint (last closed sprint before target)
+            if (closedAnchorIndex > 0 || (targetIndex < 0 && ascending.Count > 0))
             {
-                var priorSprintInfo = ascending[targetIndex - 1];
+                var priorSprintInfo = targetIndex >= 0
+                    ? ascending[targetIndex - 1]
+                    : ascending[ascending.Count - 1];
                 // Load prior sprint with memberships
                 var priorLoaded = await sprintRepository.GetSprintsWithMembershipsAsync([priorSprintInfo.Id], ct);
                 if (priorLoaded.Count > 0)
@@ -104,8 +110,8 @@ public class GetDeveloperQualityEndpoint(
                 }
             }
 
-            // All candidate sprint IDs up to and including the target (ascending order)
-            var candidateIds = ascending.Take(targetIndex + 1).Select(s => s.Id).ToList();
+            // All candidate sprint IDs up to and including the closed anchor (ascending order)
+            var candidateIds = ascending.Take(closedAnchorIndex + 1).Select(s => s.Id).ToList();
 
             // Filter to sprints with QA data (BR8 semantics) — used for both sparkline and streak
             var withQaData = await testExecutionRepository.GetSprintIdsWithQaDataAsync(candidateIds, ct);

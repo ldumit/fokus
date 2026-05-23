@@ -97,7 +97,7 @@ const sprintEndDayNumber = computed(() => {
   <PageLayout title="Sprints">
     <template #toolbar>
       <PageToolbar
-        :sprints="store.closedSprints"
+        :sprints="store.sprints"
         :selected-sprint-id="store.selectedSprintId"
         :sub-teams="store.subTeams"
         :selected-sub-team="store.selectedSubTeam"
@@ -119,7 +119,7 @@ const sprintEndDayNumber = computed(() => {
     </div>
 
     <!-- No closed sprints -->
-    <template v-else-if="store.closedSprints.length === 0">
+    <template v-else-if="store.sprints.length === 0">
       <EmptyState
         title="No sprint data yet"
         description="Sync a sprint to see sprint analytics here."

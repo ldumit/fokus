@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { ClosedSprintItem } from '../types'
+import type { SprintItem } from '../types'
 import BaseSelect from './BaseSelect.vue'
 import InfoTooltip from './InfoTooltip.vue'
 import type { SelectOption } from './BaseSelect.vue'
@@ -8,7 +8,7 @@ import SprintEditDialog from './sprints/SprintEditDialog.vue'
 import type { UpdateSprintResponse } from '../api/analytics'
 
 const props = withDefaults(defineProps<{
-  sprints?: ClosedSprintItem[]
+  sprints?: SprintItem[]
   selectedSprintId?: number | null
   subTeams?: string[]
   selectedSubTeam?: string | null
@@ -49,7 +49,7 @@ function onSprintSaved(sprint: UpdateSprintResponse) {
 
 const sprintOptions = computed<SelectOption[]>(() => {
   const opts: SelectOption[] = props.sprints.map(s => ({
-    label: s.name,
+    label: s.state === 'Active' ? `${s.name} (In Progress)` : s.name,
     value: String(s.id)
   }))
   if (props.showAggregateOptions) {

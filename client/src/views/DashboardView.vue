@@ -87,7 +87,7 @@ const bugSpAnnotation = computed(() => {
   <PageLayout title="Dashboard">
     <template #toolbar>
       <PageToolbar
-        :sprints="store.closedSprints"
+        :sprints="store.sprints"
         :selected-sprint-id="store.selectedSprintId"
         :sub-teams="store.subTeams"
         :selected-sub-team="store.selectedSubTeam"

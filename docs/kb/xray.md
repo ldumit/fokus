@@ -18,30 +18,46 @@ TestSets are read directly from the Jira issue link fields (`linkedIssue.Fields.
 
 ## Sync Flow
 
-1. Re-fetch fresh Jira issues for each sprint (issue links are not stored in the DB)
-2. Walk `Issuelinks` on each issue — extract TE keys and TestSets
+There are two sync paths. They run independently.
+
+### Path 1 — `POST /api/xray/sync` (dedicated TE sync)
+
+1. Validate `JiraOptions.ProjectKey` is non-null (BadRequestException if missing)
+2. Re-fetch fresh Jira issues for the target sprints (needed for TestSet discovery)
 3. Authenticate with Xray Cloud (client credentials → bearer token)
-4. Fetch TEs via GraphQL using TE issue keys
-5. Upsert each TE, **replace** links, **replace** test runs (full replace, not merge)
-6. Upsert each TestSet (status/summary from Jira DTO)
+4. Call `GetAllProjectTestExecutionsAsync(projectKey)` — JQL `project = {KEY}` fetches **all** project TEs with test cases and issuelinks in one paginated GraphQL query
+5. Collect all candidate ticket keys from TE-level and test-case-level issuelinks (OutwardIssueKey ?? InwardIssueKey)
+6. Call `TicketRepository.GetExistingKeysAsync(candidateKeys)` — resolves which keys exist in DB (FK safety, single query)
+7. `BuildLinkMap` — derive TE→ticket link map from Xray response using known ticket keys only; two sources:
+   - Test case issuelinks: `"Test"` link type → `TestExecutionLinkType.Tests`
+   - TE-level issuelinks: `"Test"` → `Tests`, `"Blocks"` → `Blocks`
+8. Upsert each TE, **replace** links, **replace** test runs (full replace, not merge)
+9. `SyncTestSetsFromIssuesAsync` — walk Jira issue links, extract TestSet DTOs (`"Test"` link type + `"Test Set"` issue type), upsert each TestSet
+
+### Path 2 — piggyback during `SyncSprintsFromJiraAsync`
+
+Sprint sync piggbacks TestSet-only Xray sync: calls `SyncTestSetsFromIssuesAsync(issues)` for each sprint's Jira issues. TE discovery does **not** run here — it is project-wide and belongs in the dedicated endpoint.
 
 Key files:
-- `Fokus.API/Features/Xray/XrayIssueSyncService.cs` — orchestration, link extraction, status mapping
+- `Fokus.API/Features/Xray/XrayIssueSyncService.cs` — `SyncTestExecutionsForProjectAsync`, `SyncTestSetsFromIssuesAsync`, `BuildLinkMap`
 - `Fokus.API/Features/Xray/SyncXray/SyncXrayEndpoint.cs` — `POST /api/xray/sync` (Admin only)
+- `Fokus.API/Features/Sync/SprintIssueSyncService.cs` — piggyback TestSet sync in `SyncAsync`
 - `Fokus.API/Features/Settings/SaveXraySettings/SaveXraySettingsEndpoint.cs` — `PUT /api/settings/xray`
 - `Fokus.Persistence/Repositories/TestExecutionRepository.cs` — sprint attribution and coverage queries
 
 ## Link Type Detection
 
-Two Jira link types are recognized on sprint tickets:
+Link types are now sourced from two places in the **Xray GraphQL response** (not from sprint ticket issuelinks on Jira):
 
-| Jira link type name | Issue type detected | Result |
-|---------------------|---------------------|--------|
-| `"Test"` | Test Execution | → TE attributed to this ticket (`Tests` link) |
-| `"Test"` | Test Set | → TestSet extracted from Jira DTO |
-| `"Blocks"` | Test Execution | → TE attributed to this ticket (`Blocks` link) |
+| Source | Jira link type name | Result |
+|--------|---------------------|--------|
+| Test case `jira.issuelinks` | `"Test"` | → `TestExecutionLinkType.Tests` (test-case-mediated coverage) |
+| TE `jira.issuelinks` | `"Test"` | → `TestExecutionLinkType.Tests` (direct story↔TE link) |
+| TE `jira.issuelinks` | `"Blocks"` | → `TestExecutionLinkType.Blocks` |
 
-Both inward and outward sides are checked (`link.OutwardIssue ?? link.InwardIssue`).
+TestSet links are still sourced from **Jira issue links** (`issue.Fields.Issuelinks`) — TestSets are not discoverable from the Xray GraphQL response.
+
+Both inward and outward sides are checked (`OutwardIssueKey ?? InwardIssueKey`). Only links whose ticket key exists in the DB are included (FK safety).
 
 `TestExecutionLinkType.Tests` is the coverage link. `TestExecutionLinkType.Blocks` creates attribution but is **not** used for coverage or failure counting.
 

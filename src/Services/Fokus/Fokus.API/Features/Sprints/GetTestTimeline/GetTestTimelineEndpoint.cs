@@ -17,9 +17,9 @@ public class GetTestTimelineEndpoint(
         // 1. Load settings
         var settings = await appSettingsRepository.GetAsync(ct);
 
-        // 2. Load all closed sprints (lightweight, ascending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 2. Load all analytics sprints (lightweight, ascending)
+        var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = sprints.OrderBy(s => s.StartDate).ToList();
 
         // 3. Find requested sprint — 404 if not found
         var sprintInfo = ascending.FirstOrDefault(s => s.Id == req.SprintId);

@@ -66,43 +66,46 @@ public class TestExecutionRepository(FokusDbContext db)
     }
 
     /// <summary>
-    /// Returns TestExecutions (with Links and TestRuns) attributed to the given sprint per BR8.
-    /// A TE belongs to a sprint when any of its TestExecutionLinks point to a ticket with a SprintMembership
-    /// for that sprintId, AND sprintId is the maximum SprintId across all its linked tickets' memberships.
-    /// Cancelled TEs (IsCancelled = true, i.e. Status == "Cancelled") are excluded per BR7.
+    /// Returns TestExecutions (with Links and TestRuns) attributed to the given sprint.
+    /// Attribution: a TE belongs to the sprint whose date range contains its CreatedDate.
+    /// If the TE was created in a gap between sprints, it is attributed to the most recently
+    /// ended sprint before its creation date.
+    /// The TE must also be linked (via TestExecutionLinks) to at least one ticket in the sprint.
+    /// Cancelled TEs are excluded per BR7.
     /// </summary>
     public async Task<List<TestExecution>> GetTestExecutionsForSprintAsync(int sprintId, CancellationToken ct = default)
     {
-        // Find all TE IDs linked to this sprint
-        var teIdsInSprint = await DbContext.TestExecutionLinks
+        // Step 1: Find TEs linked to this sprint's tickets
+        var teIdsLinkedToSprint = await DbContext.TestExecutionLinks
             .Where(l => DbContext.SprintMemberships.Any(sm => sm.SprintId == sprintId && sm.TicketId == l.TicketKey))
             .Select(l => l.TestExecutionIssueId)
             .Distinct()
             .ToListAsync(ct);
 
-        if (teIdsInSprint.Count == 0)
+        if (teIdsLinkedToSprint.Count == 0)
             return [];
 
-        // For each TE, find the maximum SprintId across all its linked tickets' memberships
-        // Only include TEs where sprintId == maxSprintId (BR8 tiebreaker)
-        var teIdsForSprint = await DbContext.TestExecutionLinks
-            .Where(l => teIdsInSprint.Contains(l.TestExecutionIssueId))
-            .Join(DbContext.SprintMemberships,
-                l => l.TicketKey,
-                sm => sm.TicketId,
-                (l, sm) => new { l.TestExecutionIssueId, sm.SprintId })
-            .GroupBy(x => x.TestExecutionIssueId)
-            .Where(g => g.Max(x => x.SprintId) == sprintId)
-            .Select(g => g.Key)
+        // Step 2: Load sprint date ranges for creation-date attribution
+        var sprintRanges = await LoadSprintRangesAsync(ct);
+
+        // Step 3: Load TE creation dates
+        var teCreatedDates = await DbContext.TestExecutions
+            .Where(te => teIdsLinkedToSprint.Contains(te.Id))
+            .Select(te => new { te.Id, te.CreatedDate })
             .ToListAsync(ct);
 
-        if (teIdsForSprint.Count == 0)
+        // Step 4: Filter to TEs whose creation date falls in this sprint
+        var targetTeIds = teCreatedDates
+            .Where(te => AttributedSprintId(te.CreatedDate, sprintRanges) == sprintId)
+            .Select(te => te.Id)
+            .ToList();
+
+        if (targetTeIds.Count == 0)
             return [];
 
-        // "Cancelled" matches TestExecution.IsCancelled computed property (Status == "Cancelled").
-        // The raw string is required here because EF Core cannot translate the computed property to SQL.
+        // "Cancelled" raw string required — EF Core cannot translate the computed IsCancelled property.
         return await Entity
-            .Where(te => teIdsForSprint.Contains(te.Id) && te.Status != "Cancelled")
+            .Where(te => targetTeIds.Contains(te.Id) && te.Status != "Cancelled")
             .Include(te => te.Links)
                 .ThenInclude(l => l.Ticket)
             .Include(te => te.TestRuns)
@@ -238,6 +241,39 @@ public class TestExecutionRepository(FokusDbContext db)
         }).ToList();
     }
 
+    private async Task<List<(int Id, DateTime StartDate, DateTime EndDate)>> LoadSprintRangesAsync(CancellationToken ct)
+    {
+        var raw = await DbContext.Sprints
+            .OrderBy(s => s.StartDate)
+            .Select(s => new { s.Id, s.StartDate, s.EndDate })
+            .ToListAsync(ct);
+        return raw.Select(s => (s.Id, s.StartDate, s.EndDate)).ToList();
+    }
+
+    /// <summary>
+    /// Attributes a TE to a sprint based on its creation date.
+    /// Finds the sprint whose date range contains the date; if the date falls in a gap between
+    /// sprints, uses the most recently ended sprint before that date.
+    /// </summary>
+    private static int AttributedSprintId(DateTime createdDate, List<(int Id, DateTime StartDate, DateTime EndDate)> sprints)
+    {
+        if (sprints.Count == 0) return 0;
+
+        // Find sprint containing the creation date
+        foreach (var s in sprints)
+        {
+            if (createdDate >= s.StartDate && createdDate <= s.EndDate)
+                return s.Id;
+        }
+
+        // Gap: attribute to the most recently started sprint before creation date
+        var preceding = sprints.LastOrDefault(s => s.StartDate <= createdDate);
+        if (preceding.Id != 0) return preceding.Id;
+
+        // TE predates all sprints: attribute to first sprint
+        return sprints[0].Id;
+    }
+
     private static decimal? GetEffectiveSp(SprintMembership sm, int defaultSpPerBug)
     {
         if (sm.StoryPoints.HasValue && sm.StoryPoints.Value > 0)
@@ -252,16 +288,15 @@ public class TestExecutionRepository(FokusDbContext db)
 
     /// <summary>
     /// Returns the set of sprint IDs (from the provided list) that have at least one non-cancelled
-    /// TestExecution attributed to that sprint per BR8 (max-sprint-id tiebreaker).
-    /// Mirrors the semantics of GetTestExecutionsForSprintAsync so that sprint inclusion/exclusion
-    /// decisions are consistent with TE loading.
+    /// TestExecution attributed to that sprint by creation-date attribution.
+    /// Mirrors the semantics of GetTestExecutionsForSprintAsync.
     /// </summary>
     public async Task<HashSet<int>> GetSprintIdsWithQaDataAsync(List<int> sprintIds, CancellationToken ct = default)
     {
         if (sprintIds.Count == 0)
             return [];
 
-        // Step 1: find all TE IDs linked to any ticket in the candidate sprints
+        // Step 1: Find TEs linked to any ticket in the candidate sprints
         var teIdsInCandidates = await DbContext.TestExecutionLinks
             .Where(l => DbContext.SprintMemberships.Any(sm => sprintIds.Contains(sm.SprintId) && sm.TicketId == l.TicketKey))
             .Select(l => l.TestExecutionIssueId)
@@ -271,25 +306,26 @@ public class TestExecutionRepository(FokusDbContext db)
         if (teIdsInCandidates.Count == 0)
             return [];
 
-        // Step 2: for each TE, apply BR8 tiebreaker — the TE belongs to the sprint with the
-        // maximum SprintId across all its linked tickets' memberships.
-        // Only include TEs whose max sprint is in the candidate list and is not cancelled.
-        var result = await DbContext.TestExecutionLinks
-            .Where(l => teIdsInCandidates.Contains(l.TestExecutionIssueId))
-            .Join(DbContext.SprintMemberships,
-                l => l.TicketKey,
-                sm => sm.TicketId,
-                (l, sm) => new { l.TestExecutionIssueId, sm.SprintId })
-            .GroupBy(x => x.TestExecutionIssueId)
-            .Where(g => sprintIds.Contains(g.Max(x => x.SprintId)))
-            .Join(DbContext.TestExecutions.Where(te => te.Status != "Cancelled"),
-                g => g.Key,
-                te => te.Id,
-                (g, te) => g.Max(x => x.SprintId))
-            .Distinct()
+        // Step 2: Load sprint date ranges for attribution
+        var sprintRanges = await LoadSprintRangesAsync(ct);
+
+        // Step 3: Load creation dates and filter non-cancelled
+        var nonCancelledTes = await DbContext.TestExecutions
+            .Where(te => teIdsInCandidates.Contains(te.Id) && te.Status != "Cancelled")
+            .Select(te => new { te.Id, te.CreatedDate })
             .ToListAsync(ct);
 
-        return [.. result];
+        // Step 4: Attribute each TE to a sprint; collect those in the candidate set
+        var candidateSet = sprintIds.ToHashSet();
+        var result = new HashSet<int>();
+        foreach (var te in nonCancelledTes)
+        {
+            var attributed = AttributedSprintId(te.CreatedDate, sprintRanges);
+            if (candidateSet.Contains(attributed))
+                result.Add(attributed);
+        }
+
+        return result;
     }
 
     /// <summary>

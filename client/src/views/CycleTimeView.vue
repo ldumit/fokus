@@ -73,7 +73,7 @@ function onSprintBarClick(sprintId: number) {
   <PageLayout title="Cycle Time">
     <template #toolbar>
       <PageToolbar
-        :sprints="store.closedSprints"
+        :sprints="store.sprints"
         :selected-sprint-id="store.selectedSprintId"
         :sub-teams="store.subTeams"
         :selected-sub-team="store.selectedSubTeam"
@@ -93,7 +93,7 @@ function onSprintBarClick(sprintId: number) {
     </div>
 
     <!-- Empty: no closed sprints -->
-    <template v-else-if="store.closedSprints.length === 0">
+    <template v-else-if="store.sprints.length === 0">
       <EmptyState
         title="No sprint data yet"
         description="Sync a sprint to see cycle time analytics here."

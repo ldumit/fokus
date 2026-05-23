@@ -22,9 +22,9 @@ public class GetQaWorkloadEndpoint(
             return;
         }
 
-        // 3. Load all closed sprints (lightweight, ascending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 3. Load analytics sprints — workload alert baseline and sparkline use closed sprints only
+        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = allSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         if (ascending.Count == 0)
         {
@@ -41,7 +41,7 @@ public class GetQaWorkloadEndpoint(
         // 6. Determine mode
         if (req.SprintId.HasValue)
         {
-            await HandleSingleSprintAsync(req, ascending, allDevelopers, settings, subTeam, ct);
+            await HandleSingleSprintAsync(req, allSprints, ascending, allDevelopers, settings, subTeam, ct);
         }
         else
         {
@@ -103,16 +103,18 @@ public class GetQaWorkloadEndpoint(
 
     private async Task HandleSingleSprintAsync(
         GetQaWorkloadRequest req,
+        List<Sprint> allSprints,
         List<Sprint> ascending,
         List<Developer> allDevelopers,
         AppSettings settings,
         string? subTeam,
         CancellationToken ct)
     {
-        var targetSprintInfo = ascending.FirstOrDefault(s => s.Id == req.SprintId!.Value);
+        // Search allSprints so active sprints are accepted, not just closed ones
+        var targetSprintInfo = allSprints.FirstOrDefault(s => s.Id == req.SprintId!.Value);
         if (targetSprintInfo is null)
         {
-            AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+            AddError(r => r.SprintId, "Sprint not found.");
             await SendErrorsAsync(400, ct);
             return;
         }
@@ -132,14 +134,18 @@ public class GetQaWorkloadEndpoint(
             return;
         }
 
+        // targetIndex is -1 when the selected sprint is active (not in closed ascending list)
         var targetIndex = ascending.FindIndex(s => s.Id == targetSprint.Id);
 
-        // Prior sprint
+        // Prior sprint: last closed sprint before target (or last closed sprint when active)
         Sprint? priorSprint = null;
         List<TestExecution>? priorTEs = null;
-        if (targetIndex > 0)
+        var priorIndex = targetIndex > 0 ? targetIndex - 1
+            : targetIndex < 0 && ascending.Count > 0 ? ascending.Count - 1
+            : -1;
+        if (priorIndex >= 0)
         {
-            var priorInfo = ascending[targetIndex - 1];
+            var priorInfo = ascending[priorIndex];
             var priorWithQa = await testExecutionRepository.GetSprintIdsWithQaDataAsync([priorInfo.Id], ct);
             if (priorWithQa.Contains(priorInfo.Id))
             {
@@ -149,8 +155,10 @@ public class GetQaWorkloadEndpoint(
             }
         }
 
-        // Sparkline window: up to 4 trailing sprints with QA data
-        var candidateIds = ascending.Take(targetIndex + 1).Select(s => s.Id).ToList();
+        // Sparkline window: up to 4 trailing closed sprints with QA data
+        // When active (targetIndex == -1), anchor at last closed sprint so window is non-empty
+        var sparklineAnchorIndex = targetIndex >= 0 ? targetIndex : ascending.Count - 1;
+        var candidateIds = ascending.Take(sparklineAnchorIndex + 1).Select(s => s.Id).ToList();
         var qaFilteredIds = (await testExecutionRepository.GetSprintIdsWithQaDataAsync(candidateIds, ct))
             .OrderBy(id => ascending.FindIndex(s => s.Id == id))
             .ToList();

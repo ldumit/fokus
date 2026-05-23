@@ -33,16 +33,16 @@ public class GetEpicProgressEndpoint(
             return;
         }
 
-        // 5. Load all closed sprints (lightweight, for velocity transition date ranges)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var closedSprintIds = closedSprints.Select(s => s.Id).ToList();
+        // 5. Load all analytics sprints (lightweight, for velocity transition date ranges)
+        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var analyticsSprintIds = analyticsSprints.Select(s => s.Id).ToList();
 
-        // 6. Load all closed sprint memberships (for velocity grouping by sprint)
-        var closedMemberships = await sprintRepository.GetAllClosedSprintMembershipsAsync(ct);
+        // 6. Load all analytics sprint memberships (for velocity grouping by sprint)
+        var analyticsMemberships = await sprintRepository.GetAllAnalyticsSprintMembershipsAsync(ct);
 
-        // 7. Load status transitions for all closed sprint tickets (for transition-based velocity)
-        var statusTransitions = closedSprintIds.Count > 0
-            ? await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(closedSprintIds, ct)
+        // 7. Load status transitions for all analytics sprint tickets (for transition-based velocity)
+        var statusTransitions = analyticsSprintIds.Count > 0
+            ? await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(analyticsSprintIds, ct)
             : new List<StatusTransition>();
 
         // 8. Load unlinked tickets (in at least one sprint, no epic key)
@@ -60,7 +60,7 @@ public class GetEpicProgressEndpoint(
 
         // 10. Compute epic progress
         var result = epicProgressService.ComputeEpicProgress(
-            epicTickets, closedMemberships, unlinkedTickets, settings, statusTransitions, closedSprints, subTeam, qaData);
+            epicTickets, analyticsMemberships, unlinkedTickets, settings, statusTransitions, analyticsSprints, subTeam, qaData);
 
         await SendOkAsync(result, ct);
     }

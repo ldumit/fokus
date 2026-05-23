@@ -12,9 +12,9 @@ public class GetCarryOverEndpoint(
 {
     public override async Task HandleAsync(GetCarryOverRequest req, CancellationToken ct)
     {
-        // 1. Load all closed sprints (lightweight, ordered ascending)
-        var closedSprints = await sprintRepository.GetClosedSprintsAsync(ct);
-        var ascending = closedSprints.OrderBy(s => s.StartDate).ToList();
+        // 1. Load analytics sprints — zombie counting baseline uses closed sprints only; multi-sprint is closed-only
+        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
@@ -42,18 +42,20 @@ public class GetCarryOverEndpoint(
         // 7. Determine mode
         if (req.SprintId.HasValue)
         {
-            // Single-sprint mode
-            var target = allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
+            // Single-sprint mode — accept active or closed sprint
+            var target = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
             if (target is null)
             {
-                AddError(r => r.SprintId, "Sprint not found or is not a closed sprint.");
+                AddError(r => r.SprintId, "Sprint not found.");
                 await SendErrorsAsync(400, ct);
                 return;
             }
 
-            // 8b. Identify prior sprint (next-earlier by start date)
+            // 8b. Identify prior sprint (last closed sprint before the target by start date)
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
-            var priorSprint = targetIndex > 0 ? allSprints[targetIndex - 1] : null;
+            var priorSprint = targetIndex > 0
+                ? allSprints[targetIndex - 1]
+                : (target.State == SprintState.Active && allSprints.Count > 0 ? allSprints[^1] : null);
 
             // 9b. Compute excluded developer IDs for the target sprint
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(

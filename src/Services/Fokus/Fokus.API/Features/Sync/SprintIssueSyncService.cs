@@ -162,14 +162,15 @@ public class SprintIssueSyncService(
         await sprintRepository.UpsertMembershipsAsync(sprint.Id, memberships, ct);
         await sprintRepository.SaveChangesAsync(ct);
 
-        // Piggyback Xray sync if enabled — failures do not block sprint sync
+        // Piggyback Xray TestSet sync if enabled — TE discovery is project-wide via dedicated endpoint
         XraySyncResult? xrayResult = null;
         var settings2 = await appSettingsRepository.GetAsync(ct);
         if (settings2.XrayEnabled)
         {
             try
             {
-                xrayResult = await xrayIssueSyncService.SyncXrayForIssuesAsync(issues, ct);
+                var testSetsSynced = await xrayIssueSyncService.SyncTestSetsFromIssuesAsync(issues.ToList(), ct);
+                xrayResult = new XraySyncResult(0, 0, testSetsSynced, []);
             }
             catch (Exception ex)
             {

@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { ClosedSprintItem, CycleTimeResponse, CycleTimeBoundariesResponse } from '../types'
-import { getCycleTime, getClosedSprints, getSubTeams } from '../api/analytics'
+import type { SprintItem, CycleTimeResponse, CycleTimeBoundariesResponse } from '../types'
+import { getCycleTime, getSprints, getSubTeams } from '../api/analytics'
 import { getCycleTimeBoundaries } from '../api/settings'
 
 export const useCycleTimeStore = defineStore('cycleTime', () => {
-  const closedSprints = ref<ClosedSprintItem[]>([])
+  const sprints = ref<SprintItem[]>([])
   const subTeams = ref<string[]>([])
   const boundaries = ref<CycleTimeBoundariesResponse | null>(null)
   const selectedSprintId = ref<number | null>(null)
@@ -28,18 +28,18 @@ export const useCycleTimeStore = defineStore('cycleTime', () => {
     initializing.value = true
     error.value = null
     try {
-      const [sprints, teams, boundaryResult] = await Promise.all([
-        getClosedSprints(),
+      const [sprintList, teams, boundaryResult] = await Promise.all([
+        getSprints(),
         getSubTeams(),
         getCycleTimeBoundaries()
       ])
-      closedSprints.value = sprints
+      sprints.value = sprintList
       subTeams.value = teams
       boundaries.value = boundaryResult
 
-      // Default to most recent closed sprint (sprints returned descending by startDate)
-      if (sprintMode.value === 'single' && selectedSprintId.value === null && sprints.length > 0) {
-        selectedSprintId.value = sprints[0].id
+      // Default to most recent sprint (sprints returned descending by startDate)
+      if (sprintMode.value === 'single' && selectedSprintId.value === null && sprintList.length > 0) {
+        selectedSprintId.value = sprintList[0].id
       }
 
       await fetchData()
@@ -95,7 +95,7 @@ export const useCycleTimeStore = defineStore('cycleTime', () => {
   }
 
   return {
-    closedSprints,
+    sprints,
     subTeams,
     boundaries,
     selectedSprintId,

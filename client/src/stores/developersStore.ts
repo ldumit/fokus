@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ClosedSprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse, QaWorkloadResponse } from '../types'
-import { getDeveloperThroughput, getBugRatio, getLeaderboard, getClosedSprints, getSubTeams, getDeveloperQuality, getQaWorkload } from '../api/analytics'
+import type { SprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse, QaWorkloadResponse } from '../types'
+import { getDeveloperThroughput, getBugRatio, getLeaderboard, getSprints, getSubTeams, getDeveloperQuality, getQaWorkload } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
 
 export const useDevelopersStore = defineStore('developers', () => {
-  const closedSprints = ref<ClosedSprintItem[]>([])
+  const sprints = ref<SprintItem[]>([])
   const subTeams = ref<string[]>([])
   const selectedSprintId = ref<number | null>(null)
   const selectedLast = ref<number | null>(null)
@@ -34,12 +34,12 @@ export const useDevelopersStore = defineStore('developers', () => {
     initializing.value = true
     error.value = null
     try {
-      const [sprints, teams] = await Promise.all([getClosedSprints(), getSubTeams()])
-      closedSprints.value = sprints
+      const [sprintList, teams] = await Promise.all([getSprints(), getSubTeams()])
+      sprints.value = sprintList
       subTeams.value = teams
 
-      if (sprints.length > 0 && selectedSprintId.value === null && sprintMode.value === 'single') {
-        selectedSprintId.value = sprints[0].id
+      if (sprintList.length > 0 && selectedSprintId.value === null && sprintMode.value === 'single') {
+        selectedSprintId.value = sprintList[0].id
       }
 
       await fetchThroughput()
@@ -271,7 +271,7 @@ export const useDevelopersStore = defineStore('developers', () => {
   }
 
   return {
-    closedSprints,
+    sprints,
     subTeams,
     selectedSprintId,
     selectedLast,

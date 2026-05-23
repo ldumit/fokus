@@ -1,4 +1,6 @@
 using Fokus.API.Features.Xray;
+using Jira.RestApi;
+using Microsoft.Extensions.Options;
 
 namespace Fokus.API.Features.Xray.SyncXray;
 
@@ -33,7 +35,8 @@ public class SyncXrayEndpoint(
     AppSettingsRepository settingsRepository,
     SprintRepository sprintRepository,
     IJiraClient jiraClient,
-    XrayIssueSyncService xraySyncService)
+    XrayIssueSyncService xraySyncService,
+    IOptions<JiraOptions> jiraOptions)
     : Endpoint<SyncXrayRequest, SyncXrayResponse>
 {
     public override async Task HandleAsync(SyncXrayRequest req, CancellationToken ct)
@@ -41,6 +44,10 @@ public class SyncXrayEndpoint(
         var settings = await settingsRepository.GetAsync(ct);
         if (!settings.XrayEnabled)
             throw new BadRequestException("Xray is not enabled.");
+
+        var projectKey = jiraOptions.Value.ProjectKey;
+        if (string.IsNullOrEmpty(projectKey))
+            throw new BadRequestException("Jira ProjectKey is not configured. Set it in appsettings.json under Jira:ProjectKey.");
 
         // Empty SprintIds means "all synced sprints"
         List<Sprint> sprints;
@@ -63,14 +70,18 @@ public class SyncXrayEndpoint(
         // Deduplicate — a ticket may appear in multiple sprints
         allJiraIssues = allJiraIssues.DistinctBy(i => i.Key).ToList();
 
-        var result = await xraySyncService.SyncXrayForIssuesAsync(allJiraIssues, ct);
+        // Xray-driven TE discovery for the full project
+        var teResult = await xraySyncService.SyncTestExecutionsForProjectAsync(projectKey, ct);
+
+        // Jira-driven TestSet discovery — TestSets are only discoverable from Jira issue links
+        var testSetsSynced = await xraySyncService.SyncTestSetsFromIssuesAsync(allJiraIssues, ct);
 
         await SendOkAsync(new SyncXrayResponse
         {
-            TestExecutionsSynced = result.TestExecutionsSynced,
-            TestRunsSynced = result.TestRunsSynced,
-            TestSetsSynced = result.TestSetsSynced,
-            Warnings = result.Warnings.ToArray()
+            TestExecutionsSynced = teResult.TestExecutionsSynced,
+            TestRunsSynced = teResult.TestRunsSynced,
+            TestSetsSynced = testSetsSynced,
+            Warnings = teResult.Warnings.ToArray()
         }, ct);
     }
 }

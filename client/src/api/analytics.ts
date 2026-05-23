@@ -1,4 +1,4 @@
-import type { ClosedSprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse } from '../types'
+import type { SprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse, QaTrendsResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -25,8 +25,8 @@ export function getSprintSummary(sprintId?: number, subTeam?: string): Promise<S
   return apiFetch<SprintSummaryResponse>(`/analytics/sprint-summary${query ? `?${query}` : ''}`)
 }
 
-export function getClosedSprints(): Promise<ClosedSprintItem[]> {
-  return apiFetch<ClosedSprintItem[]>('/sprints/closed')
+export function getSprints(): Promise<SprintItem[]> {
+  return apiFetch<SprintItem[]>('/sprints')
 }
 
 export function getSubTeams(): Promise<string[]> {
@@ -145,4 +145,12 @@ export function getTestTimeline(sprintId: number, subTeam?: string): Promise<Tes
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<TestTimelineResponse>(`/sprints/${sprintId}/test-timeline${query ? `?${query}` : ''}`)
+}
+
+export function getQaTrends(last?: number, subTeam?: string): Promise<QaTrendsResponse> {
+  const params = new URLSearchParams()
+  if (last !== undefined) params.set('last', String(last))
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<QaTrendsResponse>(`/analytics/qa-trends${query ? `?${query}` : ''}`)
 }

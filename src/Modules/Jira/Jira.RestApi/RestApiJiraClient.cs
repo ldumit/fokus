@@ -87,7 +87,6 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
         while (true)
         {
             var page = await RequestAsync(() => Api.SearchIssuesAsync(jql, 100, IssueExpand, IssueFields, nextPageToken, ct), ct);
-            System.Console.WriteLine($"[JIRA DEBUG] JQL='{jql}' | page null={page is null} | issues null={page?.Issues is null} | count={page?.Issues?.Count} | total={page?.Total}");
             if (page?.Issues is null || page.Issues.Count == 0) break;
             result.AddRange(page.Issues);
             nextPageToken = page.NextPageToken;
@@ -153,8 +152,6 @@ public class RestApiJiraClient(IJiraApi api) : IJiraClient
 
             if (response.IsSuccessStatusCode)
             {
-                if (response.Content is null)
-                    System.Console.WriteLine($"[JIRA DEBUG] 200 OK but Content is NULL. Raw: {response.Error?.Content?[..Math.Min(500, response.Error?.Content?.Length ?? 0)]}");
                 return response.Content!;
             }
 

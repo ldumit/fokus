@@ -116,7 +116,7 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
   <PageLayout title="Developers">
     <template #toolbar>
       <PageToolbar
-        :sprints="store.closedSprints"
+        :sprints="store.sprints"
         :selected-sprint-id="store.selectedSprintId"
         :sub-teams="store.subTeams"
         :selected-sub-team="store.selectedSubTeam"
@@ -136,7 +136,7 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
     </div>
 
     <!-- No closed sprints -->
-    <template v-else-if="store.closedSprints.length === 0">
+    <template v-else-if="store.sprints.length === 0">
       <EmptyState
         title="No developer data yet"
         description="Sync a sprint to see developer metrics here."

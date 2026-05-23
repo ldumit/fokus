@@ -248,9 +248,19 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F27 | Cross-Sprint QA Trends | Spec Ready | [CrossSprintQaTrends](specs/F27-CrossSprintQaTrends/definition/spec.md) | — |
+| F27 | Cross-Sprint QA Trends | Done | [CrossSprintQaTrends](specs/F27-CrossSprintQaTrends/definition/spec.md) | [plan](specs/F27-CrossSprintQaTrends/delivery/plan.md) |
 
 **F27:** Dedicated QA sidebar page with cross-sprint trend charts. Quality Trends panel (coverage rate, pass rate, execution rate as percentage lines). Testing Volume panel (TE count, bugs found as grouped bars). Defect Correlation section with N+1 lag (coverage in sprint N vs bug ratio in sprint N+1) and Pearson r badge. Default last 10 sprints. Sub-team filterable.
+
+---
+
+### Tier 12 — Active Sprint Analytics
+
+| ID | Feature | Status | Spec | Plan |
+|----|---------|--------|------|------|
+| F32 | Daily Developer Progress | Spec Ready | [DailyDeveloperProgress](specs/F32-DailyDeveloperProgress/definition/spec.md) | — |
+
+**F32:** Per-developer burnup cards on a new "Daily Progress" tab on the Developers page. Active sprint only. Each developer card shows a mini burnup chart (actual vs expected pace line), SP completed/assigned (all ticket types), and stall detection (tickets with no status transition in 2+ business days). Alert banner flags developers behind pace. Pace-based alerting with 2-day grace period. Sub-team filterable. Auto-refresh via SignalR (requires building initial real-time infrastructure).
 
 ---
 

@@ -3,8 +3,8 @@
 **Traces to:** `docs/product/v2.md` §5.3
 **Source:** Scratch
 **Dependencies:** F25 (Xray Integration & Ticket Test Enrichment), F26 (Sprint Test Coverage — per-sprint QA metrics, health thresholds), F13 (Bug Ratio — per-sprint bug SP percentage for defect correlation)
-**Status:** Ready
-**Plan:** None
+**Status:** Done
+**Plan:** `docs/specs/F27-CrossSprintQaTrends/delivery/plan.md`
 
 ---
 
