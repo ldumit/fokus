@@ -198,7 +198,8 @@ Build the initial SignalR infrastructure: a hub that the frontend subscribes to,
 - Modify: `src/Services/Fokus/Fokus.API/DependencyInjection.cs` -- add `services.AddSignalR()`
 - Modify: `src/Services/Fokus/Fokus.API/Program.cs` -- add `app.MapHub<SprintHub>("/hubs/sprint")` after `UseFokusMiddleware()` and before `MapFallbackToFile`
 - Modify: `src/Services/Fokus/Fokus.API/Features/Sync/SyncSprints/SyncSprintsEndpoint.cs` -- inject `IHubContext<SprintHub>`, call broadcast after successful sync
-- Modify: `src/Services/Fokus/Fokus.API/Features/Sync/SyncBacklogSprints/SyncBacklogSprintsEndpoint.cs` -- same pattern (backlog sync can also update active sprint data)
+
+**Not modified:** `SyncBacklogSprintsEndpoint` -- backlog sync only touches `SprintState.Future` sprints, which can never be the active sprint. Broadcasting from it would be semantically misleading and a no-op for Daily Progress clients.
 
 **SprintHub:**
 - Hub class decorated with `[Authorize]` (authenticated users only -- consistent with all other endpoints requiring auth).
@@ -214,7 +215,7 @@ Build the initial SignalR infrastructure: a hub that the frontend subscribes to,
 - `AddSignalR()` registered in DI
 - `SprintHub` mapped at `/hubs/sprint`
 - `SprintHub` decorated with `[Authorize]` -- unauthenticated clients cannot connect
-- Sync endpoints broadcast `SprintSynced` event with sprint IDs after successful sync
+- `SyncSprintsEndpoint` broadcasts `SprintSynced` event with sprint IDs after successful sync
 - Hub is empty (no client-to-server methods)
 - SignalR broadcast failure does not break the sync response
 

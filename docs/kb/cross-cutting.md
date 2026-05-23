@@ -85,6 +85,16 @@ All sprint scope surfaces are feature-only — bugs are excluded from the comput
 - `BugSpCompleted` field on `ScopeChangePerSprintData` — separate bug bars in multi-sprint bar chart
 - Dashboard SP Completed annotation `(+X bug SP)` — a separate field `BugSpCompleted` on SprintMetrics
 
+### Exception: Daily Developer Progress (all ticket types)
+
+`DeveloperProgressService` does NOT apply the feature-only filter. Rationale: daily progress tracks actual delivery pace across all work a developer is doing, not sprint scope health.
+
+- **Assigned SP** = sum of SP for all non-removed memberships (no `!IsBug` filter, no transition gate). Represents the developer's full committed load.
+- **Completed SP** = sum for tickets with a qualifying done-status transition within the sprint (all types).
+- **Stall detection** = applies to all ticket types, not features only.
+
+Key file: `Fokus.API/Features/Analytics/DeveloperProgressService.cs`
+
 ## Transition-Based Sprint Scope (TransitionBasedSprintScope)
 
 All sprint scope attribution uses transition timestamps, not snapshot fields (`WasCommitted`, `FinalStatus`).

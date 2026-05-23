@@ -5,6 +5,7 @@ using Fokus.API.Features.Auth.Login;
 using Fokus.API.Features.Settings;
 using Fokus.API.Features.Sync;
 using Fokus.API.Features.Xray;
+using Fokus.API.Hubs;
 using Fokus.Persistence;
 using Jira.RestApi;
 using Scalar.AspNetCore;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddFastEndpoints();
         services.SwaggerDocument();
         services.AddOpenApi();
+        services.AddSignalR();
 
         services.AddRestApiJira(configuration);
         services.AddGraphQLXray(configuration);
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<QaWorkloadService>();
         services.AddScoped<TestTimelineService>();
         services.AddScoped<QaTrendsService>();
+        services.AddScoped<DeveloperProgressService>();
 
         return services;
     }

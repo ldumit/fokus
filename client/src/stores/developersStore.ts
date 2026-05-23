@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import type { SprintItem, DeveloperThroughputResponse, BugRatioResponse, LeaderboardResponse, DeveloperQualityResponse, QaWorkloadResponse } from '../types'
 import { getDeveloperThroughput, getBugRatio, getLeaderboard, getSprints, getSubTeams, getDeveloperQuality, getQaWorkload } from '../api/analytics'
 import { setDeveloperCapacity } from '../api/developers'
+import { useDailyProgressStore } from './dailyProgressStore'
 
 export const useDevelopersStore = defineStore('developers', () => {
   const sprints = ref<SprintItem[]>([])
@@ -16,7 +17,7 @@ export const useDevelopersStore = defineStore('developers', () => {
   const initializing = ref(false)
   const error = ref<string | null>(null)
 
-  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload'>('throughput')
+  const activeTab = ref<'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload' | 'dailyProgress'>('throughput')
   const bugRatio = ref<BugRatioResponse | null>(null)
   const bugRatioLoading = ref(false)
   const bugRatioError = ref<string | null>(null)
@@ -51,6 +52,7 @@ export const useDevelopersStore = defineStore('developers', () => {
   }
 
   async function selectSprint(sprintId: number) {
+    if (activeTab.value === 'dailyProgress') return
     sprintMode.value = 'single'
     selectedSprintId.value = sprintId
     selectedLast.value = null
@@ -70,6 +72,7 @@ export const useDevelopersStore = defineStore('developers', () => {
   }
 
   async function selectLastN(n: number | null) {
+    if (activeTab.value === 'dailyProgress') return
     sprintMode.value = 'multi'
     selectedLast.value = n
     selectedSprintId.value = null
@@ -103,9 +106,18 @@ export const useDevelopersStore = defineStore('developers', () => {
     if (activeTab.value === 'qaWorkload') {
       await fetchQaWorkload()
     }
+    if (activeTab.value === 'dailyProgress') {
+      const dailyProgressStore = useDailyProgressStore()
+      await dailyProgressStore.fetchProgress(subTeam)
+    }
   }
 
-  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload') {
+  async function switchTab(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload' | 'dailyProgress') {
+    // Stop SignalR when leaving dailyProgress tab
+    if (activeTab.value === 'dailyProgress' && tab !== 'dailyProgress') {
+      const dailyProgressStore = useDailyProgressStore()
+      await dailyProgressStore.stopSignalR()
+    }
     activeTab.value = tab
     if (tab === 'bugRatio') {
       await fetchBugRatio()
@@ -118,6 +130,11 @@ export const useDevelopersStore = defineStore('developers', () => {
     }
     if (tab === 'qaWorkload') {
       await fetchQaWorkload()
+    }
+    if (tab === 'dailyProgress') {
+      const dailyProgressStore = useDailyProgressStore()
+      await dailyProgressStore.fetchProgress(selectedSubTeam.value)
+      await dailyProgressStore.startSignalR()
     }
   }
 

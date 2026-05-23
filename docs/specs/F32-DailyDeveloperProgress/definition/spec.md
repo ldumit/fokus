@@ -3,7 +3,7 @@
 **Traces to:** `docs/product/v1.md` §5.1 (Developer Throughput — per-developer analytics pattern). Extends v1 into active sprint daily tracking — a concept not in the original spec.
 **Source:** Scratch
 **Dependencies:** F9 (Developer Throughput — Developers page, tab pattern), F23 (Transition-Based Sprint Scope — completion timestamps), adhoc-ActiveSprintAnalytics (active sprint support in analytics pipeline)
-**Status:** Ready
+**Status:** Done
 **Plan:** `docs/specs/F32-DailyDeveloperProgress/delivery/plan.md`
 
 ---

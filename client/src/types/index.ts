@@ -1339,3 +1339,69 @@ export interface QaTrendsResponse {
   testingVolume: TestingVolumeEntry[]
   defectCorrelation: DefectCorrelationResult | null
 }
+
+// Daily Developer Progress types
+export interface DeveloperProgressSprintInfo {
+  id: number
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface DeveloperProgressAlert {
+  accountId: string
+  displayName: string
+  avatarUrl: string | null
+  gapSp: number
+  gapDays: number
+}
+
+export interface CompletedTicketEntry {
+  key: string
+  summary: string
+  storyPoints: number | null
+  issueType: string
+}
+
+export interface DayBreakdownEntry {
+  day: number
+  date: string
+  completedTickets: CompletedTicketEntry[]
+  cumulativeSp: number
+  expectedCumulativeSp: number
+}
+
+export interface StalledTicketEntry {
+  key: string
+  summary: string
+  currentStatus: string
+  issueType: string
+  storyPoints: number | null
+  daysSinceLastTransition: number
+}
+
+export interface DeveloperProgressEntry {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  assignedSp: number
+  completedSp: number
+  completionPercent: number
+  capacityPercent: number
+  dailyPace: number
+  isBehindPace: boolean
+  paceGapSp: number | null
+  stalledTickets: StalledTicketEntry[]
+  dailyBreakdown: DayBreakdownEntry[]
+}
+
+export interface DeveloperProgressResponse {
+  hasActiveSprint: boolean
+  sprint: DeveloperProgressSprintInfo | null
+  currentDay: number
+  totalDays: number
+  isGracePeriod: boolean
+  alerts: DeveloperProgressAlert[]
+  developers: DeveloperProgressEntry[]
+}

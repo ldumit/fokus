@@ -2,6 +2,8 @@ namespace Fokus.Domain;
 
 public partial class Sprint
 {
+    public void AddMembership(SprintMembership membership) => _memberships.Add(membership);
+
     public static Sprint FromJira(JiraSprint dto, string boardName)
     {
         var state = dto.State.ToLowerInvariant() switch

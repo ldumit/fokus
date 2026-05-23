@@ -24,6 +24,7 @@ Navigate here before reading source files. Find the relevant entry, get business
 - [Epic Progress](analytics/epic-progress.md) — dual tracking, imputed SP, velocity, projections
 - [Leaderboard](analytics/leaderboard.md) — feature vs bug SP breakdown, delta polarity, dashboard toggle
 - [Test Timeline](analytics/test-timeline.md) — burnup computation, crunch threshold, effective date resolution, dev-to-test gap
+- [Daily Developer Progress](analytics/daily-progress.md) — pace formula, grace period, behind-pace rule, stall detection, SignalR auto-refresh
 
 ## Cross-Cutting
 

@@ -1,4 +1,4 @@
-import type { SprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse, QaTrendsResponse } from '../types'
+import type { SprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse, QaTrendsResponse, DeveloperProgressResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -153,4 +153,11 @@ export function getQaTrends(last?: number, subTeam?: string): Promise<QaTrendsRe
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<QaTrendsResponse>(`/analytics/qa-trends${query ? `?${query}` : ''}`)
+}
+
+export function getDeveloperProgress(subTeam?: string): Promise<DeveloperProgressResponse> {
+  const params = new URLSearchParams()
+  if (subTeam) params.set('subTeam', subTeam)
+  const query = params.toString()
+  return apiFetch<DeveloperProgressResponse>(`/analytics/developer-progress${query ? `?${query}` : ''}`)
 }

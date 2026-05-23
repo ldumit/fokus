@@ -1,3 +1,6 @@
+using Fokus.API.Hubs;
+using Microsoft.AspNetCore.SignalR;
+
 namespace Fokus.API.Features.Sync.SyncSprints;
 
 [HttpPost("/api/sync/sprints")]
@@ -6,7 +9,9 @@ namespace Fokus.API.Features.Sync.SyncSprints;
 public class SyncSprintsEndpoint(
     IJiraClient jiraClient,
     AppSettingsRepository settingsRepository,
-    SprintIssueSyncService syncService)
+    SprintIssueSyncService syncService,
+    IHubContext<SprintHub> hubContext,
+    ILogger<SyncSprintsEndpoint> logger)
     : Endpoint<SyncSprintsCommand, SyncSprintsResponse>
 {
     public override async Task HandleAsync(SyncSprintsCommand command, CancellationToken ct)
@@ -34,6 +39,19 @@ public class SyncSprintsEndpoint(
 
         var result = await syncService.SyncSprintsFromJiraAsync(
             sprintsInRange, $"Board {boardId}", forcedNotCommitted: false, ct);
+
+        // Broadcast SprintSynced after successful sync — failure must not break the sync response
+        try
+        {
+            await hubContext.Clients.All.SendAsync(
+                SprintHubMethods.SprintSynced,
+                new { SprintIds = sprintsInRange.Select(s => s.Id).ToArray() },
+                ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "SignalR broadcast failed after sprint sync — sync result is unaffected.");
+        }
 
         XraySyncSummary? xray = null;
         if (result.XrayTestExecutionsSynced > 0 || result.XrayTestRunsSynced > 0 || result.XrayTestSetsSynced > 0 || (result.XrayWarnings?.Count > 0))

@@ -1,6 +1,7 @@
 using Blocks.AspNetCore.Middlewares;
 using Fokus.API;
 using Fokus.API.Auth;
+using Fokus.API.Hubs;
 using Fokus.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -46,6 +47,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseStaticFiles();
 app.UseFokusAuth();
 app.UseFokusMiddleware();
+app.MapHub<SprintHub>("/hubs/sprint");
 app.MapFallbackToFile("index.html");
 
 app.Run();

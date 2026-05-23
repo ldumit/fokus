@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<{
   sprintMode?: 'single' | 'multi'
   selectedLast?: number | null
   showEditButton?: boolean
+  disabled?: boolean
 }>(), {
   sprints: () => [],
   selectedSprintId: null,
@@ -30,7 +31,8 @@ const props = withDefaults(defineProps<{
   showSprintInfo: true,
   sprintMode: 'single',
   selectedLast: null,
-  showEditButton: false
+  showEditButton: false,
+  disabled: false
 })
 
 const emit = defineEmits<{
@@ -122,6 +124,7 @@ function formatDate(dateStr: string): string {
       :model-value="sprintValue"
       placeholder="No sprints"
       title="Choose a specific sprint to analyze, or select a range (Last 3, Last 5, All) for trend views."
+      :class="disabled ? 'opacity-50 pointer-events-none' : ''"
       @update:model-value="onSprintChange"
     >
       <template #icon>

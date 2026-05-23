@@ -258,7 +258,7 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F32 | Daily Developer Progress | Spec Ready | [DailyDeveloperProgress](specs/F32-DailyDeveloperProgress/definition/spec.md) | — |
+| F32 | Daily Developer Progress | Done | [DailyDeveloperProgress](specs/F32-DailyDeveloperProgress/definition/spec.md) | [plan](specs/F32-DailyDeveloperProgress/delivery/plan.md) |
 
 **F32:** Per-developer burnup cards on a new "Daily Progress" tab on the Developers page. Active sprint only. Each developer card shows a mini burnup chart (actual vs expected pace line), SP completed/assigned (all ticket types), and stall detection (tickets with no status transition in 2+ business days). Alert banner flags developers behind pace. Pace-based alerting with 2-day grace period. Sub-team filterable. Auto-refresh via SignalR (requires building initial real-time infrastructure).
 

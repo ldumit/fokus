@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDevelopersStore } from '../stores/developersStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useDailyProgressStore } from '../stores/dailyProgressStore'
 import PageLayout from '../components/PageLayout.vue'
 import PageToolbar from '../components/PageToolbar.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -11,11 +12,13 @@ import BugRatioTab from '../components/developers/BugRatioTab.vue'
 import LeaderboardTab from '../components/developers/LeaderboardTab.vue'
 import QualityTab from '../components/developers/QualityTab.vue'
 import QaWorkloadTab from '../components/developers/QaWorkloadTab.vue'
+import DailyProgressTab from '../components/developers/DailyProgressTab.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useDevelopersStore()
 const settingsStore = useSettingsStore()
+const dailyProgressStore = useDailyProgressStore()
 
 onMounted(async () => {
   // Seed state from URL before initialize
@@ -40,6 +43,8 @@ onMounted(async () => {
     store.activeTab = 'quality'
   } else if (tabParam === 'qa-workload') {
     store.activeTab = 'qaWorkload'
+  } else if (tabParam === 'daily-progress') {
+    store.activeTab = 'dailyProgress'
   }
 
   await Promise.all([store.initialize(), settingsStore.fetchSettings()])
@@ -63,6 +68,18 @@ onMounted(async () => {
   if (store.activeTab === 'qaWorkload' && store.qaWorkload === null) {
     await store.fetchQaWorkload()
   }
+
+  // If daily-progress tab was requested, fetch progress and start SignalR
+  if (store.activeTab === 'dailyProgress' && dailyProgressStore.data === null) {
+    await dailyProgressStore.fetchProgress(store.selectedSubTeam)
+    await dailyProgressStore.startSignalR()
+  }
+})
+
+onUnmounted(() => {
+  if (store.activeTab === 'dailyProgress') {
+    dailyProgressStore.stopSignalR()
+  }
 })
 
 // URL sync
@@ -85,6 +102,8 @@ watch(
       query.tab = 'quality'
     } else if (tab === 'qaWorkload') {
       query.tab = 'qa-workload'
+    } else if (tab === 'dailyProgress') {
+      query.tab = 'daily-progress'
     }
 
     router.replace({ query })
@@ -103,7 +122,7 @@ function onSubTeamChange(subTeam: string | null) {
   store.selectSubTeam(subTeam)
 }
 
-function onTabSwitch(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload') {
+function onTabSwitch(tab: 'throughput' | 'bugRatio' | 'leaderboard' | 'quality' | 'qaWorkload' | 'dailyProgress') {
   store.switchTab(tab)
 }
 
@@ -124,6 +143,7 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
         :show-aggregate-options="true"
         :sprint-mode="store.sprintMode"
         :selected-last="store.selectedLast"
+        :disabled="store.activeTab === 'dailyProgress'"
         @update:selected-sprint-id="(id) => store.selectSprint(id)"
         @update:selected-sub-team="onSubTeamChange"
         @update:sprint-mode="onSprintModeChange"
@@ -209,6 +229,17 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
         >
           QA Workload
         </button>
+        <button
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            store.activeTab === 'dailyProgress'
+              ? 'border-accent-default text-accent-default'
+              : 'border-transparent text-text-secondary hover:text-text-primary'
+          ]"
+          @click="onTabSwitch('dailyProgress')"
+        >
+          Daily Progress
+        </button>
       </div>
 
       <!-- Throughput tab -->
@@ -277,6 +308,13 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
           :data="store.qaWorkload"
           :sprint-mode="store.sprintMode"
         />
+      </template>
+
+      <!-- Daily Progress tab -->
+      <template v-else-if="store.activeTab === 'dailyProgress'">
+        <div v-if="dailyProgressStore.loading" class="text-xs text-text-muted">Loading...</div>
+        <div v-else-if="dailyProgressStore.error" class="text-sm text-status-danger">{{ dailyProgressStore.error }}</div>
+        <DailyProgressTab v-else-if="dailyProgressStore.data" :data="dailyProgressStore.data" />
       </template>
     </template>
   </PageLayout>
