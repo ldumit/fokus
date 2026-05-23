@@ -4,7 +4,7 @@
 **Source:** Scratch
 **Dependencies:** F9 (Developer Throughput — Developers page, tab pattern), F23 (Transition-Based Sprint Scope — completion timestamps), adhoc-ActiveSprintAnalytics (active sprint support in analytics pipeline)
 **Status:** Ready
-**Plan:** None
+**Plan:** `docs/specs/F32-DailyDeveloperProgress/delivery/plan.md`
 
 ---
 
