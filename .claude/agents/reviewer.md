@@ -112,8 +112,8 @@ In the `## Reviewed By` section, state who performed this review: `reviewer` (So
 
 Based on your verdict:
 - **REQUEST CHANGES:** Message team lead: "For developer: Fixes needed for {FeatureName}, see review.md. Cycle {N}/3."
-- **APPROVE:** Message team lead: "For architect: APPROVED: {FeatureName}. Review saved to review.md."
-- **COMMENT:** Message team lead: "For architect: COMMENT: {FeatureName}. No blockers, see review.md."
+- **APPROVE:** Message team lead: "For team-lead: APPROVED: {FeatureName}. Review saved to review.md."
+- **COMMENT:** Message team lead: "For team-lead: COMMENT: {FeatureName}. No blockers, see review.md."
 
 ## Escalation
 

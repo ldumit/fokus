@@ -344,25 +344,13 @@ Auto-commit at each checkpoint. No confirmation needed.
 
 After reviewer APPROVED, run these in order. Update Step in the communication log at each transition.
 
-### Tester
-
-Spawn the tester to diff the branch against its base, write/verify tests, and run them. The tester never modifies production code.
-
-If tester reports `production_bug` → route back to developer for fix → architect review → tester re-run. This shares the review cycle counter.
-
-If tester reports `green` → proceed to Teacher.
-
 ### Lessons Processing (optional)
 
-Skip by default. After all other post-approval phases complete, ask the user: "Process lessons from this pipeline? (promotes patterns to CLAUDE.md, skills, agent files)". If yes, spawn a learner agent to process the current task's `lessons.md` only. If no, skip — lessons stay in the file for future reference.
-
-### Builder (optional)
-
-Skip by default. The user can request a build in their launch message (e.g., "implement and build F26"). If requested, spawn the builder with the specified flavor.
+Skip by default. After reviewer approval, ask the user: "Process lessons from this pipeline? (promotes patterns to CLAUDE.md, skills, agent files)". If yes, spawn a learner agent to process the current task's `lessons.md` only. If no, skip — lessons stay in the file for future reference.
 
 ## Team Shutdown
 
-- **No issues detected:** After post-approval phases complete (or after reviewer approval if tester/teacher/builder are skipped), write `docs/specs/{slug}/delivery/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Update Step to `done` in the communication log. Then shut down the team.
+- **No issues detected:** After post-approval phases complete (or after reviewer approval if lessons processing is skipped), write `docs/specs/{slug}/delivery/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Update Step to `done` in the communication log. Then shut down the team.
 - **Issues detected** (failed writes, miscommunication, missing handoffs, or any unexpected behavior): Do NOT shut down the team. Instead:
   1. Identify each issue.
   2. Message the relevant agent(s) to ask what happened and why.
@@ -396,7 +384,7 @@ Format:
 
 Header fields:
 - **Branch** — set once at team launch, never updated.
-- **Step** — updated at each phase transition. Values: `architect-plan`, `developer-analyze`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `tester`, `teacher`, `builder`, `done`.
+- **Step** — updated at each phase transition. Values: `architect-plan`, `developer-analyze`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `learner`, `done`.
 - **Cycle** — updated when review cycles change. Initial: `0/3`. Reset to `0/3` after each approval phase.
 
 Rules:
@@ -449,7 +437,6 @@ Defaults:
 - **Reviewer fix cycles:** Up to 3, then force-accept.
 - **Escalation:** Force-accept.
 - **Commits:** 2-commit strategy (plan + final). Auto-commit, no confirmation.
-- **Builder:** Skip. Do not ask.
 - **All pipeline artifacts are mandatory:** plan.md, implementation.md, review.md, summary.md, lessons.md, communication-log.md. Do not skip any.
 
 If `[UNATTENDED]` is absent, follow the **autonomous interactive flow** — apply defaults silently, route questions to PO, and only escalate to the user when the PO can't answer from spec context, when 3 review cycles are exhausted, or on phase failures. The user can override any default by stating preferences in their launch message.

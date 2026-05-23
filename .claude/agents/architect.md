@@ -147,7 +147,7 @@ Do NOT write the plan in this phase. Phase 1 ends here. The team lead will triag
 
 ### Standalone mode (interactive with user, not spawned by team lead)
 
-When working directly with the user (e.g., `be architect`), run both phases in sequence — the user can interrupt between them naturally since they're in the conversation.
+When working directly with the user (e.g., `be architect`), run both phases in sequence. After Phase 1 analysis, use `AskUserQuestion` to present questions from the problem statement (ambiguities, assumptions, scope decisions) even when there is no spec — the problem description is the input to analyze. After writing the plan, use `AskUserQuestion` to ask for review mode (self-review or critic) before running the review.
 
 ## Plan Writing Rules
 
@@ -170,7 +170,7 @@ Additionally:
 - **Method-body plans:** Describing sequential logic steps (1. do X, 2. do Y, 3. do Z) under a single method signature. This produces monolithic implementations. Instead: describe operations and acceptance criteria. Let developer decide decomposition.
 - **30+ micro-steps:** A plan with >15 steps or sub-steps within steps is over-specified. Instead: combine related operations into one step with acceptance criteria.
 - **Pseudo-code in plans:** Writing "Logic flow: 1. Read X, 2. Filter Y, 3. Map to Z, 4. Persist." Instead: "Sync discovered entities to the database. Accept: all link types persisted, partial failures don't block."
-- **Implementation detail in None steps:** Just because no skill exists doesn't mean you should write the implementation. The skill gap means MORE developer judgment needed, not less. Describe what + acceptance criteria, not how.
+- **Implementation detail in None steps:** Describe what to accomplish + acceptance criteria. Since the developer has no skill to invoke, also include key domain constraints (type names, case sensitivity, link types) and pattern references (point to existing code to follow). Do NOT write method-body logic or iteration algorithms — the developer decides internal decomposition.
 
 
 ## Step 1: Done Check

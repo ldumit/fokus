@@ -4,7 +4,7 @@ Service DI registration — layer structure, where each dependency type goes, Ho
 
 ## Reference
 
-`D:\src\dotnet-microservices\src\Services\` — all services follow this pattern. Auth (FastEndpoints), Review (Carter), Submission (Minimal API) demonstrate the same DI structure regardless of endpoint framework.
+`src/Services/` — all services follow this pattern. Fokus (FastEndpoints) demonstrates the standard DI structure with API + Persistence layers (no Application project).
 
 ## Layer Structure
 

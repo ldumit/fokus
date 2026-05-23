@@ -36,7 +36,9 @@ Before writing, ensure you have:
 4. **Build the Skill Mapping** — for each step, determine the disposition:
    - **Follow** — a skill covers this pattern. Provide only feature-specific inputs (entity names, file paths, property types). Do NOT restate how the pattern works.
    - **Build** — a skill covers this pattern but references infrastructure that doesn't exist locally (BuildingBlocks, base classes). The step must include building the missing infrastructure first, then following the skill.
-   - **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Do NOT write method-body logic flows (sequential pseudo-code under a single method). The developer decides internal decomposition. Log to the Gaps column for future skill creation.
+   - **None** — no skill covers this step. Describe what to accomplish + acceptance criteria. Since the developer has no skill to invoke, also include key domain constraints (type names, case sensitivity, important values) and pattern references (point to existing code). Do NOT write method-body logic flows (sequential pseudo-code under a single method). The developer decides internal decomposition. Log to the Gaps column for future skill creation.
+
+   **Skill verification before setting None:** For each step, list the actions it performs (throws exceptions, registers services, queries data, creates endpoints, configures persistence). Match each action against skill frontmatter descriptions. Only set None after confirming no frontmatter description matches. If a frontmatter is ambiguous, read the skill's When to Use section before deciding.
 
 5. **Anti-pattern check.** Scan the draft for:
    - The word "adapted" or "adapt" near a skill reference — violation. Either Follow or Build, never Adapt.
