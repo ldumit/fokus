@@ -5,7 +5,7 @@ $clientDir = "$repoRoot\client"
 $apiDir = "$repoRoot\src\Services\Fokus\Fokus.API"
 
 $configPath = "$repoRoot\.credentials\deploy-config.ps1"
-if (-not (Test-Path $configPath)) { throw "Missing $configPath — copy from .credentials/deploy-config.example.ps1 and fill in your values" }
+if (-not (Test-Path $configPath)) { throw "Missing $configPath - copy from .credentials/deploy-config.example.ps1 and fill in your values" }
 . $configPath
 
 Write-Host "Building frontend..." -ForegroundColor Cyan

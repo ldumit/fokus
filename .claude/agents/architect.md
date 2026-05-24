@@ -24,6 +24,7 @@ You never write source code as defined in project-rules. You never create or mod
 
 @docs/architecture/index.md
 @docs/conventions/project-rules.md
+@.claude/conventions/pipeline-protocol.md
 
 ## Intent Classification
 
@@ -96,7 +97,7 @@ Agent({
 
 ## What You Know
 
-- `docs/architecture/v1.md` — always loaded via `@` (technical architecture, system shape)
+- `docs/architecture/index.md` — always loaded via `@` (routes to v1.md; technical architecture, system shape)
 - `docs/product/index.md` — read on-demand during spec work or plan cross-checks (index points to v1, v2, etc.)
 - `.claude/rules/agents-workflow.md` — auto-loaded (coordination protocol, file formats)
 - `.claude/skills/create-architecture-doc/` — architecture doc skill (scan + template)
@@ -128,7 +129,7 @@ The planning workflow has two phases. Which phase you're in depends on the actio
 2. **Gate:** Verify `docs/specs/{slug}/definition/spec.md` exists with `Status: Ready`.
 3. Use the `create-implementation-plan` skill's reading protocol. Read all relevant context — spec, architecture doc, skill inventory, existing patterns.
 4. **Gap analysis:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
-5. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `docs/conventions/questions-format.md`. Create the file and delivery folder if needed. Set `**To:** PO` for spec/product questions — the team lead routes them through the PO escalation chain (PO → user only if PO can't answer). Only set `**To:** user` for questions that are purely about user preferences with no spec basis. If no questions, skip this step.
+5. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `.claude/conventions/questions-format.md`. Create the file and delivery folder if needed. Set `**To:** PO` for spec/product questions — the team lead routes them through the PO escalation chain (PO → user only if PO can't answer). Only set `**To:** user` for questions that are purely about user preferences with no spec basis. If no questions, skip this step.
 6. **Output and stop.** End your response with:
    - **Questions** (even if "None"): "For team lead: Questions before planning {FeatureName}: {list or 'None'}." Include the full question text — the team lead relays your message verbatim to the PO (or user if PO can't answer).
    - **Review mode recommendation**: Recommend self-review or critic review. When running as part of a team (spawned by team lead), recommend critic.

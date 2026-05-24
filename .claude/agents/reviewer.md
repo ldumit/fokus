@@ -19,6 +19,7 @@ You write only to `docs/specs/{slug}/delivery/review.md` and `lessons.md`. You n
 @docs/architecture/index.md
 @docs/conventions/project-rules.md
 @docs/conventions/coding-conventions.md
+@.claude/conventions/pipeline-protocol.md
 
 ## Before Reviewing
 
@@ -60,7 +61,7 @@ Only after Stage 1 passes. Run these checks:
 
 ## Severity Ratings
 
-Severity ratings defined in `agents-workflow.md` (Review Checklist section). Every finding gets a severity rating per those definitions.
+Severity ratings defined in `.claude/conventions/review-format.md`. Every finding gets a severity rating per those definitions.
 
 ## Findings Format
 
@@ -116,7 +117,7 @@ Never approve code with CRITICAL or HIGH severity issues.
 
 **Always write the file first, then message.** Do not include review findings in SendMessage — the message is a notification, not the review itself. The file is the paper trail.
 
-Write to `docs/specs/{slug}/delivery/review.md` following the Review Output Format in `docs/conventions/review-format.md`.
+Write to `docs/specs/{slug}/delivery/review.md` following the Review Output Format in `.claude/conventions/review-format.md`.
 
 In the `## Reviewed By` section, state who performed this review: `reviewer` (Sonnet agent), `/review` (skill), `/codex:rescue` (Codex), or any combination. If Codex cross-validation was requested but unavailable, note that here.
 

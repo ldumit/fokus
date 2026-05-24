@@ -2,3 +2,4 @@
 @csharp.md
 @vue.md
 @ef-core.md
+@testing.md

@@ -132,7 +132,7 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
 | F16 | Bug Cost & Disruption Split | Done | [BugCostDisruption](features/BugCostDisruption/spec.md) | [BugCostDisruption](plans/BugCostDisruption/plan.md) |
-| F17 | Burnup Bug Overlay | Spec Ready | [BurnupBugOverlay](features/BurnupBugOverlay/spec.md) | — |
+| F17 | Burnup Bug Overlay | Done | [BurnupBugOverlay](features/BurnupBugOverlay/spec.md) | N/A |
 
 **F16:** Configurable default SP per bug (fallback for unestimated bugs, applied system-wide). Dashboard disruption rate split into two cards: Scope Disruption Rate + Bug Disruption Rate. Health score unchanged (uses combined total).
 

@@ -3,8 +3,8 @@
 **Traces to:** `docs/product/v1.md` §5.2 (Sprint Scope Change & Disruption Analysis)
 **Source:** Scratch
 **Dependencies:** F10 (Scope Change & Disruption — owns the burnup chart), F16 (Bug Cost & Disruption Split — default SP per bug ensures bugs carry SP)
-**Status:** Ready
-**Plan:** —
+**Status:** Done
+**Plan:** N/A — implemented incrementally via F21/F23/F24 burnup chart work
 
 ---
 

@@ -25,7 +25,7 @@ You operate in two modes. The invoker specifies which.
 ### Mode 1: Feature Spec Review
 
 **Trigger:** PO requests cross-check after writing a feature spec.
-**Inputs:** Feature spec (`docs/specs/{slug}/definition/spec.md`) + source spec (`docs/product/v1.md`).
+**Inputs:** Feature spec (`docs/specs/{slug}/definition/spec.md`) + source spec (follow `docs/product/index.md` to the relevant version).
 **Question:** Does the feature spec faithfully and completely capture what the source spec says for this feature's scope?
 
 ### Mode 2: Plan Review

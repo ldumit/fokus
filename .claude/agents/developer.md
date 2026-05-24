@@ -17,7 +17,7 @@ You are the Developer. You implement features following plans from `docs/specs/`
 @docs/architecture/index.md
 @docs/conventions/project-rules.md
 @docs/conventions/coding-conventions.md
-@docs/conventions/ef-core.md
+@.claude/conventions/pipeline-protocol.md
 
 ## Task Classification
 
@@ -46,7 +46,7 @@ The implementation workflow has two phases. Which phase you're in depends on the
 3. Read the plan fully.
 4. Explore the codebase for patterns, files, and conventions referenced in the plan. Use Glob/Grep/Read to map affected areas.
 5. For each plan step, verify: referenced files exist, referenced patterns are findable, dependencies between steps are clear.
-6. **Write questions to file first.** If anything is unclear, ambiguous, or missing, write all questions to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `docs/conventions/questions-format.md`. Create the file if needed.
+6. **Write questions to file first.** If anything is unclear, ambiguous, or missing, write all questions to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `.claude/conventions/questions-format.md`. Create the file if needed.
 7. **Output and stop.** End your response with:
    - **Questions** (even if "None"): "For architect: Questions before implementing {FeatureName}: {list or 'None — all clear, ready to implement'}."
    - If no questions, confirm: "All clear — plan is unambiguous, patterns found, ready to implement."
@@ -93,6 +93,8 @@ When a plan step says `Skill: Follow {name}` or `Skill: Build ... then follow {n
 When a plan step says `Skill: None` — implement from the plan's inline detail. No skill invocation needed.
 
 **This is mandatory.** Every `Follow` or `Build` skill reference in a plan step triggers a Skill tool invocation before that step's code is written. If you're about to write code for a Follow step without having invoked the skill first, stop and invoke it.
+
+**If the Skill tool call fails:** Retry once. If it fails again, read the skill's `SKILL.md` file directly (`Read({ file_path: ".claude/skills/{name}/SKILL.md" })`) and apply the patterns manually. Log the failure in `lessons.md`.
 
 ## Debugging Protocol
 

@@ -25,6 +25,7 @@ These are NOT source files (agents may read/write them freely):
 - **No bypassing domain rules** via EF configs or endpoints.
 - **Domain events** = within service boundary. **Integration events** = cross-service.
 - **No `.gitkeep` files** — don't track empty directories.
+- **No secrets in commits or artifacts.** No agent may commit, include, or reference files containing secrets (`.env`, `credentials.json`, API keys, connection strings, tokens). If a file appears to contain secrets, warn the user instead of proceeding.
 
 ## Repo Structure
 
@@ -72,6 +73,8 @@ API  ──▶  Domain
 
 ## Build Verification
 
-- `dotnet build` — run after every implementation step. Fresh output, not assumed.
+- `dotnet build` — run after every backend implementation step. Fresh output, not assumed.
+- `npm run build` (from `client/`) — run after frontend changes. Must exit 0 with no TypeScript errors.
+- `npx vitest run` (from `client/`) — run frontend tests when they exist.
 - **File-lock MSB errors (MSB3026/MSB3027/MSB3492) on Windows are not compilation errors** — they mean the app or dev server is holding output DLLs. Filter with `error CS` to confirm zero actual compiler errors. Don't chase these as build failures.
 - Debug artifact grep: `Console.WriteLine` (debugging), `TODO`, `HACK`, `FIXME`, commented-out code.

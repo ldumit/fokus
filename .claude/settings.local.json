@@ -43,7 +43,9 @@
       "mcp__claude_ai_Atlassian__search",
       "mcp__claude_ai_Atlassian__atlassianUserInfo",
       "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\.claude\\\\hooks\")",
-      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\docs\\\\audit\")"
+      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\docs\\\\audit\")",
+      "Bash(mkdir -p .claude/conventions)",
+      "Bash(git mv *)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
@@ -80,8 +82,8 @@
           {
             "type": "command",
             "command": "node .claude/hooks/audit-logger.js",
-            "async": true,
-            "timeout": 10
+            "timeout": 10,
+            "async": true
           }
         ]
       }

@@ -6,13 +6,12 @@
 - Sparkline anchor for active sprint: use `ascending.Count - 1` as the anchor index (not `selectedIndex`) so all preceding closed sprints remain in the window candidate set.
 - Rolling window with active sprint: set `rollingWindowBase = ascending.Count` so the 2-sprint expansion draws from the full closed-sprint history, not an empty set.
 - When a DTO previously named `ClosedXxx` gains a `State` field and gets renamed to `Xxx`, the frontend `PageToolbar` can read `sprint.state` directly to add visual indicators — no additional API call needed.
-- File-lock build errors (MSB3026/MSB3027) from a running dev server process are not compilation errors — filter for `error CS` to confirm zero actual compiler errors.
 - PowerShell paths with backslashes must be wrapped in `powershell -Command "..."` when invoked from bash; bare `cd D:\...` fails.
 
 ## Architect Lessons
 - When listing exception endpoints in a plan ("all of X except Y"), verify by grep that the exception is actually justified. The plan excluded GetScopeChange from the error message update list, but it contained the same error string as the other 8 endpoints. Grep-verify exclusion claims before publishing the plan.
 - When plan instructions say "if it references X" or "verify Y", require the developer to document the verification result in implementation.md even when no code change was needed. Omitting "checked SyncTab.vue — no references found" creates ambiguity during the done check about whether the step was skipped or checked-and-skipped.
-- Category labels in implementation.md (A/B/C/D) should match the plan exactly. GetTestTimeline was plan-Category B but reported as Category A. When the treatment is identical, this is cosmetic — but it forces the reviewer to investigate whether the mismatch hides a functional gap.
+- [TRACKED] Category labels in implementation.md (A/B/C/D) should match the plan exactly. GetTestTimeline was plan-Category B but reported as Category A. When the treatment is identical, this is cosmetic — but it forces the reviewer to investigate whether the mismatch hides a functional gap.
 
 ## Reviewer Lessons
 - When a plan widens a sprint lookup from "closed only" to "active + closed", verify every endpoint that does a single-sprint lookup independently — not just those that compute averages. The active-sprint 404/500 bugs in `GetQaMetrics` and `GetQaWorkload` were both single-sprint lookup gaps, not averaging gaps.

@@ -35,7 +35,7 @@ Lessons written during feature pipelines capture hard-won knowledge — gotchas,
 7. **Apply** — After approval, invoke skills:
    - Flow items → `improve-flow` skill
    - Skill items → `improve-skills` skill
-8. **Mark processed** — Tag applied items as `[APPLIED]` in their source lessons files. Tag single-occurrence items as `[TRACKED]`.
+8. **Mark processed** — Delete applied items from their source lessons files (the promoted content now lives in the target file). Tag single-occurrence items as `[TRACKED]`.
 
 ## Promotion Rules
 
@@ -115,22 +115,21 @@ Present findings grouped by action:
 
 After presenting, ask: "Approve all, or adjust items before applying?"
 
-## Tagging Format
+## Processing Format
 
-When marking items in lessons files:
+After promotion:
+- **Promoted items:** Delete the entire entry (including sub-bullets) from the source lessons file. The content now lives in the target file — keeping it in lessons is redundant.
+- **Tracked items:** Tag with `[TRACKED]` at the start of the bullet:
 
 ```markdown
-- [APPLIED] EF Core `HasData` is incompatible with entities that have `ToJson()` owned types.
 - [TRACKED] Plan should specify JSON property name attributes for Jira custom fields.
 ```
-
-The tag replaces the leading `- ` at the start of the bullet point.
 
 ## Artifacts
 
 | Artifact | Location |
 |----------|----------|
-| Lessons files (modified) | `docs/specs/*/delivery/lessons.md` — items tagged [APPLIED] or [TRACKED] |
+| Lessons files (modified) | `docs/specs/*/delivery/lessons.md` — promoted items deleted, single-occurrence items tagged [TRACKED] |
 | Skill backlog | `docs/skill-backlog.md` — created/updated by `improve-skills` |
 
 ## Completion Checklist
@@ -140,7 +139,7 @@ Before telling the user you're done:
 1. All lessons files discovered and processed.
 2. All promoted items applied to their targets via skills.
 3. No duplicate entries introduced in any target file.
-4. All applied items tagged `[APPLIED]` in source files.
+4. All promoted items deleted from source lessons files.
 5. All single-occurrence items tagged `[TRACKED]`.
 6. Skill gaps logged to backlog.
 7. Summary of changes reported to user.

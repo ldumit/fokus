@@ -50,6 +50,8 @@ For each step:
 - Feature-specific inputs only (entity names, property types, route paths)
 - Dependencies on previous steps
 
+**Always include a final numbered step for KB updates** if the KB Impact section identifies entries to update. Trailing sections are routinely skipped — only numbered steps are verified by the done check.
+
 **Follow step content budget:** When disposition is Follow, include ONLY what the skill can't know — feature-specific inputs. The developer invokes the skill via the Skill tool to get structural patterns. Over-specifying Follow steps causes the developer to skip skill invocation (all info is already inline). Target: 5-15 lines. A Follow step exceeding 30 lines is over-specified — split feature-specific inputs from structural patterns and delete the structural patterns.
 
 ## Cross-Service Changes (if applicable)

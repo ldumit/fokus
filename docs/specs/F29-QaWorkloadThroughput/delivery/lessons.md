@@ -22,5 +22,4 @@
 
 ## Skill Gaps
 
-- **Missing skill:** No skill for analytics metric computation services (pure computation, multi/single split, delta helpers, sparkline builders). Suggested name: `create-analytics-service`. Coverage: service class skeleton with multi/single methods, DeltaDirection/DeltaPolarity helpers, BuildMetricCard pattern, alert evaluation loop. Reference files: `BugRatioService.cs`, `DeveloperQualityService.cs`, `QaWorkloadService.cs`.
 - **Missing skill:** No skill for frontend developer tab integration (adding a tab button to DevelopersView, URL sync extension, store wiring). All five F2x features follow the same pattern. Suggested name: `add-developers-tab`. Coverage: store extension checklist, DevelopersView tab button template, onMounted URL seed pattern, watch extension.

@@ -2,8 +2,7 @@
 
 ## Developer Lessons
 
-- **BugRatioService.ComputeMultiSprint requires sprints with memberships loaded** — The method accesses `s.Memberships` directly on each sprint. When calling it from a new endpoint that only loads a subset of sprints, you must pass all closed sprints (with memberships loaded) for the `allClosedSprints` parameter — this is needed for alert evaluation. The `targetSprints` parameter also needs memberships loaded. Failure to load memberships results in empty computed results with no error.
-- **N+1 correlation requires one extra sprint beyond the selected range** — The defect correlation pairs sprint N coverage with sprint N+1 bug ratio. The endpoint must include one additional sprint in the BugRatioService call so the last selected sprint's next-sprint bug ratio is available. This sprint is filtered out of the QA computation itself (only the target QA sprints are passed to QaTrendsService).
+- [TRACKED] **N+1 correlation requires one extra sprint beyond the selected range** — The defect correlation pairs sprint N coverage with sprint N+1 bug ratio. The endpoint must include one additional sprint in the BugRatioService call so the last selected sprint's next-sprint bug ratio is available. This sprint is filtered out of the QA computation itself (only the target QA sprints are passed to QaTrendsService).
 - **AppSidebar needs reactive settings access** — When gating a sidebar nav item on a settings flag, the sidebar must explicitly fetch settings on mount if the settingsStore hasn't been hydrated. The store's default value (xrayEnabled: false) correctly hides the entry before settings load, then shows it if enabled.
 - **Pearson r computation uses decimal arithmetic throughout** — Using `Math.Sqrt` requires a `(double)` cast since C# Math.Sqrt takes double. The result cast back to decimal for rounding. Pattern: `(decimal)Math.Sqrt((double)(decimalExpr))`.
 - **Vue computed writable for BaseSelect v-model with store** — When binding a BaseSelect v-model to store state that needs a type conversion (number stored as string in the select), use a writable computed with get/set. This avoids template logic clutter and keeps the type conversion in one place.
@@ -18,7 +17,6 @@
 
 - **Vue computed reading `.value` of another computed inside a computed getter is valid** — Accessing `discreteMarkers.value` inside the `options` computed in `QualityTrendsChart.vue` is correct Vue 3 reactivity. Vue tracks `.value` accesses inside computed getters. Do not flag this as a reactivity bug — it is idiomatic when the outer computed needs to read from an inner computed.
 - **Plan-level `last=0` convention overrides spec wording** — The spec says "All is expressed by omitting `last`". The plan explicitly chose `last=0` as the frontend convention. Always read the plan's implementation notes for API function conventions before checking spec conformance — the plan is the authoritative contract for implementation decisions.
-- **Gap: no explicit error state in QaTrendsView** — When `store.error` is set after a failed `initialize()` or `fetchTrends()`, nothing is rendered to the user. The template only handles loading, hasQaData=false, and hasQaData=true states. Future analytics views should include a `v-else` error fallback.
 
 ## Skill Gaps
 
