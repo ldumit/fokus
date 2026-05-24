@@ -1,4 +1,4 @@
-import type { SprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse, QaTrendsResponse, DeveloperProgressResponse } from '../types'
+import type { SprintItem, SprintSummaryResponse, DeveloperThroughputResponse, ScopeChangeResponse, CarryOverResponse, BugRatioResponse, EpicProgressResponse, CycleTimeResponse, LeaderboardResponse, QaMetricsResponse, UntestedTicketsResponse, FailingTicketsResponse, DeveloperQualityResponse, QaWorkloadResponse, TestTimelineResponse, QaTrendsResponse, DeveloperProgressResponse, DeveloperDetailResponse } from '../types'
 import { apiFetch } from './client'
 
 export interface UpdateSprintRequest {
@@ -160,4 +160,11 @@ export function getDeveloperProgress(subTeam?: string): Promise<DeveloperProgres
   if (subTeam) params.set('subTeam', subTeam)
   const query = params.toString()
   return apiFetch<DeveloperProgressResponse>(`/analytics/developer-progress${query ? `?${query}` : ''}`)
+}
+
+export function getDeveloperDetail(accountId: string, last?: number): Promise<DeveloperDetailResponse> {
+  const params = new URLSearchParams()
+  if (last !== undefined) params.set('last', String(last))
+  const query = params.toString()
+  return apiFetch<DeveloperDetailResponse>(`/analytics/developer-detail/${encodeURIComponent(accountId)}${query ? `?${query}` : ''}`)
 }

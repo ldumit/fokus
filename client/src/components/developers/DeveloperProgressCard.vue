@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { DeveloperProgressEntry, DayBreakdownEntry } from '../../types'
-import BaseCard from '../BaseCard.vue'
 
 const props = defineProps<{
   developer: DeveloperProgressEntry
@@ -107,20 +106,25 @@ const cardBorderClass = computed(() =>
   >
     <!-- Header: avatar + name + sub-team -->
     <div class="flex items-center gap-2">
-      <img
-        v-if="developer.avatarUrl"
-        :src="developer.avatarUrl"
-        :alt="developer.displayName"
-        class="w-8 h-8 rounded-full shrink-0"
-      />
-      <div
-        v-else
-        class="w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-xs font-medium text-text-secondary shrink-0"
-      >
-        {{ developer.displayName.charAt(0).toUpperCase() }}
-      </div>
+      <RouterLink :to="{ name: 'developer-detail', params: { accountId: developer.accountId } }" class="shrink-0">
+        <img
+          v-if="developer.avatarUrl"
+          :src="developer.avatarUrl"
+          :alt="developer.displayName"
+          class="w-8 h-8 rounded-full hover:ring-2 hover:ring-accent-default transition-shadow"
+        />
+        <div
+          v-else
+          class="w-8 h-8 rounded-full bg-surface-elevated flex items-center justify-center text-xs font-medium text-text-secondary hover:ring-2 hover:ring-accent-default transition-shadow"
+        >
+          {{ developer.displayName.charAt(0).toUpperCase() }}
+        </div>
+      </RouterLink>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-medium text-text-primary truncate">{{ developer.displayName }}</div>
+        <RouterLink
+          :to="{ name: 'developer-detail', params: { accountId: developer.accountId } }"
+          class="text-sm font-medium text-text-primary truncate hover:text-accent-default hover:underline"
+        >{{ developer.displayName }}</RouterLink>
         <div v-if="developer.subTeam" class="text-xs text-text-muted">{{ developer.subTeam }}</div>
       </div>
       <!-- Behind-pace indicator -->

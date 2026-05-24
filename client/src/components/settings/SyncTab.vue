@@ -17,6 +17,11 @@ const syncConfigSaving = ref(false)
 const syncConfigSaved = ref(false)
 const syncConfigError = ref('')
 
+// Analytics targets save state
+const analyticsTargetsSaving = ref(false)
+const analyticsTargetsSaved = ref(false)
+const analyticsTargetsError = ref('')
+
 // Sync all state
 const syncing = ref(false)
 const syncResult = ref<{ sprints: SyncSprintsResponse; backlog: SyncBacklogResponse } | null>(null)
@@ -31,6 +36,25 @@ const toSprintId = ref<number | null>(null)
 const syncingRange = ref(false)
 const syncRangeResult = ref<SyncSprintsResponse | null>(null)
 const syncRangeError = ref('')
+
+async function saveAnalyticsTargetsPanel() {
+  analyticsTargetsSaved.value = false
+  analyticsTargetsError.value = ''
+  analyticsTargetsSaving.value = true
+  try {
+    await store.saveAnalyticsTargetsAction(form.bugRatioTarget)
+    if (!store.error) {
+      analyticsTargetsSaved.value = true
+      setTimeout(() => analyticsTargetsSaved.value = false, 3000)
+    } else {
+      analyticsTargetsError.value = store.error
+    }
+  } catch (e: any) {
+    analyticsTargetsError.value = e.message || 'Failed to save analytics targets.'
+  } finally {
+    analyticsTargetsSaving.value = false
+  }
+}
 
 async function saveSyncConfigPanel() {
   syncConfigSaved.value = false
@@ -136,6 +160,40 @@ async function syncRange() {
 </script>
 
 <template>
+  <!-- Analytics Targets -->
+  <section class="bg-gray-900 rounded-lg p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-gray-200">Analytics Targets</h2>
+    <p class="text-sm text-gray-400">Configure targets used in developer detail analytics charts.</p>
+
+    <div class="flex items-center gap-3">
+      <label
+        class="text-sm text-gray-300 whitespace-nowrap cursor-help"
+        title="Target bug SP percentage for the work allocation chart. Developers spending more than this on bugs will be flagged."
+      >Bug ratio target (%)</label>
+      <input
+        v-model.number="form.bugRatioTarget"
+        type="number"
+        min="0"
+        max="100"
+        :disabled="isReadOnly"
+        class="w-24 bg-gray-800 border border-gray-700 rounded px-3 py-1 text-gray-100 text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      />
+      <span class="text-xs text-gray-500">(0–100%)</span>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <button
+        @click="saveAnalyticsTargetsPanel"
+        :disabled="analyticsTargetsSaving || isReadOnly"
+        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
+      >
+        {{ analyticsTargetsSaving ? 'Saving...' : 'Save Analytics Targets' }}
+      </button>
+      <span v-if="analyticsTargetsSaved" class="text-green-400 text-sm">Saved.</span>
+      <span v-if="analyticsTargetsError" class="text-red-400 text-sm">{{ analyticsTargetsError }}</span>
+    </div>
+  </section>
+
   <!-- Sync -->
   <section class="bg-gray-900 rounded-lg p-6 space-y-4">
     <div class="flex items-center gap-1">

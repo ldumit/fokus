@@ -206,6 +206,7 @@ export interface AppSettings {
   syncBackSprintCount: number
   planningWindowDays: number
   defaultSpPerBug: number
+  bugRatioTarget: number
   xrayEnabled: boolean
   xrayClientId: string | null
   xrayClientSecret: string | null
@@ -1338,6 +1339,73 @@ export interface QaTrendsResponse {
   qualityTrends: QualityTrendEntry[]
   testingVolume: TestingVolumeEntry[]
   defectCorrelation: DefectCorrelationResult | null
+}
+
+// Developer Detail types
+export interface DeveloperDetailInfo {
+  accountId: string
+  displayName: string
+  subTeam: string | null
+  avatarUrl: string | null
+  role: string
+  defaultCapacityPercent: number
+}
+
+export interface SprintTrendEntry {
+  sprintId: number
+  sprintName: string
+  startDate: string
+  endDate: string
+  featureSp: number
+  bugSp: number
+  totalSp: number
+  assignedSp: number
+  completionPercent: number
+  capacityPercent: number
+  rollingAverageSp: number | null
+  bugPercent: number
+}
+
+export interface WorkAllocationSummary {
+  averageBugPercent: number
+  sprintsAboveTarget: number
+  totalSprints: number
+}
+
+export interface TicketDetailEntry {
+  key: string
+  summary: string
+  currentStatus: string
+  storyPoints: number | null
+  issueType: string
+  daysInCurrentStatus: number
+  state: 'stalled' | 'in-progress' | 'done' | 'not-started'
+  isStalled: boolean
+}
+
+export interface CurrentSprintDetail {
+  sprint: DeveloperProgressSprintInfo
+  currentDay: number
+  totalDays: number
+  assignedSp: number
+  completedSp: number
+  completionPercent: number
+  featureCompletedSp: number
+  bugCompletedSp: number
+  dailyPace: number
+  isBehindPace: boolean
+  paceGapSp: number | null
+  dailyBreakdown: DayBreakdownEntry[]
+  tickets: TicketDetailEntry[]
+}
+
+export interface DeveloperDetailResponse {
+  developer: DeveloperDetailInfo
+  sprintTrends: SprintTrendEntry[]
+  workAllocation: WorkAllocationSummary
+  currentSprint: CurrentSprintDetail | null
+  bugRatioTarget: number
+  jiraInstanceUrl: string
 }
 
 // Daily Developer Progress types

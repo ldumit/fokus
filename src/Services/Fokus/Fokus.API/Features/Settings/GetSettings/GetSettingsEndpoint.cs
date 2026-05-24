@@ -21,6 +21,7 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             SyncBackSprintCount = settings.SyncBackSprintCount,
             PlanningWindowDays = settings.PlanningWindowDays,
             DefaultSpPerBug = settings.DefaultSpPerBug,
+            BugRatioTarget = settings.BugRatioTarget,
             XrayEnabled = settings.XrayEnabled,
             XrayClientId = settings.XrayClientId,
             XrayClientSecret = MaskSecret(settings.XrayClientSecret),

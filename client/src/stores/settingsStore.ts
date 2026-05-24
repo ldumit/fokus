@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig, QaHealthThresholdConfig, QualitySubScoreWeightConfig } from '../types'
-import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages, saveXraySettings } from '../api/settings'
+import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages, saveXraySettings, saveAnalyticsTargets } from '../api/settings'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({
@@ -26,6 +26,7 @@ export const useSettingsStore = defineStore('settings', () => {
     syncBackSprintCount: 20,
     planningWindowDays: 2,
     defaultSpPerBug: 3,
+    bugRatioTarget: 30,
     xrayEnabled: false,
     xrayClientId: null,
     xrayClientSecret: null,
@@ -154,6 +155,19 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  async function saveAnalyticsTargetsAction(bugRatioTarget: number) {
+    saving.value = true
+    error.value = null
+    try {
+      await saveAnalyticsTargets(bugRatioTarget)
+      settings.value = { ...settings.value, bugRatioTarget }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to save analytics targets'
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function runDetectWorkflowStages() {
     detecting.value = true
     error.value = null
@@ -214,6 +228,7 @@ export const useSettingsStore = defineStore('settings', () => {
     saveHealthConfigAction,
     saveBugRatioAlertsAction,
     saveSyncConfigAction,
+    saveAnalyticsTargetsAction,
     saveXraySettingsAction,
     runDetectWorkflowStages,
     clearDetection,

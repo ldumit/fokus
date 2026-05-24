@@ -16,6 +16,7 @@ public class AppSettings
     public int SyncBackSprintCount { get; set; } = 20;
     public int PlanningWindowDays { get; set; } = 2;
     public int DefaultSpPerBug { get; set; } = 3;
+    public decimal BugRatioTarget { get; set; } = 30;
     public string? CompanyDomain { get; set; } = null;
     public bool XrayEnabled { get; set; } = false;
     public string? XrayClientId { get; set; }
@@ -40,6 +41,7 @@ public class AppSettings
         SyncBackSprintCount = 20,
         PlanningWindowDays = 2,
         DefaultSpPerBug = 3,
+        BugRatioTarget = 30,
         CompanyDomain = null,
         XrayEnabled = false,
         XrayClientId = null,

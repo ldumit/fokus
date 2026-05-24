@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { inject, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getUsers, getInvitations, createInvitation, updateUserRole, updateUserStatus, revokeInvitation } from '../../api/auth'
 import type { UserEntry, InvitationEntry, CreateInvitationResponse } from '../../types'
-import { authStoreKey } from './injectionKeys'
-
-const authStore = inject(authStoreKey)!
 
 // User management state
 const users = ref<UserEntry[]>([])

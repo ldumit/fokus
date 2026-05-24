@@ -9,7 +9,7 @@ defineProps<{
   single?: QaWorkloadSingleSprintResponse
 }>()
 
-const { deltaIcon, deltaClass } = useDeltaDisplay()
+const { deltaIcon } = useDeltaDisplay()
 
 const PASS_RATE_GREEN = 90
 const PASS_RATE_AMBER = 70

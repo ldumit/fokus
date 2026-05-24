@@ -3,7 +3,7 @@
 **Traces to:** `docs/product/v1.md` §5.1 (Developer Throughput — per-developer analytics). Extends the Developers page with an individual drill-down that surfaces cross-sprint trends, work type allocation, and current sprint ticket-level detail.
 **Source:** Scratch
 **Dependencies:** F9 (Developer Throughput — velocity data, rolling averages), F19 (Leaderboard Breakdown — bug/feature SP split per sprint), F32 (Daily Developer Progress — current sprint daily breakdown, stall detection), F33 (Daily Progress Enhancements — bug/feature SP split on progress data), F15 (Team Management — developer profiles, capacity, sub-team)
-**Status:** Ready
+**Status:** Done
 **Plan:** `docs/specs/F34-DeveloperDetailPage/delivery/plan.md`
 
 ---

@@ -23,6 +23,10 @@ public class GlobalExceptionMiddleware(
         {
             context.Response.StatusCode = 499;
         }
+        catch (Exception ex) when (IsCausedByCancellation(ex))
+        {
+            context.Response.StatusCode = 499;
+        }
         catch (ValidationException ex)
         {
             await WriteResponseAsync(context, 400, "One or more validation errors occurred.", errors: ex.Errors
@@ -37,6 +41,13 @@ public class GlobalExceptionMiddleware(
             var details = environment.IsDevelopment() ? ex.ToString() : null;
             await WriteResponseAsync(context, statusCode, message, details: details);
         }
+    }
+
+    private static bool IsCausedByCancellation(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+            if (e is OperationCanceledException) return true;
+        return false;
     }
 
     private static (int StatusCode, string Message) MapStatusCode(Exception ex) => ex switch

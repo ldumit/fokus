@@ -101,6 +101,8 @@ public record QaWorkloadResponse(
 
 public class QaWorkloadService
 {
+    private const string UnassignedKey = "";
+
     // --- Per-person metrics holder used internally ---
 
     private sealed record PersonMetrics(
@@ -138,9 +140,9 @@ public class QaWorkloadService
             .ToList();
 
         // Aggregate person metrics across all target sprints
-        var personMap = new Dictionary<string?, PersonMetrics>(NullableStringComparer.Instance);
+        var personMap = new Dictionary<string, PersonMetrics>(StringComparer.OrdinalIgnoreCase);
 
-        var sprintBreakdownsByPerson = new Dictionary<string?, List<QaWorkloadSprintBreakdown>>(NullableStringComparer.Instance);
+        var sprintBreakdownsByPerson = new Dictionary<string, List<QaWorkloadSprintBreakdown>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var sprint in sortedTarget)
         {
@@ -217,7 +219,7 @@ public class QaWorkloadService
         var currentPersonMap = BuildSprintPersonMetrics(targetSprint, targetTEs, allDevelopers);
 
         // Prior sprint person metrics (for deltas)
-        Dictionary<string?, PersonMetrics>? priorPersonMap = null;
+        Dictionary<string, PersonMetrics>? priorPersonMap = null;
         if (priorSprint is not null && priorTEs is { Count: > 0 })
             priorPersonMap = BuildSprintPersonMetrics(priorSprint, priorTEs, allDevelopers);
 
@@ -252,17 +254,18 @@ public class QaWorkloadService
 
     // --- Per-sprint person metrics builder ---
 
-    private static Dictionary<string?, PersonMetrics> BuildSprintPersonMetrics(
+    private static Dictionary<string, PersonMetrics> BuildSprintPersonMetrics(
         Sprint sprint,
         List<TestExecution> sprintTEs,
         List<Developer> allDevelopers)
     {
         var developerLookup = allDevelopers.ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase);
-        var personMap = new Dictionary<string?, PersonMetrics>(NullableStringComparer.Instance);
+        var personMap = new Dictionary<string, PersonMetrics>(StringComparer.OrdinalIgnoreCase);
 
         PersonMetrics GetOrCreate(string? accountId)
         {
-            if (!personMap.TryGetValue(accountId, out var p))
+            var key = accountId ?? UnassignedKey;
+            if (!personMap.TryGetValue(key, out var p))
             {
                 string displayName;
                 string? subTeam = null;
@@ -284,7 +287,7 @@ public class QaWorkloadService
                 }
 
                 p = new PersonMetrics(accountId, displayName, subTeam, avatarUrl);
-                personMap[accountId] = p;
+                personMap[key] = p;
             }
             return p;
         }
@@ -329,7 +332,7 @@ public class QaWorkloadService
 
             foreach (var personId in attributedPersons)
             {
-                if (personMap.TryGetValue(personId, out var person))
+                if (personMap.TryGetValue(personId ?? UnassignedKey, out var person))
                 {
                     foreach (var key in testKeys)
                         person.StoriesCoveredKeys.Add(key);
@@ -349,7 +352,7 @@ public class QaWorkloadService
             if (bugKeys.Count == 0) continue;
 
             var ownerKey = te.AssigneeId;
-            if (personMap.TryGetValue(ownerKey, out var owner))
+            if (personMap.TryGetValue(ownerKey ?? UnassignedKey, out var owner))
             {
                 foreach (var key in bugKeys)
                     owner.BugsFoundKeys.Add(key);
@@ -369,7 +372,7 @@ public class QaWorkloadService
     // --- Sub-team filter ---
 
     private static void FilterPersonMapBySubTeam(
-        Dictionary<string?, PersonMetrics> personMap,
+        Dictionary<string, PersonMetrics> personMap,
         List<Developer> allDevelopers,
         string? subTeam)
     {
@@ -379,7 +382,7 @@ public class QaWorkloadService
         var keysToRemove = personMap.Keys
             .Where(key =>
             {
-                if (key is null) return true; // Unassigned excluded when sub-team filter active
+                if (key == UnassignedKey) return true; // Unassigned excluded when sub-team filter active
                 return !developerLookup.TryGetValue(key, out var dev) || dev.SubTeam != subTeam;
             })
             .ToList();
@@ -541,18 +544,18 @@ public class QaWorkloadService
     // --- Developer entries builder ---
 
     private static List<QaWorkloadEntry> BuildDeveloperEntries(
-        Dictionary<string?, PersonMetrics> personMap,
-        Dictionary<string?, List<QaWorkloadSprintBreakdown>> sprintBreakdownsByPerson,
+        Dictionary<string, PersonMetrics> personMap,
+        Dictionary<string, List<QaWorkloadSprintBreakdown>> sprintBreakdownsByPerson,
         List<Sprint> allClosedSprints,
         Dictionary<int, List<TestExecution>> allClosedTesBySprintId,
         List<Developer> allDevelopers)
     {
         var entries = new List<QaWorkloadEntry>();
 
-        foreach (var (accountId, metrics) in personMap)
+        foreach (var metrics in personMap.Values)
         {
-            var breakdowns = sprintBreakdownsByPerson.GetValueOrDefault(accountId, []);
-            var alert = EvaluateWorkloadAlert(accountId, allClosedSprints, allClosedTesBySprintId);
+            var breakdowns = sprintBreakdownsByPerson.GetValueOrDefault(metrics.AccountId ?? UnassignedKey, []);
+            var alert = EvaluateWorkloadAlert(metrics.AccountId, allClosedSprints, allClosedTesBySprintId);
 
             entries.Add(new QaWorkloadEntry(
                 metrics.AccountId,
@@ -578,20 +581,20 @@ public class QaWorkloadService
     }
 
     private static List<QaWorkloadSingleEntry> BuildSingleDeveloperEntries(
-        Dictionary<string?, PersonMetrics> currentPersonMap,
-        Dictionary<string?, PersonMetrics>? priorPersonMap,
+        Dictionary<string, PersonMetrics> currentPersonMap,
+        Dictionary<string, PersonMetrics>? priorPersonMap,
         List<Sprint> allClosedSprints,
         Dictionary<int, List<TestExecution>> allClosedTesBySprintId,
         List<Developer> allDevelopers)
     {
         var entries = new List<QaWorkloadSingleEntry>();
 
-        foreach (var (accountId, current) in currentPersonMap)
+        foreach (var current in currentPersonMap.Values)
         {
             PersonMetrics? prior = null;
-            priorPersonMap?.TryGetValue(accountId, out prior);
+            priorPersonMap?.TryGetValue(current.AccountId ?? UnassignedKey, out prior);
 
-            var alert = EvaluateWorkloadAlert(accountId, allClosedSprints, allClosedTesBySprintId);
+            var alert = EvaluateWorkloadAlert(current.AccountId, allClosedSprints, allClosedTesBySprintId);
 
             // Compute deltas and polarities
             decimal? tesDelta = prior is not null ? current.TesOwned - prior.TesOwned : null;

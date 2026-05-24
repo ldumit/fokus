@@ -33,6 +33,11 @@ const router = createRouter({
       component: () => import('./views/DevelopersView.vue')
     },
     {
+      path: '/developers/:accountId',
+      name: 'developer-detail',
+      component: () => import('./views/DeveloperDetailView.vue')
+    },
+    {
       path: '/sprints',
       name: 'sprints',
       component: () => import('./views/SprintsView.vue')

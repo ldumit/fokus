@@ -46,6 +46,13 @@ export function saveBugRatioAlerts(alertThreshold: number, consecutiveSprintCoun
   })
 }
 
+export function saveAnalyticsTargets(bugRatioTarget: number): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/settings/analytics-targets', {
+    method: 'PUT',
+    body: JSON.stringify({ bugRatioTarget })
+  })
+}
+
 export function saveSyncConfig(syncBackSprintCount: number, planningWindowDays: number): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>('/settings/sync-config', {
     method: 'PUT',

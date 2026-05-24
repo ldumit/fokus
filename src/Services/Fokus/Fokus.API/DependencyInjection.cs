@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<TestTimelineService>();
         services.AddScoped<QaTrendsService>();
         services.AddScoped<DeveloperProgressService>();
+        services.AddScoped<DeveloperDetailService>();
 
         return services;
     }

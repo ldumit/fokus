@@ -3,6 +3,7 @@ using System;
 using Fokus.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fokus.Persistence.Migrations
 {
     [DbContext(typeof(FokusDbContext))]
-    partial class FokusDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260524082152_AddBugRatioTarget")]
+    partial class AddBugRatioTarget
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0-preview.4.25258.110");

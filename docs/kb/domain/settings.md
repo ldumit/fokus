@@ -17,6 +17,7 @@ Singleton entity (Id=1). Configuration for all analytics features.
 | BugRatioAlertThreshold | 50 | BugRatio — % threshold for alert |
 | BugRatioConsecutiveSprintCount | 2 | BugRatio — how many consecutive sprints triggers alert |
 | DefaultSpPerBug | 3 | All analytics — fallback SP for unestimated Bug tickets |
+| BugRatioTarget | 30 | DeveloperDetail — team-wide bug ratio target % (0-100) used as reference line in work allocation chart |
 | CycleTimeStartStage | null | CycleTime measurement start (null = auto: second workflow stage). Also drives **active/started scope attribution** across all analytics via TransitionAttributionChecker (null = auto: first stage, wider than cycle time). |
 | CycleTimeEndStage | null | CycleTime measurement end (null = auto: first done status). Also drives **completion attribution** across all analytics via TransitionAttributionChecker (supersedes FinalStatus snapshot approach for sprint scope). EpicProgress progress tracking still uses boundary-driven CompletionChecker. |
 | HealthThresholds | (see below) | Health score RAG classification |
