@@ -39,7 +39,8 @@ const chartOptions = computed(() => ({
     background: 'transparent',
     toolbar: { show: false },
     sparkline: { enabled: false },
-    animations: { enabled: false }
+    animations: { enabled: false },
+    zoom: { enabled: false }
   },
   stroke: {
     curve: 'straight',
@@ -60,6 +61,7 @@ const chartOptions = computed(() => ({
   yaxis: {
     min: 0,
     max: yMax.value,
+    reversed: false,
     labels: { style: { colors: '#9ca3af', fontSize: '10px' }, formatter: (v: number) => v.toFixed(1) }
   },
   grid: { borderColor: '#374151', strokeDashArray: 3 },
@@ -145,6 +147,23 @@ const cardBorderClass = computed(() =>
       <span class="ml-1 text-xs text-text-muted italic">(all types)</span>
     </div>
 
+    <!-- Bug/feature SP split line -->
+    <div
+      v-if="developer.completedSp > 0"
+      class="text-xs text-text-muted"
+      title="Completed SP split by ticket type: features (stories, tasks) and bugs."
+    >
+      <template v-if="developer.featureCompletedSp > 0 && developer.bugCompletedSp > 0">
+        {{ developer.featureCompletedSp.toFixed(1) }} features / {{ developer.bugCompletedSp.toFixed(1) }} bugs
+      </template>
+      <template v-else-if="developer.featureCompletedSp > 0">
+        {{ developer.featureCompletedSp.toFixed(1) }} features
+      </template>
+      <template v-else>
+        {{ developer.bugCompletedSp.toFixed(1) }} bugs
+      </template>
+    </div>
+
     <!-- Mini burnup chart -->
     <div v-if="developer.dailyBreakdown.length > 0">
       <div class="flex items-center gap-1 mb-1">
@@ -159,7 +178,7 @@ const cardBorderClass = computed(() =>
       </div>
       <apexchart
         type="line"
-        height="80"
+        height="140"
         :options="chartOptions"
         :series="series"
       />

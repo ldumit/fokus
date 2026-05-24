@@ -4,7 +4,14 @@ namespace Fokus.API.Features.Analytics;
 
 public record DeveloperProgressSprintInfo(int Id, string Name, DateTime StartDate, DateTime EndDate);
 
-public record DeveloperProgressAlert(string AccountId, string DisplayName, string? AvatarUrl, decimal GapSp, decimal GapDays);
+public record DeveloperProgressAlert(
+    string AccountId,
+    string DisplayName,
+    string? AvatarUrl,
+    decimal GapSp,
+    decimal GapDays,
+    decimal? GapDelta,
+    string Direction);
 
 public record CompletedTicketEntry(string Key, string Summary, decimal? StoryPoints, string IssueType);
 
@@ -19,6 +26,8 @@ public record DeveloperProgressEntry(
     string? AvatarUrl,
     decimal AssignedSp,
     decimal CompletedSp,
+    decimal FeatureCompletedSp,
+    decimal BugCompletedSp,
     decimal CompletionPercent,
     int CapacityPercent,
     decimal DailyPace,
@@ -79,7 +88,12 @@ public class DeveloperProgressService
             .Where(d => string.IsNullOrWhiteSpace(subTeam) || d.SubTeam == subTeam)
             .ToList();
 
-        var developerEntries = filteredDevelopers.Select(developer =>
+        // Stall reference dates computed once (shared across all developers)
+        var todayDate = DateTime.UtcNow.Date;
+        var yesterdayDate = todayDate.AddDays(-1);
+
+        // Build developer entries alongside yesterday's stall set for direction derivation
+        var developerData = filteredDevelopers.Select(developer =>
         {
             var capacity = GetCapacity(capacityLookup, developer.Id, allDevelopers);
 
@@ -103,6 +117,8 @@ public class DeveloperProgressService
             // Build per-ticket completion info for daily breakdown
             var completionsByDay = new Dictionary<int, List<CompletedTicketEntry>>();
             var completedSp = 0m;
+            var featureCompletedSp = 0m;
+            var bugCompletedSp = 0m;
 
             foreach (var m in memberships)
             {
@@ -114,7 +130,14 @@ public class DeveloperProgressService
                 if (!isCompleted || completedAt is null) continue;
 
                 var effectiveSp = m.GetEffectiveSp(settings.DefaultSpPerBug);
-                if (effectiveSp.HasValue) completedSp += effectiveSp.Value;
+                if (effectiveSp.HasValue)
+                {
+                    completedSp += effectiveSp.Value;
+                    if (m.Ticket?.IssueType == "Bug")
+                        bugCompletedSp += effectiveSp.Value;
+                    else
+                        featureCompletedSp += effectiveSp.Value;
+                }
 
                 // BR3: completion day = (completedAt.Date - sprintStart.Date).Days + 1
                 var completionDay = (completedAt.Value.Date - activeSprint.StartDate.Date).Days + 1;
@@ -166,17 +189,23 @@ public class DeveloperProgressService
                 }
             }
 
-            // BR15-17: stall detection
+            // BR15-17: stall detection for today and yesterday (direction derivation)
             var stalledTickets = BuildStalledTickets(
-                memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex);
+                memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex, todayDate);
+            var yesterdayStalledKeys = BuildStalledTickets(
+                memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex, yesterdayDate)
+                .Select(t => t.Key)
+                .ToHashSet();
 
-            return new DeveloperProgressEntry(
+            var entry = new DeveloperProgressEntry(
                 developer.Id,
                 developer.DisplayName,
                 developer.SubTeam,
                 developer.AvatarUrl,
                 Math.Round(assignedSp, 1),
                 Math.Round(completedSp, 1),
+                Math.Round(featureCompletedSp, 1),
+                Math.Round(bugCompletedSp, 1),
                 Math.Round(completionPercent, 1),
                 capacity,
                 Math.Round(dailyPace, 10), // preserve precision; rounded at usage
@@ -184,25 +213,75 @@ public class DeveloperProgressService
                 paceGapSp,
                 stalledTickets,
                 dailyBreakdown);
+
+            return (Entry: entry, YesterdayStalledKeys: yesterdayStalledKeys, Dev: developer);
         }).ToList();
 
-        // Build alerts (behind-pace developers, suppressed during grace period)
+        var developerEntries = developerData.Select(d => d.Entry).ToList();
+
+        // Build alerts (pace-change developers, suppressed during grace period)
         var alerts = new List<DeveloperProgressAlert>();
         if (!isGracePeriod)
         {
-            foreach (var entry in developerEntries.Where(e => e.IsBehindPace))
+            foreach (var (entry, yesterdayStalledKeys, devRecord) in developerData)
             {
+                // Gap delta: gap(currentDay) - gap(previousDay); null when breakdown has < 2 days
+                decimal? gapDelta = null;
+                if (entry.DailyBreakdown.Count >= 2)
+                {
+                    var last = entry.DailyBreakdown[^1];
+                    var prev = entry.DailyBreakdown[^2];
+                    var gapCurrent = last.ExpectedCumulativeSp - last.CumulativeSp;
+                    var gapPrev = prev.ExpectedCumulativeSp - prev.CumulativeSp;
+                    gapDelta = Math.Round(gapCurrent - gapPrev, 1);
+                }
+
+                // Stall signals (spec BR6 — stall takes priority over gap direction)
+                var todayStalledKeys = entry.StalledTickets.Select(t => t.Key).ToHashSet();
+                var hasNewStall = todayStalledKeys.Any(k => !yesterdayStalledKeys.Contains(k));
+                var hadStallYesterday = yesterdayStalledKeys.Count > 0;
+                var hasNoStallToday = todayStalledKeys.Count == 0;
+                var isStallResolved = hadStallYesterday && hasNoStallToday;
+
+                // Direction derivation (stall takes priority)
+                string direction;
+                if (hasNewStall)
+                    direction = "new-stall";
+                else if (isStallResolved)
+                    direction = "stall-resolved";
+                else if (gapDelta.HasValue && gapDelta.Value > 0)
+                    direction = "worsening";
+                else if (gapDelta.HasValue && gapDelta.Value < 0)
+                    direction = "improving";
+                else
+                    direction = "stable";
+
+                if (direction == "stable") continue;
+
+                var gapSp = entry.PaceGapSp ?? 0m;
                 var gapDays = entry.DailyPace > 0 && entry.PaceGapSp.HasValue
                     ? Math.Round(entry.PaceGapSp.Value / entry.DailyPace, 1)
                     : 0m;
-                var dev = filteredDevelopers.First(d => d.Id == entry.AccountId);
                 alerts.Add(new DeveloperProgressAlert(
                     entry.AccountId,
                     entry.DisplayName,
-                    dev.AvatarUrl,
-                    entry.PaceGapSp!.Value,
-                    gapDays));
+                    devRecord.AvatarUrl,
+                    gapSp,
+                    gapDays,
+                    gapDelta,
+                    direction));
             }
+
+            // Sort: worsening/new-stall group first, then improving/stall-resolved
+            // Within worsening: new-stall at top, then by gapDelta desc (largest gap increase first)
+            // Within improving: stall-resolved at top, then by gapDelta asc (largest improvement first)
+            alerts = alerts
+                .OrderBy(a => a.Direction is "improving" or "stall-resolved" ? 1 : 0)
+                .ThenBy(a => a.Direction is "new-stall" or "stall-resolved" ? 0 : 1)
+                .ThenBy(a => a.Direction is "improving" or "stall-resolved"
+                    ? a.GapDelta ?? 0m
+                    : -(a.GapDelta ?? 0m))
+                .ToList();
         }
 
         var sprintInfo = new DeveloperProgressSprintInfo(
@@ -220,9 +299,9 @@ public class DeveloperProgressService
         Sprint sprint,
         List<string> orderedStages,
         int startIndex,
-        int endIndex)
+        int endIndex,
+        DateTime referenceDate)
     {
-        var today = DateTime.UtcNow.Date;
         var stalled = new List<StalledTicketEntry>();
 
         foreach (var m in memberships)
@@ -253,7 +332,7 @@ public class DeveloperProgressService
             if (ticketTransitions.Count == 0) continue;
 
             var lastTransition = ticketTransitions[0].Timestamp;
-            var businessDays = CountBusinessDays(lastTransition, today);
+            var businessDays = CountBusinessDays(lastTransition, referenceDate);
 
             if (businessDays <= 2) continue;
 

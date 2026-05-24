@@ -1354,6 +1354,8 @@ export interface DeveloperProgressAlert {
   avatarUrl: string | null
   gapSp: number
   gapDays: number
+  gapDelta: number | null
+  direction: 'worsening' | 'improving' | 'stable' | 'new-stall' | 'stall-resolved'
 }
 
 export interface CompletedTicketEntry {
@@ -1387,6 +1389,8 @@ export interface DeveloperProgressEntry {
   avatarUrl: string | null
   assignedSp: number
   completedSp: number
+  featureCompletedSp: number
+  bugCompletedSp: number
   completionPercent: number
   capacityPercent: number
   dailyPace: number
