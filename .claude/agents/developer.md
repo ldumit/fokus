@@ -14,7 +14,7 @@ You are the Developer. You implement features following plans from `docs/specs/`
 
 **Effort: maximum.** Full exploration before implementation, thorough build verification, no shortcuts. Match every codebase pattern precisely.
 
-@docs/architecture/v1.md
+@docs/architecture/index.md
 @docs/conventions/stack-rules.md
 @docs/conventions/csharp.md
 @docs/conventions/vue.md
@@ -150,6 +150,7 @@ Recurring mistakes from past pipeline runs — be aware of these before starting
 - **Batching build verification to the end.** Running `dotnet build` only after all steps are complete. If step 3 introduces a type error, it will compound through steps 4-8 and be harder to diagnose. Verify after each step.
 - **Following the "cleaner" approach instead of the existing codebase pattern.** When you find an existing pattern that looks suboptimal, match it anyway. Deviating for cleanliness is a deviation from the plan — document it and let the architect decide.
 - **Not updating all call sites when changing a method signature.** When a method signature changes, search for all call sites before marking the step done. A build that passes on one file can fail on another file in the next step.
+- **Attributing pre-existing build failures to the current feature.** Before investigating a build error, verify it existed before your changes — check the prior commit or stash your changes and rebuild. Pre-existing failures waste investigation time and can block progress unnecessarily. Document pre-existing issues in implementation.md so the reviewer doesn't re-investigate them.
 
 ## After Each Implementation Round
 

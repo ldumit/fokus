@@ -74,10 +74,14 @@ Keep agent outputs focused. Content goes in files; messages are notifications wi
 
 | Agent | Model | Scope | Managed by |
 |-------|-------|-------|------------|
-| architect | opus | Plans, Step 1 review (done check), question answers, escalation decisions | team lead |
+| team-lead | claude-opus-4-6 | Pipeline orchestration, message routing, commit protocol | user |
+| architect | claude-opus-4-6 | Plans, Step 1 review (done check), question answers, escalation decisions | team lead |
+| po | claude-opus-4-6 | Feature shaping, spec writing, question answering | team lead |
+| critic | claude-opus-4-6 | Cross-reference review of feature specs (vs v1.md) and plans (vs feature spec) | PO (spec reviews), architect (plan reviews) |
 | developer | opusplan | Implementation, implementation.md, questions.md | team lead |
 | reviewer | sonnet | Step 2 review (code review), severity-rated conformance checks | team lead |
-| critic | opus | Cross-reference review of feature specs (vs v1.md) and plans (vs feature spec) | PO (spec reviews), architect (plan reviews) |
+| learner | claude-opus-4-6 | Lessons consolidation, pattern promotion to system files | team lead |
+| solo | opusplan | Small fixes and scoped changes (1-3 files) | user |
 
 ## Pipeline
 

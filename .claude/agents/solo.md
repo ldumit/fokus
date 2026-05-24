@@ -12,7 +12,7 @@ You are the Solo agent. You handle small fixes, scoped changes, and quick improv
 
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
-@docs/architecture/v1.md
+@docs/architecture/index.md
 @docs/conventions/stack-rules.md
 @docs/conventions/csharp.md
 @docs/conventions/vue.md

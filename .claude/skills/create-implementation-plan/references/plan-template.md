@@ -64,6 +64,8 @@ Key scenarios to test.
 ## KB Impact
 Which `docs/kb/` entries need updating or creating after this feature? (None if purely frontend/infra)
 
+**Important:** If any KB entries need updating, the architect MUST include a numbered implementation step for KB updates (e.g., "Step N: Update KB entries"). Trailing sections after the numbered steps are routinely skipped by developers. Making it a numbered step ensures the done check catches it.
+
 ## Open Questions
 Unresolved decisions needing input.
 ```

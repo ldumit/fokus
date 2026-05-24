@@ -16,7 +16,7 @@ You write only to `docs/specs/{slug}/delivery/review.md` and `lessons.md`. You n
 
 **Effort: maximum.** Check every plan instruction against code, run all verifications, no rubber-stamping. Every finding backed by file:line evidence.
 
-@docs/architecture/v1.md
+@docs/architecture/index.md
 @docs/conventions/stack-rules.md
 @docs/conventions/csharp.md
 @docs/conventions/vue.md
@@ -56,6 +56,8 @@ Only after Stage 1 passes. Run these checks:
 - **Logic:** All branches reachable, no off-by-one, null handling correct
 - **Error handling:** Happy path AND error paths covered
 - **Performance:** Check for performance anti-patterns defined in loaded conventions
+- **Data loading depth:** When service logic accesses nested/related data, verify the data layer eagerly loads it to that depth. Missing loads cause silent null/zero results — not runtime errors. This is a data correctness bug that passes all builds.
+- **Boundary tests for threshold logic:** When code uses `> N` or `>= N` conditions (stall thresholds, pace gaps, alerting triggers), verify tests exist at exactly N and N+1. Missing boundary tests allow off-by-one regressions.
 - **Carry-over:** Each carry-over finding from implementation.md addressed — confirmed or refuted with evidence in review.md
 
 ## Severity Ratings
@@ -90,6 +92,7 @@ After reviewing what IS present, explicitly check what's MISSING:
 - Error paths not covered
 - Acceptance criteria from the spec not tested
 - Integration points not verified
+- **Empty-state reachability:** Before flagging a missing empty-state UI, trace the backend condition that produces the state to the frontend call site. If the frontend only calls the endpoint under conditions that preclude the empty state, the "missing" UI is unreachable — skip it rather than filing a false finding.
 
 ## Self-Audit
 
@@ -140,6 +143,8 @@ Do not ask developer to make architecture calls.
 
 Only when the launch instruction includes "enable Codex cross-validation". **Run Codex only on the first review round** — fix-cycle re-reviews (cycles 2, 3) do not re-run Codex; verify fixes with your normal review only.
 
+**When to recommend enabling Codex:** Request Codex cross-validation for features with complex analytics (multi-service data loading, interacting computation paths), full-stack changes where client and server must agree, and non-trivial filtering/pagination logic. Codex consistently catches data-accuracy and ordering bugs that single-pass review misses.
+
 1. Complete your normal Sonnet review first (Stages 1 and 2, write review.md).
 2. Invoke `/codex:rescue` asking Codex to independently review the implementation against the plan.
 3. Compare Codex findings against your own.
@@ -167,7 +172,7 @@ Recurring mistakes from past pipeline runs — be aware of these before starting
 - **Flagging style preferences as HIGH severity.** Style choices (naming, formatting, minor structure) are LOW by definition. Elevating them wastes fix cycles and trains the developer to ignore severity ratings. When in doubt: is this a correctness issue or a preference? If preference → LOW or remove.
 - **Approving without fresh build output.** Claiming "the build should pass" is not evidence. Every APPROVE verdict requires a build check row in the Evidence table with actual command output from this review session.
 - **Missing carry-over findings from implementation.md.** The developer flags risks in the Carry-Over Findings table specifically for the reviewer. Not addressing each one — confirmed or refuted — leaves flagged risks unacknowledged.
-- **Rubber-stamping fix cycles.** On cycles 2 and 3, explicitly re-check areas adjacent to each fix. A fix that corrects one file can introduce a regression in a nearby call site. Cycle N+1 review is not just "did they change the right lines" — it's "did the change break anything nearby."
+- **Rubber-stamping fix cycles.** On cycles 2 and 3, explicitly re-check areas adjacent to each fix. A fix that corrects one file can introduce a regression in a nearby call site. Cycle N+1 review is not just "did they change the right lines" — it's "did the change break anything nearby." When fixes are surgical (single-line changes), scope the re-review to changed files + adjacent call sites + fresh build — don't re-read the entire feature. Targeted grep checks (method existence, signature chain, store wiring) satisfy gap analysis without full re-reads.
 - **Attributing pre-existing failures to the feature under review.** Before flagging a build or type error, check whether it existed before this feature using `git show <pre-commit>:{path}`. Misattributing a pre-existing failure is a false HIGH.
 
 ## After Review

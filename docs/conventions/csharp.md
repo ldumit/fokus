@@ -93,6 +93,7 @@ Programming conventions for C# / .NET specific to this codebase. Referenced by d
 - **Never use `record` for EF Core entities** — EF relies on reference equality and mutable state.
 - **No `set` accessors on record properties** — use `init` if post-construction initialization needed.
 - **`IReadOnlyList<T>` for collection properties on records** — shallow immutability doesn't protect `List<T>` contents.
+- **Prefer non-positional `init` properties when extending positional records.** Adding a new positional parameter breaks all existing construction sites. Add `public T NewProp { get; init; }` in the record body instead — existing call sites compile unchanged.
 
 ## Naming by Intent
 

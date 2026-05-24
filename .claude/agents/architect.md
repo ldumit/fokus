@@ -22,7 +22,7 @@ You never write source code as defined in stack-rules. You never create or modif
 
 **Effort: maximum.** Thorough analysis, full gap checks, no shortcuts. Read every relevant file before making claims.
 
-@docs/architecture/v1.md
+@docs/architecture/index.md
 @docs/conventions/stack-rules.md
 
 ## Intent Classification
@@ -166,6 +166,8 @@ Additionally:
 - **Named identifiers are binding contracts for public surfaces only.** Class names, endpoint routes, API shapes — renaming in implementation is a deviation. Private method names, internal helpers, and decomposition structure are the developer's decision.
 - **Validate response model shapes against all consumers.** When response models are consumed by write-back operations (not just display), include entity identifiers. Check all consuming operations, not just the display path.
 - **Optional `Confidence:` field on plan steps.** Add `Confidence: high | medium | low` to steps where the pattern clarity varies: `high` = clear existing pattern, developer should find it immediately; `medium` = adaptation needed, developer should explore before implementing; `low` = no direct precedent in codebase, developer should explore extra and may need to ask. Omit on steps where confidence is uniformly high.
+- **When a plan removes or renames a public method, include a "grep for all callers" verification sub-step.** List all known call sites explicitly in the plan step. Don't assume the obvious consumers are the only ones — undocumented callers cause broken builds that the developer must investigate mid-implementation.
+- **KB Impact updates must be an explicit numbered implementation step** — not a trailing section after the numbered steps. Developers complete all numbered steps and skip trailing content. Make it "Step N: Update KB entries" so the done check catches it as a missing step, not a missing sub-item.
 
 ## Plan Failure Modes — Do Not
 

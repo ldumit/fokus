@@ -58,10 +58,19 @@ An item must appear in lessons from **2 or more different features** before prom
 
 ## Classification Rules
 
+### Process vs Stack distinction
+
+Every lesson is either a **process improvement** or a **stack improvement**:
+
+- **Process** — workflow, planning discipline, review calibration, coordination, agent behavior. These are portable across projects with different tech stacks. Target: CLAUDE.md, agent files, `.claude/rules/`.
+- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack (C#, EF Core, Vue, .NET, etc.). Target: `docs/conventions/` files (`stack-rules.md`, `csharp.md`, `ef-core.md`, `vue.md`, etc.).
+
+**CLAUDE.md is stack-agnostic.** Never promote stack-specific items to CLAUDE.md — they go to convention files. This keeps CLAUDE.md portable when the setup is reused in projects with different stacks.
+
 | Pattern | Target |
 |---------|--------|
-| Framework-specific gotchas (per stack-rules) | CLAUDE.md |
-| Guardrails, conventions, architectural rules | CLAUDE.md |
+| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (stack-rules, csharp, ef-core, vue, etc.) |
+| Stack-agnostic guardrails, conventions, architectural rules | CLAUDE.md |
 | Planning discipline (dependency analysis, grep strategies, plan step detail) | architect.md |
 | Review calibration (what to check, how to verify, false positive avoidance) | reviewer.md |
 | Implementation discipline (transitive deps, namespace rules, build verification) | developer.md |

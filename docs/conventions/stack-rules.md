@@ -2,6 +2,21 @@
 
 Architectural guardrails, repo structure, and conventions. Referenced by all agents that plan, write, or review code.
 
+## Source File Definition
+
+Source files are files that contain application code. Agents restricted from writing source code must not create or modify these files:
+
+- `src/**/*.cs` — all C# files under the services, modules, and building blocks tree
+- `client/src/**/*.ts` — TypeScript files
+- `client/src/**/*.vue` — Vue single-file components
+- `client/src/**/*.css` — stylesheets
+
+These are NOT source files (agents may read/write them freely):
+- `docs/**` — documentation, specs, plans, KB entries
+- `.claude/**` — agent definitions, rules, skills
+- `client/index.html`, `client/*.config.*` — frontend build config
+- Root config files (`*.slnx`, `docker-compose.*`, `*.json`, `*.md`)
+
 ## Guardrails — DO NOT
 
 - **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
@@ -58,4 +73,5 @@ API  ──▶  Domain
 ## Build Verification
 
 - `dotnet build` — run after every implementation step. Fresh output, not assumed.
+- **File-lock MSB errors (MSB3026/MSB3027/MSB3492) on Windows are not compilation errors** — they mean the app or dev server is holding output DLLs. Filter with `error CS` to confirm zero actual compiler errors. Don't chase these as build failures.
 - Debug artifact grep: `Console.WriteLine` (debugging), `TODO`, `HACK`, `FIXME`, commented-out code.

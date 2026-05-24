@@ -49,11 +49,25 @@
 ## Skills Needed
 
 ### extract-feature-service (analytics variant)
-- **Status:** Needed
+- **Status:** Superseded by `analytics-computation-service`
 - **Type:** Gap
 - **Source:** SprintSummaryCard lessons
-- **Description:** Existing skill focuses on extracting from endpoints. Analytics computation services are created fresh (not extracted) but follow the same naming/placement conventions. Skill should cover the "create fresh computation service" variant.
+- **Description:** Existing skill focuses on extracting from endpoints. Analytics computation services are created fresh (not extracted) but follow the same naming/placement conventions. Superseded by the dedicated `analytics-computation-service` skill created from 5 features' lessons.
 - **Date:** 2026-05-09
+
+### analytics-computation-service
+- **Status:** Created
+- **Type:** Gap
+- **Source:** F29-QaWorkloadThroughput, F30-TestExecutionTimeline, F31-EpicTestHealth, F33-DailyProgressEnhancements, F34-DeveloperDetailPage lessons
+- **Description:** Analytics computation service pattern — response records, delta/direction/polarity helpers, sparkline builders, multi-sprint iteration, rolling average, Xray-disabled fast path
+- **Date:** 2026-05-24
+
+### create-service (fix: CLAUDE.md fallback)
+- **Status:** Needed
+- **Type:** Fix
+- **Source:** adhoc-SuiteScaffolding lessons
+- **Description:** `create-service` hard-errors when `src/Services/{Name}/CLAUDE.md` is missing. For ad-hoc scaffolding without an architect phase, the skill should fallback: prompt for key axes inline rather than requiring the architect's `create-service-claude-md` skill as a prerequisite.
+- **Date:** 2026-05-24
 
 ### create-standalone-service
 - **Status:** Needed
