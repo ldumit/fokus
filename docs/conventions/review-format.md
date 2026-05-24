@@ -1,4 +1,38 @@
-# Review Output Format
+# Review Format
+
+## Review Checklist
+
+### Step 1: Done check (architect, no code reading)
+- Every plan step has a corresponding implementation.md entry
+- No plan steps missing or silently skipped
+- Reported deviations have reasons
+- No unexpected files or scope creep
+
+### Step 2: Code review (reviewer, reads implementation)
+- Each plan instruction has corresponding code that matches
+- Referenced patterns and skills were followed
+- Naming conventions match coding standards
+- Build passes (fresh output, not assumed)
+- No new patterns invented
+- Domain rules enforced in aggregates, not handlers
+- Deviations flagged with verdict: plan wrong or code wrong
+- Security: no hardcoded secrets, inputs validated, no injection vectors
+- Logic: all branches reachable, no off-by-one, null handling correct
+- Performance: check for performance anti-patterns per loaded conventions
+- Skill mapping verified: any "None" disposition in the Skill Mapping was warranted (no existing skill actually covers the step)
+
+## Severity Ratings
+- **CRITICAL**: Security vulnerability, data loss risk, fundamentally wrong approach. Blocks merge.
+- **HIGH**: Logic error, missing error handling, plan deviation without justification. Should fix.
+- **MEDIUM**: Suboptimal pattern, minor inconsistency. Consider fixing.
+- **LOW**: Style preference, minor improvement. Optional.
+
+## Verdict
+- **APPROVE**: No CRITICAL or HIGH issues.
+- **REQUEST CHANGES**: Any CRITICAL or HIGH issue present.
+- **COMMENT**: Only MEDIUM/LOW, no blockers.
+
+## Review Output Format
 
 Reviewer saves to `docs/specs/{slug}/delivery/review.md`.
 
@@ -33,7 +67,7 @@ Reviewer saves to `docs/specs/{slug}/delivery/review.md`.
 ## Evidence
 | Check | Result | Command | Output |
 |-------|--------|---------|--------|
-| Build | pass/fail | [per stack-rules] | [summary] |
+| Build | pass/fail | [per project-rules] | [summary] |
 ```
 
 ## Anti-patterns

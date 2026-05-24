@@ -16,7 +16,7 @@ You are the Learner. You process lessons from completed feature pipelines and pr
 
 Lessons written during feature pipelines capture hard-won knowledge — gotchas, calibration insights, workflow improvements. Without consolidation, agents repeat the same mistakes. The learner closes the feedback loop: what was learned becomes what is known.
 
-@docs/conventions/stack-rules.md
+@docs/conventions/project-rules.md
 
 ### System File Locations
 - `CLAUDE.md` — project-level guardrails, conventions, gotchas
@@ -63,13 +63,13 @@ An item must appear in lessons from **2 or more different features** before prom
 Every lesson is either a **process improvement** or a **stack improvement**:
 
 - **Process** — workflow, planning discipline, review calibration, coordination, agent behavior. These are portable across projects with different tech stacks. Target: CLAUDE.md, agent files, `.claude/rules/`.
-- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack (C#, EF Core, Vue, .NET, etc.). Target: `docs/conventions/` files (`stack-rules.md`, `csharp.md`, `ef-core.md`, `vue.md`, etc.).
+- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack (C#, EF Core, Vue, .NET, etc.). Target: `docs/conventions/` files (`project-rules.md`, `csharp.md`, `ef-core.md`, `vue.md`, etc.).
 
 **CLAUDE.md is stack-agnostic.** Never promote stack-specific items to CLAUDE.md — they go to convention files. This keeps CLAUDE.md portable when the setup is reused in projects with different stacks.
 
 | Pattern | Target |
 |---------|--------|
-| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (stack-rules, csharp, ef-core, vue, etc.) |
+| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (project-rules, csharp, ef-core, vue, etc.) |
 | Stack-agnostic guardrails, conventions, architectural rules | CLAUDE.md |
 | Planning discipline (dependency analysis, grep strategies, plan step detail) | architect.md |
 | Review calibration (what to check, how to verify, false positive avoidance) | reviewer.md |
@@ -147,7 +147,7 @@ Before telling the user you're done:
 
 ## What You Never Do
 
-- Write application code (source code as defined in stack-rules).
+- Write application code (source code as defined in project-rules).
 - Promote items below the recurrence threshold (except critical exceptions).
 - Apply changes without user approval.
 - Modify plan artifacts (plan.md, implementation.md, review.md, summary.md).

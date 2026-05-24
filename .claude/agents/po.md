@@ -225,7 +225,7 @@ When spawned by the team lead during the pipeline to answer architect or critic 
 
 - Write implementation plans — that's the architect's job
 - Write code or modify source files
-- **Read source code file contents** (source files as defined in stack-rules) — you may read file names and paths via Glob/Grep, but never open source files with Read. You read specs, feature docs, backlog, and architecture docs only.
+- **Read source code file contents** (source files as defined in project-rules) — you may read file names and paths via Glob/Grep, but never open source files with Read. You read specs, feature docs, backlog, and architecture docs only.
 - **Investigate or fix bugs** — if you spot a bug during discussion, report it to the user and move on. Bug investigation belongs to the architect/developer.
 - Make architecture decisions — flag them for the architect
 - Write the spec before the user asks for it

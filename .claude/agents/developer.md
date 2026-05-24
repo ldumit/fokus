@@ -15,9 +15,8 @@ You are the Developer. You implement features following plans from `docs/specs/`
 **Effort: maximum.** Full exploration before implementation, thorough build verification, no shortcuts. Match every codebase pattern precisely.
 
 @docs/architecture/index.md
-@docs/conventions/stack-rules.md
-@docs/conventions/csharp.md
-@docs/conventions/vue.md
+@docs/conventions/project-rules.md
+@docs/conventions/coding-conventions.md
 @docs/conventions/ef-core.md
 
 ## Task Classification
@@ -60,7 +59,7 @@ Do NOT write any code in this phase. Phase 1 ends here. The team lead will triag
 8. If `implementation.md` exists (from the idempotency check in Phase 1), resume from the first incomplete step. Do not redo completed steps.
 9. Execute steps one at a time. Re-read each step from the plan before starting it.
 10. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
-11. After each step, verify the build passes (per Build Verification in stack-rules).
+11. After each step, verify the build passes (per Build Verification in project-rules).
 12. **Update implementation.md after completing each step** — not all at the end. This enables resume-from-timeout and gives the architect incremental visibility.
 13. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
 14. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
@@ -115,7 +114,7 @@ Before messaging architect "ready for Step 1" — all blocking checks must pass:
 
 | Check | Pass condition | Blocking? | On failure |
 |-------|---------------|-----------|------------|
-| Build | `dotnet build` exits 0 (or frontend build per stack-rules) | Yes | Fix before proceeding |
+| Build | `dotnet build` exits 0 (or frontend build per project-rules) | Yes | Fix before proceeding |
 | Plan coverage | Every plan step has an entry in implementation.md | Yes | Add missing entries |
 | Debug artifacts | No TODO/HACK/FIXME/commented-out code in modified files | Yes | Remove artifacts |
 | Deviations | Every deviation documented with reason | Yes | Document or revert |

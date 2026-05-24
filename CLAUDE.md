@@ -33,17 +33,7 @@ docker-compose                 # Local dev environment
 Default to **module**; only use a microservice when deployment/scaling/ownership demands it.
 New services use the three-project split above (API / Domain / Persistence). There is no separate Application project — FastEndpoints endpoint classes own feature slices directly (request + response + validator + handler logic + event handlers all live in `{Svc}.API/Features/`).
 
-### Project reference graph
-
-```
-API  ──▶  Domain
-  │
-  └─▶  Persistence  ──▶  Domain
-```
-
-- `API` references both `Domain` and `Persistence` directly. Because we do not use repository interfaces (see Guardrails), endpoints consume concrete repositories from `Persistence` — no abstraction layer to bridge.
-- `Persistence` references `Domain`.
-- `Domain` references nothing.
+See `docs/conventions/project-rules.md` for the project reference graph, coding conventions, and build verification.
 
 ## Tech Stack
 
@@ -107,11 +97,6 @@ Example — a service at index `1` with app prefix `44`:
 - **Slots 1–3 are reserved.** Do not use them for anything else without amending this convention.
 - **Services do not duplicate port numbers in their own `CLAUDE.md`.** Each service records only its service index; the ports derive from this table.
 
-## Guardrails — DO NOT
+## Guardrails
 
-- **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
-- **No repository interfaces** — single implementation, interfaces add zero value. Other components (modules, cross-cutting) do use interfaces where contracts are needed.
-- **No bypassing domain rules** via EF configs or endpoints.
-- **Domain events** = within service boundary. **Integration events** = cross-service.
-
-
+See `docs/conventions/project-rules.md` for all architectural guardrails (the authoritative source).

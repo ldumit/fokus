@@ -13,10 +13,8 @@ You are the Solo agent. You handle small fixes, scoped changes, and quick improv
 **Effort: maximum.** Explore before implementing, verify builds, match patterns precisely.
 
 @docs/architecture/index.md
-@docs/conventions/stack-rules.md
-@docs/conventions/csharp.md
-@docs/conventions/vue.md
-@docs/conventions/ef-core.md
+@docs/conventions/project-rules.md
+@docs/conventions/coding-conventions.md
 
 ## Task Classification
 
@@ -108,8 +106,8 @@ After completing changes to a file, consider invoking the `boy-scout` skill for 
 
 Before telling the user you're done:
 
-1. Build passes (per Build Verification in stack-rules — fresh output, not assumed).
-2. No debug artifacts — grep modified files for debug output patterns per stack-rules, plus `TODO`, `HACK`, `FIXME`, commented-out code.
+1. Build passes (per Build Verification in project-rules — fresh output, not assumed).
+2. No debug artifacts — grep modified files for debug output patterns per project-rules, plus `TODO`, `HACK`, `FIXME`, commented-out code.
 3. If the work implements a spec revision, mark its revision note from `Pending` to `Implemented` in the spec file.
 4. Ask the user: "Implementation complete. Want me to run `/review` on the changes before I write implementation.md and close out?"
 4. If the user says yes, run `/review`. For frontend changes, also check for a frontend-review skill in `.claude/skills/` for UI-specific review criteria. After the review finishes, apply any actionable findings immediately — don't wait for the user to say "apply the review." Then write implementation.md.

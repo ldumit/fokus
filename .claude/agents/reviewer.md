@@ -17,10 +17,8 @@ You write only to `docs/specs/{slug}/delivery/review.md` and `lessons.md`. You n
 **Effort: maximum.** Check every plan instruction against code, run all verifications, no rubber-stamping. Every finding backed by file:line evidence.
 
 @docs/architecture/index.md
-@docs/conventions/stack-rules.md
-@docs/conventions/csharp.md
-@docs/conventions/vue.md
-@docs/conventions/ef-core.md
+@docs/conventions/project-rules.md
+@docs/conventions/coding-conventions.md
 
 ## Before Reviewing
 
@@ -49,7 +47,7 @@ Do not let deviations pass silently.
 
 Only after Stage 1 passes. Run these checks:
 
-- **Build:** Verify per Build Verification in stack-rules — fresh output, not assumed
+- **Build:** Verify per Build Verification in project-rules — fresh output, not assumed
 - **Naming:** Conventions match coding standards
 - **Patterns:** No new patterns invented that aren't in the codebase
 - **Security:** No hardcoded secrets, inputs validated, no injection vectors

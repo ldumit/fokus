@@ -207,48 +207,7 @@ After escalation to human, agents STOP and wait.
 
 ## Implementation Plan Format
 
-Plans created via the `create-implementation-plan` skill include an additional **Skill Mapping** section before Implementation Steps. See the skill's `references/plan-template.md` for the full template.
-
-Plans saved to `docs/specs/{slug}/delivery/plan.md` by architect.
-
-```
-# {Feature Name}
-
-**Feature Spec:** `docs/specs/{slug}/definition/spec.md` | None
-
-## Context
-What problem this solves. Which service(s) impacted and why.
-
-## Scope
-In scope. Explicitly out of scope.
-
-## Domain Model Changes
-New/modified aggregates, entities, value objects, domain events.
-
-## Data Model Changes
-New tables, columns, relationships, migrations needed.
-
-## Implementation Steps
-Numbered steps — each step is one focused task.
-For each step:
-- What to do (not how to code it)
-- Which files to create or modify (full paths)
-- What pattern to follow (reference an existing file)
-- Which skill to use if one applies
-- Dependencies on previous steps
-
-## Cross-Service Changes (if applicable)
-gRPC contract changes, integration events, consumers.
-
-## Migration Notes (if applicable)
-Migration commands per relevant persistence convention. Seed data if needed.
-
-## Testing Strategy
-Key scenarios to test.
-
-## Open Questions
-Unresolved decisions needing input.
-```
+See the `create-implementation-plan` skill's `references/plan-template.md` for the full template. Plans saved to `docs/specs/{slug}/delivery/plan.md` by architect.
 
 ## Implementation File Format
 
@@ -256,27 +215,7 @@ See `docs/conventions/implementation-format.md` for the full format.
 
 ## Summary File Format
 
-Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summary.md`. Its existence means the pipeline completed successfully.
-
-```
-# {Feature Name} — Summary
-
-## Status: COMPLETE
-
-## What Was Built
-- [1-3 sentence description of the feature/change]
-
-## Key Outcomes
-- [Files created/modified count]
-- [Build status]
-- [Review verdict and cycle count]
-
-## Deviations from Plan
-- [Any deviations, or "None"]
-
-## Notes
-- [Anything the user should know before committing]
-```
+See `docs/conventions/summary-format.md` for the full format.
 
 ## Questions File Format
 
@@ -284,81 +223,11 @@ See `docs/conventions/questions-format.md` for the full format, rules, and routi
 
 ## Lessons File Format
 
-All pipeline agents append under their own heading: `docs/specs/{slug}/delivery/lessons.md`. The PO writes lessons during spec shaping (before the delivery/ folder exists) — create the folder and lessons file if needed.
+See `docs/conventions/lessons-format.md` for the full format, headings, improvement proposals, and mandatory rules.
 
-```
-# {Feature Name} — Lessons
+## Review Format
 
-## PO Lessons
-- Spec gaps the critic caught
-- Research that changed a decision
-- Questions that should have been asked earlier or differently
-
-## Architect Lessons
-- Plan instructions that were ambiguous
-- Architecture decisions needing documentation
-- Skill gaps discovered
-
-## Developer Lessons
-- Patterns discovered not yet documented
-- Inconsistencies found
-- Steps missing from a skill
-
-## Reviewer Lessons
-- Review criteria that were unclear
-- Recurring code quality issues
-- Patterns that should become conventions
-```
-
-For systemic issues that recur across features, append an improvement proposal inside the relevant heading:
-
-```
-### Improvement Proposal (optional, for systemic issues)
-**Target:** {file path — agent file, skill, convention, or rule}
-**Change:** {what to add/modify}
-**Evidence:** {which features demonstrated this, with links}
-**Priority:** {low/medium/high}
-```
-
-Only add items not already in CLAUDE.md, convention files, skills, or agent files. Update before `/compact` or `/clear`.
-
-**Mandatory:** Every agent must write lessons before finishing its work. This is not optional — if you learned something (a gap, a pattern, a mistake, an ambiguity), write it down. If the lessons file doesn't exist yet, create it. If your heading already exists, append to it. No agent exits without writing lessons.
-
-## Review Checklist
-
-### Step 1: Done check (architect, no code reading)
-- Every plan step has a corresponding implementation.md entry
-- No plan steps missing or silently skipped
-- Reported deviations have reasons
-- No unexpected files or scope creep
-
-### Step 2: Code review (reviewer, reads implementation)
-- Each plan instruction has corresponding code that matches
-- Referenced patterns and skills were followed
-- Naming conventions match coding standards
-- Build passes (fresh output, not assumed)
-- No new patterns invented
-- Domain rules enforced in aggregates, not handlers
-- Deviations flagged with verdict: plan wrong or code wrong
-- Security: no hardcoded secrets, inputs validated, no injection vectors
-- Logic: all branches reachable, no off-by-one, null handling correct
-- Performance: check for performance anti-patterns per loaded conventions
-- Skill mapping verified: any "None" disposition in the Skill Mapping was warranted (no existing skill actually covers the step)
-
-### Severity Ratings (reviewer)
-- **CRITICAL**: Security vulnerability, data loss risk, fundamentally wrong approach. Blocks merge.
-- **HIGH**: Logic error, missing error handling, plan deviation without justification. Should fix.
-- **MEDIUM**: Suboptimal pattern, minor inconsistency. Consider fixing.
-- **LOW**: Style preference, minor improvement. Optional.
-
-### Verdict
-- **APPROVE**: No CRITICAL or HIGH issues.
-- **REQUEST CHANGES**: Any CRITICAL or HIGH issue present.
-- **COMMENT**: Only MEDIUM/LOW, no blockers.
-
-## Review Output Format
-
-See `docs/conventions/review-format.md` for the full format, anti-patterns, and consumer table.
+See `docs/conventions/review-format.md` for the checklist, severity ratings, verdict criteria, output format, anti-patterns, and consumer table.
 
 ## Skill Authority
 
