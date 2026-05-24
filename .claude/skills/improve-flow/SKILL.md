@@ -55,6 +55,16 @@ Applies classified and approved lesson items to their target flow files. Each it
 - Don't add dates. The git history tracks when it was added.
 - Condense the lesson to its actionable essence. Strip the story, keep the rule.
 
+## Anti-pattern Promotion
+
+When a lesson recurs 2+ times across features and maps to an agent file, check if that agent has an `## Anti-patterns` section. If yes, promote the recurring lesson as a new anti-pattern entry. Format:
+
+```markdown
+- **{Pattern name}.** {What goes wrong}. {Correct approach instead}.
+```
+
+Anti-patterns are a valid promotion target alongside rules, conventions, and agent instructions. The `## Anti-patterns` section exists in developer.md and reviewer.md.
+
 ## What This Skill Does NOT Do
 
 - Classify items — the learner already did that.

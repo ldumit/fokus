@@ -2,6 +2,20 @@
 
 Used by: FastEndpoints services
 
+## Inputs
+- Service name and domain area (from plan step)
+- Feature name — drives all file names
+- Route path and HTTP method
+- Request/response type names and properties
+- Required role (if auth-gated) or AllowAnonymous
+
+## Outputs
+- `{Svc}.API/Features/{Domain}/{FeatureName}/{FeatureName}Endpoint.cs`
+- Optionally: `{FeatureName}Endpoint.Configure.cs` (if configuration is complex)
+
+## Gate
+Proceed only after: service CLAUDE.md read, endpoint framework confirmed as FastEndpoints, one existing feature in the service reviewed for structure.
+
 Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in `HandleAsync` — no MediatR dispatch.
 
 ## Pattern

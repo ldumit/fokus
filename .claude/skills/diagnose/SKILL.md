@@ -118,6 +118,26 @@ The developer/solo circuit breaker triggers after 3 failed attempts. This skill 
 - **Minimal fix** — don't refactor during a fix. Fix the bug, verify, then propose refactoring separately
 - **No permanent logging for debugging** — if the insight is valuable long-term, it's observability (different concern, different PR)
 
+## Required Reading
+
+Before invoking this skill, ensure you have:
+- The exact error message or failure symptom (copy it verbatim — every word matters)
+- The build or test output from the failed attempt
+- A description of what changed immediately before the failure (the last step you completed)
+
+## Anti-patterns
+
+- **Skipping Phase 3 (Hypothesize) and going straight to fixing.** Without ranked hypotheses, each fix attempt is a shot in the dark. The circuit breaker exists precisely because ad-hoc fixing compounds problems. Write the hypotheses before touching the code.
+- **Changing multiple things in one fix attempt.** Bundling fixes resets you to Phase 1 — if it works, you don't know why; if it doesn't, you've made the state harder to reason about. One variable at a time.
+- **Forgetting to remove debug instrumentation.** Tagged debug output (`[DEBUG-xxxx]`) left in after the fix becomes production noise. Phase 6 cleanup is not optional.
+
+## Downstream Consumers
+
+| Agent | How they use this skill | Impact if skipped |
+|-------|------------------------|-------------------|
+| Developer | Follows phases to diagnose build/runtime failures | Without structure, 3 failed attempts trigger circuit breaker and escalate to architect unnecessarily |
+| Architect | Reviews evidence log when escalated | Incomplete phase logs make root cause analysis impossible; architect can't make a good decision |
+
 ## What This Skill Does NOT Do
 
 - Replace the architect's escalation role — if you can't find root cause, escalate

@@ -15,3 +15,7 @@ Agent({
   ...
 })
 ```
+
+## Output Size Constraint
+
+Explore and general-purpose agents return a structured report under 300 words. Write detailed findings to disk (e.g., a notes file or questions.md); the message is a summary. Never return raw file dumps or full grep output as the agent response — summarize findings and cite file paths.

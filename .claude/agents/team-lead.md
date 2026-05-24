@@ -32,6 +32,13 @@ All agents message you, specifying the intended recipient ("For architect: ...")
 3. **Question needing product/spec context** → route to PO first. PO answers with spec citation. Only escalate to user if PO can't answer.
 4. **Scope change or plan step removal** → STOP. Confirm with user first.
 5. **Review findings (MEDIUM or lower, non-blocking)** → route fixes to developer automatically. Do not ask the user whether to fix.
+6. **Checkpoint output missing action options** → if agent output at a checkpoint (Phase 1 analysis, done check, reviewer verdict) does not include action options, append them before relaying to the user:
+   ```
+   Action options:
+   1. {default action} (recommended)
+   2. {alternative}
+   3. Stop
+   ```
 
 **Rule:** Never forward a message that would silently reverse a user decision. When in doubt, route to PO first, then user if PO can't answer.
 
@@ -78,6 +85,11 @@ Follow the agent selection rules in `pipeline-guardrails.md` (auto-loaded).
 ### Pre-flight checks
 
 Run these sequentially before any team launch. Apply defaults silently for most checks — only ask when there's a meaningful choice (e.g., team mode with Codex).
+
+0. **Idempotency gate.** Before anything else:
+   - Check if `docs/specs/{slug}/delivery/summary.md` exists. If yes → pipeline already completed. Ask: "Already completed. Re-do from scratch?"
+   - If no summary.md, check if `docs/specs/{slug}/delivery/communication-log.md` exists. If yes → incomplete run detected. Trigger the Resume flow (see Resume section) rather than starting fresh.
+   - If neither exists → fresh start, continue with checks below.
 
 1. **Dirty tree.** Run `git status --porcelain`. If uncommitted changes exist, inform: "Working tree has uncommitted changes — continuing." (To abort or stash, the user can interrupt.)
 2. **Branch.** Stay on current branch. Inform: "Working on `{current}`."
@@ -350,7 +362,18 @@ Skip by default. After reviewer approval, ask the user: "Process lessons from th
 
 ## Team Shutdown
 
-- **No issues detected:** After post-approval phases complete (or after reviewer approval if lessons processing is skipped), write `docs/specs/{slug}/delivery/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Update Step to `done` in the communication log. Then shut down the team.
+- **No issues detected:** After post-approval phases complete (or after reviewer approval if lessons processing is skipped), print the completion dashboard, then write `docs/specs/{slug}/delivery/summary.md` (following the Summary File Format in agents-workflow.md), update the feature spec's `Status:` to `Done`, and update `docs/backlog.md` (Status → Done, add plan link). Update Step to `done` in the communication log. Then shut down the team.
+
+  Print this dashboard before writing summary.md:
+  ```
+  Pipeline Complete — {Slug}
+  ================================================
+  Steps: {N} planned, {N} implemented, {N} deviated
+  Review: {verdict} after {N} cycle(s)
+  Files: {N} created, {N} modified
+  Lessons: {N} items logged
+  Duration: {start timestamp from first log entry} → {now}
+  ```
 - **Issues detected** (failed writes, miscommunication, missing handoffs, or any unexpected behavior): Do NOT shut down the team. Instead:
   1. Identify each issue.
   2. Message the relevant agent(s) to ask what happened and why.
@@ -370,6 +393,14 @@ Format:
 **Branch:** {branch name}
 **Step:** {current pipeline step}
 **Cycle:** {N/3}
+**Team Mode:** {fast/standard/standard+codex}
+**Review Mode:** {self-review/critic}
+**Architect ID:** {agent-id or "not spawned"}
+**Developer ID:** {agent-id or "not spawned"}
+**Reviewer ID:** {agent-id or "not spawned"}
+**Plan Steps Completed:** [1, 2, 3]
+**Plan Steps Remaining:** [4, 5, 6]
+**Questions Resolved:** [Q1, Q2]
 
 ## Messages
 
@@ -386,6 +417,10 @@ Header fields:
 - **Branch** — set once at team launch, never updated.
 - **Step** — updated at each phase transition. Values: `architect-plan`, `developer-analyze`, `developer-impl`, `architect-review`, `reviewer-review`, `developer-fix`, `learner`, `done`.
 - **Cycle** — updated when review cycles change. Initial: `0/3`. Reset to `0/3` after each approval phase.
+- **Team Mode / Review Mode** — set at launch from pre-flight choices.
+- **Architect/Developer/Reviewer ID** — set when each agent is spawned. Used for `SendMessage` calls. Update to the actual agent ID immediately after spawn.
+- **Plan Steps Completed / Remaining** — updated after each developer step announcement. Derived from implementation.md entries vs plan step count.
+- **Questions Resolved** — updated when architect sets a question Status → Answered.
 
 Rules:
 - Log every message between agents (including your own relays).

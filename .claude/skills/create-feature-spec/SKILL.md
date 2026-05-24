@@ -81,6 +81,14 @@ For an issue nested under an epic, the path becomes `docs/specs/{epic-slug}/{iss
 
 Pass the feature name: `create-feature-spec Sprint`
 
+## Downstream Consumers
+
+| Agent | What they use | Impact if spec is incomplete |
+|-------|--------------|------------------------------|
+| Architect | All sections (plans against the spec) | Plan steps miss requirements; gaps discovered only during implementation |
+| Critic (Mode 1) | All sections (validates spec vs v1.md) | Critic can't find gaps in an incomplete spec; architectural misalignments reach the plan stage |
+| Developer | Never reads spec directly — reads the plan | Indirect: spec gaps become plan gaps, which become implementation gaps |
+
 ## What this skill does NOT do
 
 - Does not write implementation plans — that is the Architect's plan workflow.

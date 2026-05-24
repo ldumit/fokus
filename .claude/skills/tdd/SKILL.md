@@ -187,6 +187,19 @@ TDD is HOW the developer implements plan steps, not a separate phase:
 - **Delete tests that test nothing** — a test that passes regardless of implementation is worse than no test
 - **Integration over unit for endpoints** — prefer one `WebApplicationFactory` test over mocking 5 internal collaborators
 
+## Required Reading
+
+Before invoking this skill, ensure you have:
+- The plan step's acceptance criteria — what behavior needs to be verified
+- The test project path for this service (check if `{Svc}.Tests/` exists; if not, run Step 0 bootstrap)
+- An existing test file in the same service — for naming conventions and fixture setup patterns
+
+## Anti-patterns
+
+- **Writing all tests first, then all implementation (horizontal slicing).** This produces tests that verify shape rather than behavior. Write one test → implement → green → next test. Never batch tests.
+- **Writing a test that passes before any implementation.** If the test is green before you write the implementation code, the test is testing nothing. Confirm the test fails for the right reason (missing behavior, not a compile error) before implementing.
+- **Using implementation details as test assertions.** If refactoring internals breaks tests, the tests are wrong. Assert on observable behavior (return values, side effects, state changes) — not on how the code is structured internally.
+
 ## What This Skill Does NOT Do
 
 - Set up CI/CD test pipelines — that's infrastructure

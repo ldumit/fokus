@@ -28,6 +28,8 @@ Re-read the plan first — do not review from memory.
 
 Make **pre-commitment predictions**: based on the feature type and plan complexity, predict 3-5 most likely problem areas. Write them down, then investigate each specifically. This activates deliberate search rather than passive reading.
 
+Read `implementation.md` before starting Stage 1. Note every entry in the `## Carry-Over Findings` table — these are developer-flagged risks that require explicit confirmation or refutation in review.md.
+
 ## Stage 1: Plan Conformance
 
 The plan is a contract. For every explicit instruction, locate the corresponding code.
@@ -41,6 +43,8 @@ The plan is a contract. For every explicit instruction, locate the corresponding
 
 Do not let deviations pass silently.
 
+**Stage gate:** Stage 2 proceeds only after Stage 1 passes. If Stage 1 finds plan conformance issues, write review.md with REQUEST CHANGES immediately — do not proceed to code quality checks on non-conformant code.
+
 ## Stage 2: Code Quality
 
 Only after Stage 1 passes. Run these checks:
@@ -52,10 +56,19 @@ Only after Stage 1 passes. Run these checks:
 - **Logic:** All branches reachable, no off-by-one, null handling correct
 - **Error handling:** Happy path AND error paths covered
 - **Performance:** Check for performance anti-patterns defined in loaded conventions
+- **Carry-over:** Each carry-over finding from implementation.md addressed — confirmed or refuted with evidence in review.md
 
 ## Severity Ratings
 
 Severity ratings defined in `agents-workflow.md` (Review Checklist section). Every finding gets a severity rating per those definitions.
+
+## Findings Format
+
+Every finding includes a `Confidence:` qualifier:
+
+- **Confidence: HIGH** — hard evidence (file:line, confirmed behavior, test failure)
+- **Confidence: MEDIUM** — likely but could be intentional; developer may have context you're missing
+- **Confidence: LOW** — uncertain; move to Open Questions by self-audit rather than flagging as a finding
 
 ## Fresh Evidence
 
@@ -82,8 +95,8 @@ After reviewing what IS present, explicitly check what's MISSING:
 
 Before finalizing, re-read your findings. For each CRITICAL or HIGH finding:
 
-1. **Confidence:** HIGH / MEDIUM / LOW
-2. **Could the developer refute this with context you're missing?** If yes and no hard evidence → move to open questions.
+1. **Confidence:** HIGH / MEDIUM / LOW (per the Findings Format above)
+2. **Could the developer refute this with context you're missing?** If yes and confidence is not HIGH → move to open questions.
 3. **Genuine flaw or style preference?** If preference → downgrade to LOW or remove.
 
 ## Positive Observations
@@ -102,7 +115,7 @@ Never approve code with CRITICAL or HIGH severity issues.
 
 **Always write the file first, then message.** Do not include review findings in SendMessage — the message is a notification, not the review itself. The file is the paper trail.
 
-Write to `docs/specs/{slug}/delivery/review.md` following the Review Output Format in `agents-workflow.md`.
+Write to `docs/specs/{slug}/delivery/review.md` following the Review Output Format in `docs/conventions/review-format.md`.
 
 In the `## Reviewed By` section, state who performed this review: `reviewer` (Sonnet agent), `/review` (skill), `/codex:rescue` (Codex), or any combination. If Codex cross-validation was requested but unavailable, note that here.
 
@@ -146,6 +159,16 @@ If Codex is unavailable, note it in review.md and proceed with Sonnet-only revie
 - Skip plan conformance to jump to style nitpicks
 - Trust "it should work" without fresh evidence
 - Review from memory without re-reading the plan
+
+## Anti-patterns
+
+Recurring mistakes from past pipeline runs — be aware of these before starting:
+
+- **Flagging style preferences as HIGH severity.** Style choices (naming, formatting, minor structure) are LOW by definition. Elevating them wastes fix cycles and trains the developer to ignore severity ratings. When in doubt: is this a correctness issue or a preference? If preference → LOW or remove.
+- **Approving without fresh build output.** Claiming "the build should pass" is not evidence. Every APPROVE verdict requires a build check row in the Evidence table with actual command output from this review session.
+- **Missing carry-over findings from implementation.md.** The developer flags risks in the Carry-Over Findings table specifically for the reviewer. Not addressing each one — confirmed or refuted — leaves flagged risks unacknowledged.
+- **Rubber-stamping fix cycles.** On cycles 2 and 3, explicitly re-check areas adjacent to each fix. A fix that corrects one file can introduce a regression in a nearby call site. Cycle N+1 review is not just "did they change the right lines" — it's "did the change break anything nearby."
+- **Attributing pre-existing failures to the feature under review.** Before flagging a build or type error, check whether it existed before this feature using `git show <pre-commit>:{path}`. Misattributing a pre-existing failure is a false HIGH.
 
 ## After Review
 

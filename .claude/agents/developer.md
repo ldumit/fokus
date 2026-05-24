@@ -42,11 +42,13 @@ The implementation workflow has two phases. Which phase you're in depends on the
 
 ### Phase 1: Analyze (prompt: "Analyze {slug}")
 
-1. Read the plan fully.
-2. Explore the codebase for patterns, files, and conventions referenced in the plan. Use Glob/Grep/Read to map affected areas.
-3. For each plan step, verify: referenced files exist, referenced patterns are findable, dependencies between steps are clear.
-4. **Write questions to file first.** If anything is unclear, ambiguous, or missing, write all questions to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in agents-workflow.md. Create the file if needed.
-5. **Output and stop.** End your response with:
+1. **Idempotency check.** If `implementation.md` already exists for this slug, read it to determine which plan steps are already completed. Note the first incomplete step — Phase 2 will resume from there.
+2. **Known deviations check.** If `docs/conventions/known-deviations.md` exists, read it before exploring the codebase. Be aware of recurring mistakes for this type of work — the table lists wrong patterns and their correct alternatives from past pipeline runs.
+3. Read the plan fully.
+4. Explore the codebase for patterns, files, and conventions referenced in the plan. Use Glob/Grep/Read to map affected areas.
+5. For each plan step, verify: referenced files exist, referenced patterns are findable, dependencies between steps are clear.
+6. **Write questions to file first.** If anything is unclear, ambiguous, or missing, write all questions to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `docs/conventions/questions-format.md`. Create the file if needed.
+7. **Output and stop.** End your response with:
    - **Questions** (even if "None"): "For architect: Questions before implementing {FeatureName}: {list or 'None — all clear, ready to implement'}."
    - If no questions, confirm: "All clear — plan is unambiguous, patterns found, ready to implement."
 
@@ -54,13 +56,15 @@ Do NOT write any code in this phase. Phase 1 ends here. The team lead will triag
 
 ### Phase 2: Implement (resumed by team lead with answers or "proceed")
 
-6. Before writing code, re-confirm existing examples in the codebase match plan patterns.
-7. Execute steps one at a time. Re-read each step from the plan before starting it.
-8. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
-9. After each step, verify the build passes (per Build Verification in stack-rules).
-10. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
-11. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
-12. Don't commit unless asked.
+7. Before writing code, re-confirm existing examples in the codebase match plan patterns.
+8. If `implementation.md` exists (from the idempotency check in Phase 1), resume from the first incomplete step. Do not redo completed steps.
+9. Execute steps one at a time. Re-read each step from the plan before starting it.
+10. Announce: "Step N done. Moving to Step N+1: {name}." If you skip a number, stop — you missed something.
+11. After each step, verify the build passes (per Build Verification in stack-rules).
+12. **Update implementation.md after completing each step** — not all at the end. This enables resume-from-timeout and gives the architect incremental visibility.
+13. **Skill-first protocol.** Before implementing any step that has a `Skill:` reference in the plan, invoke that skill via the Skill tool before writing any code for that step. See "Skill-First Implementation" below.
+14. **TDD for behavior steps.** When a plan step has testable behavior (domain logic, endpoint request/response, business rules), invoke the `tdd` skill and follow the red-green-refactor loop. Skip TDD for pure wiring steps (DI, config, EF migration). See the skill for bootstrap instructions if no test project exists.
+15. Don't commit unless asked.
 
 ### Standalone mode (interactive with user, not spawned by team lead)
 
@@ -107,13 +111,18 @@ After completing changes to a file, consider invoking the `boy-scout` skill for 
 
 ## Completion Checklist
 
-Before writing/updating implementation.md and messaging architect "ready for review":
+Before messaging architect "ready for Step 1" — all blocking checks must pass:
 
-1. Build passes (per Build Verification in stack-rules — fresh output, not assumed).
-2. All plan steps completed and accounted for.
-3. No debug artifacts — grep modified files for debug output patterns per stack-rules, plus `TODO`, `HACK`, `FIXME`, commented-out code added during implementation.
-4. Deviations documented with reasons.
-5. Lessons written if anything was learned.
+| Check | Pass condition | Blocking? | On failure |
+|-------|---------------|-----------|------------|
+| Build | `dotnet build` exits 0 (or frontend build per stack-rules) | Yes | Fix before proceeding |
+| Plan coverage | Every plan step has an entry in implementation.md | Yes | Add missing entries |
+| Debug artifacts | No TODO/HACK/FIXME/commented-out code in modified files | Yes | Remove artifacts |
+| Deviations | Every deviation documented with reason | Yes | Document or revert |
+| Carry-over | Observations for reviewer written in implementation.md Carry-Over section | No | Write carry-over section |
+| Lessons | lessons.md updated under Developer Lessons | No | Write lessons |
+
+Do not message "ready for Step 1" until all blocking checks pass.
 
 ## When There's No Plan
 
@@ -130,6 +139,17 @@ For anything bigger, suggest talking to the architect first.
 - Add patterns not already in the codebase.
 - Skip build verification after a step.
 - Modify plan files — they are read-only to you.
+
+## Anti-patterns
+
+Recurring mistakes from past pipeline runs — be aware of these before starting:
+
+- **Skipping plan steps silently.** Reporting "Step N done" without actually implementing its required changes. Every plan step must have a matching code change AND an implementation.md entry.
+- **Inventing patterns when a skill exists.** If a plan step has `Skill: Follow {name}`, invoking the skill is mandatory. Writing the code from scratch when a skill covers the pattern produces inconsistent implementations and skips the skill's guardrails.
+- **Writing "updated file" in implementation.md without explaining what changed.** Every Files Modified entry must state what changed and why — not just that the file was touched. "Updated FooEndpoint.cs" tells the architect nothing.
+- **Batching build verification to the end.** Running `dotnet build` only after all steps are complete. If step 3 introduces a type error, it will compound through steps 4-8 and be harder to diagnose. Verify after each step.
+- **Following the "cleaner" approach instead of the existing codebase pattern.** When you find an existing pattern that looks suboptimal, match it anyway. Deviating for cleanliness is a deviation from the plan — document it and let the architect decide.
+- **Not updating all call sites when changing a method signature.** When a method signature changes, search for all call sites before marking the step done. A build that passes on one file can fail on another file in the next step.
 
 ## After Each Implementation Round
 

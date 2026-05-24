@@ -7,6 +7,19 @@ description: Creates a complete vertical slice feature — endpoint, command/que
 
 Creates a complete vertical slice for a new feature. The endpoint framework determines which workflow variant to follow.
 
+## Required Reading
+
+Before invoking this skill, ensure you have read:
+- The service's `src/Services/{Svc}/CLAUDE.md` — identifies which endpoint framework (FastEndpoints/Carter/Minimal APIs) to use
+- An existing feature in the same service — e.g., `{Svc}.API/Features/{Domain}/{ExistingFeature}/` — for naming and structure conventions
+- The plan step's feature-specific inputs (entity names, route paths, request/response shape)
+
+## Anti-patterns
+
+- **Reading the service CLAUDE.md after starting to write code.** The framework choice (FastEndpoints vs Carter vs Minimal APIs) determines which workflow variant to follow. Discovering the wrong framework mid-implementation means rewriting the endpoint. Read CLAUDE.md first.
+- **Inventing a new folder structure instead of following the existing feature layout.** All features in a service share the same folder convention. Copy the structure from an existing feature in the same service — don't derive it from the skill template alone.
+- **Manually registering a FastEndpoints endpoint.** FastEndpoints auto-discovers endpoints by convention. Adding manual registration creates duplicate routing.
+
 ## Steps
 
 1. **Determine the service and framework.** Check the service's CLAUDE.md for which endpoint framework to use:

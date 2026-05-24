@@ -2,6 +2,17 @@
 
 Used by: Carter + MediatR services
 
+## Inputs
+- Feature name, route path, HTTP method
+- Request/response type names
+- MediatR command/query type to dispatch to
+
+## Outputs
+- `{Svc}.API/Endpoints/{Domain}/{FeatureName}Endpoint.cs`
+
+## Gate
+Proceed only after: service CLAUDE.md confirms Carter + MediatR, Handler.md workflow followed first.
+
 Class implementing `ICarterModule` with fluent route building. Dispatches to MediatR handler.
 
 ## Pattern

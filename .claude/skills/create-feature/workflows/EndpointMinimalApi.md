@@ -2,6 +2,18 @@
 
 Used by: Minimal API + MediatR services
 
+## Inputs
+- Feature name, route path, HTTP method
+- Request/response type names
+- MediatR command/query type to dispatch to
+
+## Outputs
+- `{Svc}.API/Endpoints/{FeatureName}Endpoint.cs`
+- Registration entry in `EndpointRegistration.MapAllEndpoints()`
+
+## Gate
+Proceed only after: service CLAUDE.md confirms Minimal APIs + MediatR, Handler.md workflow followed first.
+
 Static class with `Map(IEndpointRouteBuilder)` extension method. Dispatches to MediatR handler.
 
 ## Pattern

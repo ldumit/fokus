@@ -1,5 +1,17 @@
 # Create Validator
 
+## Inputs
+- Command/request type name and its properties
+- Validation rules from the plan step (required fields, format constraints, business rules)
+- Framework (FastEndpoints or FluentValidation standalone)
+
+## Outputs
+- FastEndpoints: `{FeatureName}CommandValidator` class co-located with the command
+- Other: `{FeatureName}Validator.cs` alongside the command file
+
+## Gate
+Proceed only after: command/request type is defined and its properties are known.
+
 ## Framework Variants
 
 ### FastEndpoints: `Validator<T>`

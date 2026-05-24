@@ -51,6 +51,18 @@ To team-lead: "For {recipient}: {message content}"
 
 - **Rules go in files, not memory.** When a reusable rule or convention is identified, capture it in the appropriate rule or agent file — not in memory. Memory is for context that doesn't fit in rule files (user preferences, project state, external references). This applies to every agent, not just the team lead.
 
+## Message Size Contract
+
+Keep agent outputs focused. Content goes in files; messages are notifications with summaries.
+
+| Output type | Max length | Rule |
+|-------------|-----------|------|
+| Analysis outputs (Phase 1) | ~500 words | Write detailed findings to questions.md or a notes file; message is the summary |
+| Handoff messages | ~300 words | One paragraph of what was done + one paragraph of what's next |
+| Checkpoint reports | Structured format (see below) | Use the Checkpoint Report Format |
+
+**Write first, message second** — this applies to ALL artifacts, not just questions. Implementation details go in implementation.md, review findings go in review.md, questions go in questions.md. Messages are notifications.
+
 ## Team Lead Rules
 
 - Do not read files before delegating to agents. Send the file path in the message and let the agent read it.
@@ -107,6 +119,25 @@ Human → architect (analyze — Phase 1)
                                             ↓ exhausted
                                       architect (escalation)
 ```
+
+## Checkpoint Report Format
+
+Use this format at pipeline checkpoints: architect Phase 1 output, developer Phase 1 output, done check verdict, reviewer verdict.
+
+```
+{Phase Name} — {Slug}
+================================================
+{2-4 headline metrics — e.g., "10 steps analyzed, 0 questions, 3 patterns verified"}
+{Table or list of key findings}
+Needs your attention:
+  1. {flagged item — or "None"}
+Action options:
+  1. {default action} (recommended)
+  2. {alternative}
+  3. Stop
+```
+
+Team lead rule: if agent output at a checkpoint does not include action options, append them before relaying to the user.
 
 ## Message Handoffs (all via team lead)
 
@@ -217,23 +248,7 @@ Unresolved decisions needing input.
 
 ## Implementation File Format
 
-Written by developer after each implementation round: `docs/specs/{slug}/delivery/implementation.md`.
-
-```
-# {Feature Name} — Implementation
-
-## Files Created
-- `full/path/to/File` — what it does
-
-## Files Modified
-- `full/path/to/File` — what changed and why
-
-## Key Decisions
-- Implementation choices not specified in the plan
-
-## Deviations from Plan
-- Steps done differently, with reasons
-```
+See `docs/conventions/implementation-format.md` for the full format.
 
 ## Summary File Format
 
@@ -261,34 +276,7 @@ Written by team lead after reviewer approval: `docs/specs/{slug}/delivery/summar
 
 ## Questions File Format
 
-Written by any agent when blocked or needing clarification. The recipient answers inline. All questions go in one file — `docs/specs/{slug}/delivery/questions.md`.
-
-**Write first, message second.** Every agent must write its questions to the file before sending them as a message. The file is the log; the message is the notification.
-
-```
-# {Feature Name} — Questions
-
-## Q1: [Short title]
-**From:** [agent role]
-**To:** [agent role, "PO", or "user" — see routing below]
-**Status:** Open | Answered | Resolved
-**Step:** [Plan step number and name, or "Phase 1 analysis" if pre-plan]
-**File:** [File being worked on, if relevant]
-
-**Context:** [What was being done, what was tried, what is unclear]
-
-**Question:** [Specific question or decision needed]
-
-### Answer
-[Recipient fills this in, sets Status → Answered]
-```
-
-**Rules:**
-- One question per section. Multiple blockers = multiple sections.
-- Include enough context that the recipient can answer without reading the sender's work.
-- If the answer changes the plan, architect updates the plan. Plan stays source of truth.
-- Questions are numbered sequentially across the entire file (Q1, Q2, Q3...) regardless of sender.
-- **To field routing:** Set `To: PO` for spec/product questions (the team lead routes through the PO escalation chain: PO answers from spec → user only if PO can't cite a section). Set `To: architect` for technical/plan questions from the developer. Set `To: user` only for pure preference questions with no spec or technical basis.
+See `docs/conventions/questions-format.md` for the full format, rules, and routing chain.
 
 ## Lessons File Format
 
@@ -316,6 +304,16 @@ All pipeline agents append under their own heading: `docs/specs/{slug}/delivery/
 - Review criteria that were unclear
 - Recurring code quality issues
 - Patterns that should become conventions
+```
+
+For systemic issues that recur across features, append an improvement proposal inside the relevant heading:
+
+```
+### Improvement Proposal (optional, for systemic issues)
+**Target:** {file path — agent file, skill, convention, or rule}
+**Change:** {what to add/modify}
+**Evidence:** {which features demonstrated this, with links}
+**Priority:** {low/medium/high}
 ```
 
 Only add items not already in CLAUDE.md, convention files, skills, or agent files. Update before `/compact` or `/clear`.
@@ -356,40 +354,7 @@ Only add items not already in CLAUDE.md, convention files, skills, or agent file
 
 ## Review Output Format
 
-Reviewer saves to `docs/specs/{slug}/delivery/review.md`:
-
-```
-# {Feature Name} — Review
-
-## Reviewed By
-[Who performed this review: reviewer (Sonnet), /review (skill), /codex:rescue (Codex), or combination]
-
-## Verdict: APPROVE | REQUEST CHANGES | COMMENT
-
-## Pre-commitment Predictions
-- [What you expected to find vs what you found]
-
-## Findings
-
-### [SEVERITY] Finding title
-**File:** `path/to/file:line`
-**Issue:** What's wrong
-**Fix:** Specific suggestion
-
-## Positive Observations
-- [What was done well]
-
-## Gaps
-- [Edge cases or paths not covered]
-
-## Open Questions
-- [Low-confidence findings moved here by self-audit]
-
-## Evidence
-| Check | Result | Command | Output |
-|-------|--------|---------|--------|
-| Build | pass/fail | [per stack-rules] | [summary] |
-```
+See `docs/conventions/review-format.md` for the full format, anti-patterns, and consumer table.
 
 ## Skill Authority
 

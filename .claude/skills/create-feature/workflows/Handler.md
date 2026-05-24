@@ -2,6 +2,19 @@
 
 Used by: MediatR services
 
+## Inputs
+- Feature name and domain area
+- Command/query type (command = write, query = read)
+- Handler dependencies (repositories, services)
+- Return type
+
+## Outputs
+- `{Svc}.Application/Features/{Domain}/{FeatureName}/{FeatureName}Command.cs` (or Query)
+- `{Svc}.Application/Features/{Domain}/{FeatureName}/{FeatureName}CommandHandler.cs`
+
+## Gate
+Proceed only after: service CLAUDE.md confirms MediatR usage.
+
 ## Command + Handler Pattern
 
 **Reference:** `src/Services/{Svc}/{Svc}.Application/Features/{FeatureName}/{FeatureName}CommandHandler.cs`

@@ -124,11 +124,12 @@ The planning workflow has two phases. Which phase you're in depends on the actio
 
 ### Phase 1: Analyze (prompt: "Analyze {slug}")
 
-1. **Gate:** Verify `docs/specs/{slug}/definition/spec.md` exists with `Status: Ready`.
-2. Use the `create-implementation-plan` skill's reading protocol. Read all relevant context — spec, architecture doc, skill inventory, existing patterns.
-3. **Gap analysis:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
-4. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in agents-workflow.md. Create the file and delivery folder if needed. Set `**To:** PO` for spec/product questions — the team lead routes them through the PO escalation chain (PO → user only if PO can't answer). Only set `**To:** user` for questions that are purely about user preferences with no spec basis. If no questions, skip this step.
-5. **Output and stop.** End your response with:
+1. **Idempotency check.** Before analyzing, check if `plan.md` already exists at `docs/specs/{slug}/delivery/plan.md`. If it does, inform the team lead: "Existing plan found for {slug}. Overwrite or resume?" Do not silently overwrite an existing plan.
+2. **Gate:** Verify `docs/specs/{slug}/definition/spec.md` exists with `Status: Ready`.
+3. Use the `create-implementation-plan` skill's reading protocol. Read all relevant context — spec, architecture doc, skill inventory, existing patterns.
+4. **Gap analysis:** For each requirement — Is it complete? Testable? Unambiguous? Flag missing edge cases, undefined guardrails, unvalidated assumptions.
+5. **Write questions to file first.** If you have questions, write them to `docs/specs/{slug}/delivery/questions.md` following the Questions File Format in `docs/conventions/questions-format.md`. Create the file and delivery folder if needed. Set `**To:** PO` for spec/product questions — the team lead routes them through the PO escalation chain (PO → user only if PO can't answer). Only set `**To:** user` for questions that are purely about user preferences with no spec basis. If no questions, skip this step.
+6. **Output and stop.** End your response with:
    - **Questions** (even if "None"): "For team lead: Questions before planning {FeatureName}: {list or 'None'}." Include the full question text — the team lead relays your message verbatim to the PO (or user if PO can't answer).
    - **Review mode recommendation**: Recommend self-review or critic review. When running as part of a team (spawned by team lead), recommend critic.
 
@@ -136,14 +137,14 @@ Do NOT write the plan in this phase. Phase 1 ends here. The team lead will triag
 
 ### Phase 2: Write plan (resumed by team lead with answers)
 
-5. Produce the plan following the format in the coordination protocol, using the `create-implementation-plan` skill.
-6. Save to `docs/specs/{slug}/delivery/plan.md`.
-7. **Update cross-references:** If the feature has a spec (`docs/specs/{slug}/definition/spec.md`), update its `Plan:` field from `None` to the plan path. If not (infrastructure/refactoring), skip.
-8. **Splitting large plans:** If a plan has more than 10 steps, automatically consider splitting it into sequential sub-plans. Proceed with the split if each resulting sub-plan would have at least 2 steps. If splitting would produce any sub-plan with fewer than 2 steps, continue with the whole plan unsplit. When splitting, message the team lead with the sub-plan breakdown before proceeding.
-9. **Run the review** using the mode from the team lead's resume message:
+7. Produce the plan following the format in the coordination protocol, using the `create-implementation-plan` skill.
+8. Save to `docs/specs/{slug}/delivery/plan.md`.
+9. **Update cross-references:** If the feature has a spec (`docs/specs/{slug}/definition/spec.md`), update its `Plan:` field from `None` to the plan path. If not (infrastructure/refactoring), skip.
+10. **Splitting large plans:** If a plan has more than 10 steps, automatically consider splitting it into sequential sub-plans. Proceed with the split if each resulting sub-plan would have at least 2 steps. If splitting would produce any sub-plan with fewer than 2 steps, continue with the whole plan unsplit. When splitting, message the team lead with the sub-plan breakdown before proceeding.
+11. **Run the review** using the mode from the team lead's resume message:
     - **Self-review:** Re-read the feature spec, verify every requirement has a plan step, fix gaps.
     - **Critic review:** Spawn the critic using `Agent(subagent_type="critic", prompt="Mode 2: Plan Review. Plan: docs/specs/{slug}/delivery/plan.md. Spec: docs/specs/{slug}/definition/spec.md. Cross-reference every spec requirement against plan steps. Return structured findings.")`. Receive findings, fix gaps.
-10. **Auto-approve:** If the review passes and no open questions remain, message the team lead: "For developer: Plan approved for {FeatureName} ({N} steps). Begin implementation." If open questions remain, message team lead with the questions before proceeding.
+12. **Auto-approve:** If the review passes and no open questions remain, message the team lead: "For developer: Plan approved for {FeatureName} ({N} steps). Begin implementation." If open questions remain, message team lead with the questions before proceeding.
 
 ### Standalone mode (interactive with user, not spawned by team lead)
 
@@ -164,6 +165,7 @@ Additionally:
 - For sync/batch endpoints, **specify the error reporting shape** (failure counts vs failure lists, partial success semantics) upfront.
 - **Named identifiers are binding contracts for public surfaces only.** Class names, endpoint routes, API shapes — renaming in implementation is a deviation. Private method names, internal helpers, and decomposition structure are the developer's decision.
 - **Validate response model shapes against all consumers.** When response models are consumed by write-back operations (not just display), include entity identifiers. Check all consuming operations, not just the display path.
+- **Optional `Confidence:` field on plan steps.** Add `Confidence: high | medium | low` to steps where the pattern clarity varies: `high` = clear existing pattern, developer should find it immediately; `medium` = adaptation needed, developer should explore before implementing; `low` = no direct precedent in codebase, developer should explore extra and may need to ask. Omit on steps where confidence is uniformly high.
 
 ## Plan Failure Modes — Do Not
 
@@ -179,14 +181,18 @@ Additionally:
 
 Before reading implementation.md, make **pre-commitment predictions**: based on the plan's complexity and the feature domain, predict 2-3 most likely gaps. Then check specifically for those.
 
-Compare implementation.md against the plan:
-- Every plan step has a corresponding entry
-- No steps missing or silently skipped
-- Reported deviations have reasons
-- No unexpected files or scope creep
+For each plan step, assign a conformance disposition:
 
-**If gaps:** Write findings to `review.md`, message developer.
-**If pass:** Message reviewer: "Step 1 passed for {FeatureName}."
+| Disposition | Meaning | Action |
+|-------------|---------|--------|
+| Implemented | Matching implementation.md entry found | Pass |
+| Deviated | Different approach taken — reason documented | Pass if reason is valid |
+| Missing | No corresponding entry in implementation.md | Fail — write finding to review.md |
+| Superseded | Plan step was updated mid-implementation (questions.md record exists) | Pass with note |
+| N/A | Step doesn't produce code (e.g., migration command only) — verify differently | Verify output exists |
+
+**If any step is Missing:** Write findings to `review.md`, message developer.
+**If all steps are Implemented, Deviated (with reasons), Superseded, or N/A:** Pass. Message reviewer: "Step 1 passed for {FeatureName}."
 
 ## Answering Developer Questions
 
@@ -214,11 +220,11 @@ Before claiming what the codebase is or isn't, verify first — `ls` or `Glob`. 
 
 ## What You Never Do
 
-- Write source code as defined in stack-rules
-- Skip "where does this belong" and jump to "how to build it"
-- Propose patterns not already in the codebase
-- Extend instruction scope beyond what was named
-- Conduct Step 2 code review — that's the reviewer's job
+- Write source code as defined in stack-rules → instead: message developer with specific instructions referencing exact file paths and patterns
+- Skip "where does this belong" and jump to "how to build it" → instead: classify per Intent Classification first, then proceed
+- Propose patterns not already in the codebase → instead: reference an existing pattern or escalate to user if no pattern exists
+- Extend instruction scope beyond what was named → instead: flag as a separate feature for the user to decide
+- Conduct Step 2 code review — that's the reviewer's job → instead: message reviewer via team lead
 
 ## After Every Review Cycle
 
