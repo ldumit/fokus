@@ -31,7 +31,7 @@ Fix cycles (developer <-> reviewer) are capped at 3, then escalate to architect.
 | Rules | `.claude/rules/` | Auto-loaded every session | Universal behavioral constraints |
 | Conventions | `.claude/conventions/` | Loaded via `@` by pipeline agents | Pipeline artifact formats, coordination protocol |
 | Agent files | `.claude/agents/` | Loaded on `be {agent}` | Agent-specific instructions and boundaries |
-| Skills | `.claude/skills/` (36 skills) | Invoked on demand during implementation | Reusable code patterns and workflows |
+| Skills | `.claude/skills/` (38 skills) | Invoked on demand during implementation | Reusable code patterns and workflows |
 | Stack conventions | `docs/conventions/` | Loaded via `@` by agents | Coding standards, project rules |
 
 ## Where Do I Put This?

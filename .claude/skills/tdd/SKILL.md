@@ -34,44 +34,7 @@ GOOD: Write 1 test → implement → green → write next test → implement →
 
 ### Step 0: Bootstrap (first time only)
 
-If no test project exists for the service:
-
-**Backend (.NET):**
-```
-src/Services/{Svc}/{Svc}.Tests/
-  {Svc}.Tests.csproj    ← xUnit + FluentAssertions + NSubstitute
-  GlobalUsings.cs
-```
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
-    <PackageReference Include="xunit" Version="2.*" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
-    <PackageReference Include="FluentAssertions" Version="8.*" />
-    <PackageReference Include="NSubstitute" Version="5.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\{Svc}.API\{Svc}.API.csproj" />
-  </ItemGroup>
-</Project>
-```
-
-Register in solution: `dotnet sln add src/Services/{Svc}/{Svc}.Tests/{Svc}.Tests.csproj`
-
-**Frontend (Vue/TypeScript):**
-```
-client/vitest.config.ts
-client/src/**/*.spec.ts   ← co-located with source
-```
-
-Add to `package.json`: `vitest`, `@testing-library/vue`, `@vue/test-utils`
+If no test project exists, set one up following `docs/conventions/testing.md` (project structure, frameworks, dependencies). If no testing convention file exists, create a minimal test project using the stack's standard test runner and register it in the build.
 
 ### Step 1: Plan the Slice
 
@@ -84,17 +47,9 @@ Write it as a sentence: "When {input}, it should {behavior}."
 
 ### Step 2: Red — Write One Failing Test
 
-```csharp
-[Fact]
-public async Task Should_{expected_behavior}_When_{condition}()
-{
-    // Arrange — set up inputs and dependencies
-    // Act — call the unit under test
-    // Assert — verify the ONE behavior
-}
-```
+Write one test using the naming convention from `docs/conventions/testing.md`. Structure: Arrange (set up inputs), Act (call the unit), Assert (verify ONE behavior).
 
-**Run:** `dotnet test` — confirm it fails for the RIGHT reason (not a compile error, not a wrong assertion — the actual behavior is missing).
+**Run** the test runner — confirm it fails for the RIGHT reason (not a compile error, not a wrong assertion — the actual behavior is missing).
 
 If it fails for the wrong reason: fix the test setup, not the production code.
 
@@ -102,7 +57,7 @@ If it fails for the wrong reason: fix the test setup, not the production code.
 
 Write the **minimum** code to make the test pass. No more. Hardcoding is acceptable if only one test exists — the next test will force generalization.
 
-**Run:** `dotnet test` — green.
+**Run** the test runner — green.
 
 ### Step 4: Refactor (only when green)
 
@@ -120,53 +75,11 @@ With all tests passing, improve the code:
 
 Return to Step 1 with the next behavior. Each cycle should take 5–15 minutes.
 
-## What to Test (and at which level)
+## What to Test, Mocking Rules, Test Naming, Test Organization
 
-| Layer | Test Through | Mock |
-|-------|-------------|------|
-| Domain aggregate methods | Direct call | Nothing — pure logic |
-| Domain services | Direct call | Repository (if data-dependent) |
-| Endpoint handlers | `WebApplicationFactory` HTTP call | External services (gRPC clients, MassTransit) |
-| Vue composables | Direct import + invoke | API module (msw or manual mock) |
-| Vue components | `@vue/test-utils` mount | Store (provide mock), API (msw) |
+Read `docs/conventions/testing.md` for all stack-specific details: test layers and what to mock at each level, mocking rules (mock at system boundaries only, never mock internal classes or pure logic), test naming conventions, test file organization, and assertion style.
 
-## Mocking Rules
-
-Mock **only at system boundaries:**
-- External HTTP APIs (gRPC clients, REST clients)
-- Message bus (MassTransit publish/consume)
-- Time (`TimeProvider`)
-- File system (if used)
-
-**Never mock:**
-- Internal classes within the same service
-- Repositories when testing through WebApplicationFactory (use real SQLite)
-- Domain logic (it's pure — test it directly)
-
-## Test Naming
-
-```
-Should_{ExpectedBehavior}_When_{Condition}
-```
-
-Examples:
-- `Should_ReturnActiveIssues_When_SprintIsInProgress`
-- `Should_ThrowDomainException_When_TransitionInvalid`
-- `Should_PublishDomainEvent_When_StatusChanges`
-
-## Test Organization
-
-```
-{Svc}.Tests/
-  Domain/
-    {Aggregate}Tests.cs          ← aggregate method tests
-  Features/
-    {Area}/
-      {Feature}EndpointTests.cs  ← integration tests via WebApplicationFactory
-  _Fixtures/
-    WebAppFixture.cs             ← shared WebApplicationFactory setup
-    TestData.cs                  ← builder methods for test entities
-```
+The universal principle: mock only at system boundaries (external APIs, message buses, time, file system). Never mock internal classes or pure domain logic.
 
 ## Integration with Developer Workflow
 
@@ -191,8 +104,8 @@ TDD is HOW the developer implements plan steps, not a separate phase:
 
 Before invoking this skill, ensure you have:
 - The plan step's acceptance criteria — what behavior needs to be verified
-- The test project path for this service (check if `{Svc}.Tests/` exists; if not, run Step 0 bootstrap)
-- An existing test file in the same service — for naming conventions and fixture setup patterns
+- The test project path (check if a test project exists; if not, run Step 0 bootstrap)
+- An existing test file in the same project — for naming conventions and fixture setup patterns
 
 ## Anti-patterns
 

@@ -24,7 +24,7 @@ description: Small adjacent improvements while touching a file — dead code, na
 Look for these in the files you just modified. Check in order — stop when improvements are proportional to your task:
 
 1. **Dead code** — unused variables, unreachable branches, commented-out code, unused imports/usings
-2. **Misleading names** — variable/method names that don't match what they do. Apply `docs/conventions/csharp.md` naming rules.
+2. **Misleading names** — variable/method names that don't match what they do. Apply naming rules from `docs/conventions/coding-conventions.md`.
 3. **Obvious duplication** — but apply the semantic test first (see below)
 4. **Magic numbers/strings** — unnamed literals that obscure meaning
 5. **Unnecessary complexity** — nested ternaries, double negations, overly clever LINQ chains that a simpler loop would clarify
@@ -47,13 +47,9 @@ Premature abstraction from structural similarity is worse than duplication. When
 - **No file moves** — don't reorganize folder structure as a boy scout improvement
 - **Time-box: under 5 minutes** — if a cleanup takes longer, it's a separate task
 
-## DDD Guardrails
+## Project-Specific Guardrails
 
-- **Don't rename aggregate public methods** — they're domain contracts. Internal/private names are fair game.
-- **Don't extract logic out of aggregates** — behavior belongs with state. If an aggregate method is complex, simplify it in place.
-- **Don't move code across vertical slice boundaries** — a feature's endpoint, validator, and handler belong together. Don't extract shared services between features (that's a separate refactoring decision).
-- **Don't create cross-feature helpers** — if two features need the same logic, that's an architect decision, not a boy scout fix.
-- **Don't touch domain events or integration event contracts** — those are public APIs between components.
+Read `docs/conventions/coding-conventions.md` § Boy Scout Guardrails for project-specific architectural boundaries (e.g., which code structures are contracts and must not be renamed, which boundaries must not be crossed). Skip this section if the project has no boy-scout guardrails defined.
 
 ## Report Format
 
@@ -78,4 +74,4 @@ If nothing worth improving: say nothing. Don't report "no improvements found."
 - Architectural improvements — use `improve-architecture` skill for that
 - Cross-file refactoring — this is single-file or adjacent-file only
 - Test cleanup — not in scope (tests have their own conventions)
-- Convention enforcement — `docs/conventions/csharp.md` defines conventions; this skill applies them opportunistically, not exhaustively
+- Convention enforcement — `docs/conventions/coding-conventions.md` defines conventions; this skill applies them opportunistically, not exhaustively

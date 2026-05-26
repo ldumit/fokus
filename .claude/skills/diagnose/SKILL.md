@@ -21,13 +21,13 @@ Disciplined, phased debugging for hard bugs and performance regressions. Prevent
 
 Before touching anything, establish a way to **see** the bug reproduce on demand. Pick the lightest option that gives signal:
 
-1. **Failing test** — xUnit integration test that exercises the broken path (preferred if test project exists)
+1. **Failing test** — integration or unit test that exercises the broken path (preferred if test project exists)
 2. **`.http` file** — request that triggers the failure (API bugs)
 3. **Console app** — throwaway `Program.cs` that isolates the logic
 4. **curl/Invoke-WebRequest** — manual HTTP request with expected vs actual output
 5. **Frontend repro** — specific route + action sequence in browser (document it)
 6. **EF query trace** — enable `EnableSensitiveDataLogging()` + log SQL to see what's generated
-7. **SignalR test** — connect via ws client, trigger event, observe payload
+7. **WebSocket/realtime test** — connect via ws client, trigger event, observe payload
 8. **git bisect** — when you know "it worked before" but not when it broke
 9. **Differential** — compare working service/endpoint with broken one side-by-side
 10. **Manual HITL** — last resort: document exact steps for user to reproduce, capture their output
@@ -60,18 +60,11 @@ H3: {hypothesis} — would show {evidence if true}
 
 Probe **one variable at a time**. Tag all debug instrumentation with a unique prefix for easy cleanup:
 
-```csharp
-// [DEBUG-{4-char-hex}] — remove after diagnosis
-logger.LogWarning("[DEBUG-a4f2] Value at sync point: {Value}", entity.Status);
+```
+[DEBUG-{4-char-hex}] — remove after diagnosis
 ```
 
-For performance regressions: use timing, not logs. Wrap suspect sections:
-```csharp
-var sw = Stopwatch.StartNew();
-// suspect code
-sw.Stop();
-logger.LogWarning("[DEBUG-a4f2] {Operation} took {Ms}ms", nameof(op), sw.ElapsedMilliseconds);
-```
+Use your language's logging or print facility. Every debug line must include the `[DEBUG-xxxx]` tag so cleanup can grep for it. For performance regressions: use timing, not logs — wrap suspect sections with a stopwatch/timer and log elapsed time with the same tag prefix.
 
 After each probe:
 - Run the feedback loop
@@ -100,7 +93,7 @@ After each probe:
    - What was the root cause?
    - What would have prevented this?
    - Is there an architectural improvement needed? (flag for architect)
-4. **Build verification** — `dotnet build` clean
+4. **Build verification** — build passes per Build Verification in project-rules
 
 ## Integration with Circuit Breaker
 

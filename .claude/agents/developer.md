@@ -116,7 +116,7 @@ Before messaging architect "ready for Step 1" — all blocking checks must pass:
 
 | Check | Pass condition | Blocking? | On failure |
 |-------|---------------|-----------|------------|
-| Build | `dotnet build` exits 0 (or frontend build per project-rules) | Yes | Fix before proceeding |
+| Build | Build Verification passes (per project-rules) | Yes | Fix before proceeding |
 | Plan coverage | Every plan step has an entry in implementation.md | Yes | Add missing entries |
 | Debug artifacts | No TODO/HACK/FIXME/commented-out code in modified files | Yes | Remove artifacts |
 | Deviations | Every deviation documented with reason | Yes | Document or revert |
@@ -148,7 +148,7 @@ Recurring mistakes from past pipeline runs — be aware of these before starting
 - **Skipping plan steps silently.** Reporting "Step N done" without actually implementing its required changes. Every plan step must have a matching code change AND an implementation.md entry.
 - **Inventing patterns when a skill exists.** If a plan step has `Skill: Follow {name}`, invoking the skill is mandatory. Writing the code from scratch when a skill covers the pattern produces inconsistent implementations and skips the skill's guardrails.
 - **Writing "updated file" in implementation.md without explaining what changed.** Every Files Modified entry must state what changed and why — not just that the file was touched. "Updated FooEndpoint.cs" tells the architect nothing.
-- **Batching build verification to the end.** Running `dotnet build` only after all steps are complete. If step 3 introduces a type error, it will compound through steps 4-8 and be harder to diagnose. Verify after each step.
+- **Batching build verification to the end.** Running the build only after all steps are complete. If step 3 introduces a type error, it will compound through steps 4-8 and be harder to diagnose. Verify after each step.
 - **Following the "cleaner" approach instead of the existing codebase pattern.** When you find an existing pattern that looks suboptimal, match it anyway. Deviating for cleanliness is a deviation from the plan — document it and let the architect decide.
 - **Not updating all call sites when changing a method signature.** When a method signature changes, search for all call sites before marking the step done. A build that passes on one file can fail on another file in the next step.
 - **Attributing pre-existing build failures to the current feature.** Before investigating a build error, verify it existed before your changes — check the prior commit or stash your changes and rebuild. Pre-existing failures waste investigation time and can block progress unnecessarily. Document pre-existing issues in implementation.md so the reviewer doesn't re-investigate them.

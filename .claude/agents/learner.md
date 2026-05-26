@@ -47,12 +47,12 @@ An item must appear in lessons from **2 or more different features** before prom
 
 - Data loss risks
 - Security vulnerabilities
-- Build-breaking gotchas (e.g., EF Core incompatibilities that fail silently)
+- Build-breaking gotchas (e.g., framework incompatibilities that fail silently)
 - Incorrect information in existing skills (skill fixes)
 
 ### What gets discarded
 
-- General programming language knowledge (C# syntax, .NET behavior anyone would know)
+- General programming language knowledge (basic syntax, standard library behavior anyone would know)
 - Items already captured in target files
 - Items too narrow to be useful beyond the specific feature
 
@@ -63,13 +63,13 @@ An item must appear in lessons from **2 or more different features** before prom
 Every lesson is either a **process improvement** or a **stack improvement**:
 
 - **Process** — workflow, planning discipline, review calibration, coordination, agent behavior. These are portable across projects with different tech stacks. Target: CLAUDE.md, agent files, `.claude/rules/`.
-- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack (C#, EF Core, Vue, .NET, etc.). Target: `docs/conventions/` files (`project-rules.md`, `csharp.md`, `ef-core.md`, `vue.md`, etc.).
+- **Stack** — framework gotchas, language idioms, library behavior, build tooling. These are specific to the current tech stack. Target: `docs/conventions/` files (stack-specific convention files referenced from `coding-conventions.md`).
 
 **CLAUDE.md is stack-agnostic.** Never promote stack-specific items to CLAUDE.md — they go to convention files. This keeps CLAUDE.md portable when the setup is reused in projects with different stacks.
 
 | Pattern | Target |
 |---------|--------|
-| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (project-rules, csharp, ef-core, vue, etc.) |
+| Stack-specific gotchas (framework, language, library, tooling) | `docs/conventions/` (stack-specific convention files) |
 | Stack-agnostic guardrails, conventions, architectural rules | CLAUDE.md |
 | Planning discipline (dependency analysis, grep strategies, plan step detail) | architect.md |
 | Review calibration (what to check, how to verify, false positive avoidance) | reviewer.md |
@@ -79,7 +79,7 @@ Every lesson is either a **process improvement** or a **stack improvement**:
 | New skill needed for a repeatable pattern | Skill gap → `improve-skills` |
 | General programming knowledge | Discard |
 
-**Classify by content, not by keyword.** An EF Core lesson might be a planning insight (architect.md) rather than a guardrail (CLAUDE.md) depending on what it teaches.
+**Classify by content, not by keyword.** A framework-specific lesson might be a planning insight (architect.md) rather than a guardrail (CLAUDE.md) depending on what it teaches.
 
 ## Presentation Format
 
@@ -110,7 +110,7 @@ Present findings grouped by action:
 
 | # | Item | Reason |
 |---|------|--------|
-| 1 | ... | General C# knowledge |
+| 1 | ... | General language knowledge |
 ```
 
 After presenting, ask: "Approve all, or adjust items before applying?"
@@ -159,7 +159,7 @@ Before telling the user you're done:
 **Bad:** Promoting every lesson regardless of recurrence — floods system files with one-off observations.
 **Good:** Only promoting items that recur across features, proving they're systemic.
 
-**Bad:** Classifying by keyword alone ("EF Core" → CLAUDE.md).
+**Bad:** Classifying by keyword alone ("framework name" → CLAUDE.md).
 **Good:** Reading the lesson's content to determine if it's a guardrail (CLAUDE.md), a planning insight (architect.md), or a review technique (reviewer.md).
 
 **Bad:** Adding a lesson to a target file that already expresses the same concept differently.
