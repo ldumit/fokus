@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import BaseCard from '../BaseCard.vue'
-import type { EpicProgressSummaryMetrics, EpicProgressUnlinkedWork } from '../../types'
+import type { EpicProgressUnlinkedWork } from '../../types'
 
 defineProps<{
-  summaryMetrics: EpicProgressSummaryMetrics
+  activeEpicCount: number
+  averageCompletion: number
+  averageTestCoverage: number | null
   unlinkedWork: EpicProgressUnlinkedWork
   activeFilter: 'active' | 'completed'
   hasQaData: boolean
-  averageTestCoverage: number | null
 }>()
 </script>
 
@@ -29,7 +30,7 @@ defineProps<{
         </span>
       </div>
       <div class="text-2xl font-semibold text-text-primary tabular-nums">
-        {{ activeFilter === 'completed' ? summaryMetrics.completedEpicCount : summaryMetrics.activeEpicCount }}
+        {{ activeEpicCount }}
       </div>
     </BaseCard>
 
@@ -47,17 +48,17 @@ defineProps<{
         </span>
       </div>
       <div class="text-2xl font-semibold text-text-primary tabular-nums">
-        {{ activeFilter === 'completed' ? '100' : summaryMetrics.averageCompletionPercentage.toFixed(1) }}%
+        {{ averageCompletion.toFixed(1) }}%
       </div>
       <div class="mt-2 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
         <div
           class="h-full bg-accent-default rounded-full transition-all"
-          :style="{ width: `${Math.min(activeFilter === 'completed' ? 100 : summaryMetrics.averageCompletionPercentage, 100)}%` }"
+          :style="{ width: `${Math.min(averageCompletion, 100)}%` }"
         />
       </div>
     </BaseCard>
 
-    <!-- Unlinked Work -->
+    <!-- Unlinked Work — not affected by search (BR5) -->
     <BaseCard>
       <div class="flex items-center gap-1 mb-1">
         <div class="text-xs text-text-muted">Unlinked Work</div>
@@ -78,7 +79,7 @@ defineProps<{
       </div>
     </BaseCard>
 
-    <!-- Average Test Coverage (BR17: only when hasQaData and at least one epic has non-null coverage) -->
+    <!-- Average Test Coverage (only when hasQaData and at least one epic has non-null coverage) -->
     <BaseCard v-if="hasQaData && averageTestCoverage !== null">
       <div class="flex items-center gap-1 mb-1">
         <div class="text-xs text-text-muted">Average Test Coverage</div>
@@ -92,12 +93,12 @@ defineProps<{
         </span>
       </div>
       <div class="text-2xl font-semibold text-text-primary tabular-nums">
-        {{ averageTestCoverage !== null ? `${averageTestCoverage.toFixed(1)}%` : '—' }}
+        {{ `${averageTestCoverage.toFixed(1)}%` }}
       </div>
       <div class="mt-2 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
         <div
           class="h-full bg-emerald-500 rounded-full transition-all"
-          :style="{ width: `${Math.min(averageTestCoverage ?? 0, 100)}%` }"
+          :style="{ width: `${Math.min(averageTestCoverage, 100)}%` }"
         />
       </div>
     </BaseCard>

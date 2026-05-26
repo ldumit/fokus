@@ -45,6 +45,8 @@ public record EpicProgressEntry(
     decimal? ProjectedSprintsRemaining,
     string? ProjectionConfidence,
     int ActiveSprintCount,
+    DateOnly? StartedDate,
+    DateOnly? LastWorkDate,
     bool IsCompleted,
     List<EpicProgressTicketEntry> Tickets,
     decimal? CoverageRate,
@@ -90,7 +92,7 @@ public class EpicProgressService
         var completedStatuses = CompletionChecker.ResolveCompletedStatuses(settings);
         var defaultSpPerBug = settings.DefaultSpPerBug;
 
-        var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
         // Build sprint date lookup for velocity transition checks
@@ -105,6 +107,11 @@ public class EpicProgressService
         var epicGroups = filteredEpicTickets
             .GroupBy(t => t.EpicKey!)
             .ToList();
+
+        // Build once — used for velocity, date derivation, and sprint completion checks across all epics
+        var transitionsByTicket = statusTransitions
+            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
         var epicEntries = new List<EpicProgressEntry>();
 
@@ -166,9 +173,31 @@ public class EpicProgressService
                 .Where(sm => sm.Ticket?.EpicKey == epicKey)
                 .ToList();
 
-            var transitionsByTicket = statusTransitions
-                .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+            // Activity dates (F35 BR1, BR2): earliest and most recent qualifying transition across epic tickets
+            // A transition qualifies if its ToStatus stage index >= startIndex (same boundary as velocity)
+            // Guard: if no cycle time start stage is configured (startIndex < 0), dates cannot be derived —
+            // GetStageIndex returns -1 for unrecognised statuses, so -1 >= -1 would match noise transitions
+            DateOnly? startedDate = null;
+            DateOnly? lastWorkDate = null;
+
+            if (startIndex >= 0)
+            {
+                foreach (var ticket in tickets)
+                {
+                    var ticketTransitions = transitionsByTicket.GetValueOrDefault(ticket.Id, []);
+                    foreach (var transition in ticketTransitions)
+                    {
+                        if (TransitionAttributionChecker.GetStageIndex(transition.ToStatus, orderedStages) >= startIndex)
+                        {
+                            var transitionDate = DateOnly.FromDateTime(transition.Timestamp);
+                            if (startedDate is null || transitionDate < startedDate)
+                                startedDate = transitionDate;
+                            if (lastWorkDate is null || transitionDate > lastWorkDate)
+                                lastWorkDate = transitionDate;
+                        }
+                    }
+                }
+            }
 
             // Group by SprintId, sum completed SP per sprint (transition-based — spec BR16 velocity)
             var sprintSpCompleted = epicMemberships
@@ -259,6 +288,8 @@ public class EpicProgressService
                 projectedSprintsRemaining,
                 projectionConfidence,
                 activeSprintCount,
+                startedDate,
+                lastWorkDate,
                 isCompleted,
                 ticketEntries,
                 epicCoverageRate,

@@ -27,6 +27,11 @@ const syncing = ref(false)
 const syncResult = ref<{ sprints: SyncSprintsResponse; backlog: SyncBacklogResponse } | null>(null)
 const syncError = ref('')
 
+// Sync current sprint state
+const syncingCurrent = ref(false)
+const syncCurrentResult = ref<SyncSprintsResponse | null>(null)
+const syncCurrentError = ref('')
+
 // Sprint range sync state
 const sprintsForRange = ref<{ id: number; name: string; startDate: string | null; state: string }[]>([])
 const sprintsForRangeLoading = ref(false)
@@ -116,6 +121,29 @@ async function syncAll() {
   }
 }
 
+async function syncCurrentSprint() {
+  if (!form.boardId) {
+    syncCurrentError.value = 'Select a board and save settings first.'
+    return
+  }
+  syncingCurrent.value = true
+  syncCurrentError.value = ''
+  syncCurrentResult.value = null
+  try {
+    const { sprints } = await getJiraSprints(form.boardId)
+    const active = sprints.find(s => s.state === 'active')
+    if (!active) {
+      syncCurrentError.value = 'No active sprint found on this board.'
+      return
+    }
+    syncCurrentResult.value = await syncSprints(active.id, active.id)
+  } catch (e: any) {
+    syncCurrentError.value = e.message || 'Sync failed.'
+  } finally {
+    syncingCurrent.value = false
+  }
+}
+
 async function loadSprintsForRange() {
   if (!form.boardId) {
     sprintsForRangeError.value = 'Select a board first.'
@@ -131,8 +159,9 @@ async function loadSprintsForRange() {
       return a.startDate.localeCompare(b.startDate)
     })
     if (sprintsForRange.value.length > 0) {
-      fromSprintId.value = sprintsForRange.value[0].id
-      toSprintId.value = sprintsForRange.value[sprintsForRange.value.length - 1].id
+      const last = sprintsForRange.value[sprintsForRange.value.length - 1].id
+      fromSprintId.value = last
+      toSprintId.value = last
     }
   } catch (e: any) {
     sprintsForRangeError.value = e.message || 'Failed to load sprints.'
@@ -249,16 +278,34 @@ async function syncRange() {
       <span v-if="syncConfigError" class="text-red-400 text-sm">{{ syncConfigError }}</span>
     </div>
 
-    <button
-      @click="syncAll"
-      :disabled="syncing || !form.boardId || isReadOnly"
-      class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium"
-    >
-      {{ syncing ? 'Syncing...' : 'Sync All' }}
-    </button>
+    <div class="flex items-center gap-3 flex-wrap">
+      <button
+        @click="syncAll"
+        :disabled="syncing || !form.boardId || isReadOnly"
+        class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium"
+      >
+        {{ syncing ? 'Syncing...' : 'Sync All' }}
+      </button>
+      <button
+        @click="syncCurrentSprint"
+        :disabled="syncingCurrent || !form.boardId || isReadOnly"
+        class="border border-green-600 hover:bg-green-600/10 disabled:opacity-50 disabled:cursor-not-allowed text-green-400 px-4 py-2 rounded font-medium text-sm"
+      >
+        {{ syncingCurrent ? 'Syncing...' : 'Sync Current Sprint' }}
+      </button>
+    </div>
     <p class="text-xs text-gray-500">Sync All also syncs future sprints and epics.</p>
 
     <div v-if="syncError" class="text-red-400 text-sm">{{ syncError }}</div>
+    <div v-if="syncCurrentError" class="text-red-400 text-sm">{{ syncCurrentError }}</div>
+    <div v-if="syncCurrentResult" class="space-y-1 text-sm">
+      <p class="text-green-400 font-medium">Current sprint synced!</p>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-300">
+        <span>Sprints synced:</span><span class="text-gray-100">{{ syncCurrentResult.sprintsSynced }}</span>
+        <span>Tickets upserted:</span><span class="text-gray-100">{{ syncCurrentResult.ticketsUpserted }}</span>
+        <span>Developers discovered:</span><span class="text-gray-100">{{ syncCurrentResult.developersDiscovered }}</span>
+      </div>
+    </div>
 
     <div v-if="syncResult" class="space-y-2 text-sm">
       <p class="text-green-400 font-medium" title="Post-sync report showing sprints synced, tickets upserted, developers found, and any failures.">Sync complete!</p>

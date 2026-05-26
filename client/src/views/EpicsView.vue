@@ -8,10 +8,25 @@ import EmptyState from '../components/EmptyState.vue'
 import EpicSummaryCards from '../components/epics/EpicSummaryCards.vue'
 import EpicTable from '../components/epics/EpicTable.vue'
 import EpicActiveCompletedToggle from '../components/epics/EpicActiveCompletedToggle.vue'
+import EpicColumnToggle from '../components/epics/EpicColumnToggle.vue'
+import type { ColumnDef } from '../components/epics/EpicColumnToggle.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useEpicsStore()
+
+const COLUMN_DEFS: ColumnDef[] = [
+  { id: 'progress', label: 'Progress' },
+  { id: 'spDoneTotal', label: 'SP Done / Total' },
+  { id: 'tickets', label: 'Tickets' },
+  { id: 'velocity', label: 'Velocity' },
+  { id: 'projected', label: 'Projected' },
+  { id: 'startedDate', label: 'Started' },
+  { id: 'lastWorkDate', label: 'Last Work' },
+  { id: 'coverageRate', label: 'Coverage %' },
+  { id: 'passRate', label: 'Pass Rate %' },
+  { id: 'bugsFound', label: 'Bugs Found' },
+]
 
 onMounted(async () => {
   // Seed state from URL before initialize
@@ -81,31 +96,59 @@ function onSubTeamChange(subTeam: string | null) {
       <div class="flex flex-col gap-6">
         <div v-if="store.loading" class="text-xs text-text-muted">Updating...</div>
 
-        <!-- Summary cards -->
+        <!-- Summary cards — receive search-filtered values (BR5) except Unlinked Work -->
         <EpicSummaryCards
           v-if="store.epicProgress"
-          :summary-metrics="store.epicProgress.summaryMetrics"
+          :active-epic-count="store.searchSummaryMetrics.activeEpicCount"
+          :average-completion="store.searchSummaryMetrics.averageCompletion"
+          :average-test-coverage="store.searchSummaryMetrics.averageTestCoverage"
           :unlinked-work="store.epicProgress.unlinkedWork"
           :active-filter="store.activeFilter"
           :has-qa-data="store.epicProgress.hasQaData"
-          :average-test-coverage="store.averageTestCoverage"
         />
 
-        <!-- Active/Completed toggle -->
-        <EpicActiveCompletedToggle
-          :active-filter="store.activeFilter"
-          @update:active-filter="store.setActiveFilter"
-        />
+        <!-- Toolbar: active/completed toggle + search + column toggle -->
+        <div class="flex flex-wrap items-center gap-3">
+          <EpicActiveCompletedToggle
+            :active-filter="store.activeFilter"
+            @update:active-filter="store.setActiveFilter"
+          />
+
+          <div class="flex-1 min-w-0">
+            <input
+              type="text"
+              :value="store.searchQuery"
+              placeholder="Search epics..."
+              class="w-full max-w-xs px-3 py-1.5 text-sm bg-surface-elevated border border-border-default rounded text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-accent-default"
+              title="Filter epics by name or Jira key. Combines with the sub-team filter."
+              @input="store.setSearchQuery(($event.target as HTMLInputElement).value)"
+            />
+          </div>
+
+          <EpicColumnToggle
+            :columns="COLUMN_DEFS"
+            :hidden-columns="store.hiddenColumns"
+            :has-qa-data="store.epicProgress?.hasQaData ?? false"
+            @toggle="store.toggleColumnVisibility"
+          />
+        </div>
 
         <!-- Epic table -->
         <EpicTable
-          :epics="store.filteredEpics"
+          :epics="store.sortedEpics"
           :expanded-epic-keys="store.expandedEpicKeys"
           :has-qa-data="store.epicProgress?.hasQaData ?? false"
+          :sort-column="store.sortColumn"
+          :sort-direction="store.sortDirection"
+          :is-column-visible="store.isColumnVisible"
           @toggle-expand="store.toggleEpicExpanded"
+          @sort="store.toggleSort"
         >
           <template #empty>
-            <template v-if="store.activeFilter === 'active'">
+            <template v-if="store.searchQuery">
+              No epics match your search.
+            </template>
+            <template v-else-if="store.activeFilter === 'active'">
               All epics are complete — switch to <button class="text-accent-default underline" @click="store.setActiveFilter('completed')">Completed</button> to view them.
             </template>
             <template v-else>

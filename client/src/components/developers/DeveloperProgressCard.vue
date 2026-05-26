@@ -15,10 +15,27 @@ const xLabels = computed(() =>
   props.developer.dailyBreakdown.map(d => `Day ${d.day}`)
 )
 
+const dailyCumulatives = computed(() => {
+  let featureSp = 0
+  let bugSp = 0
+  return props.developer.dailyBreakdown.map((d: DayBreakdownEntry) => {
+    for (const t of d.completedTickets) {
+      const sp = t.storyPoints ?? 0
+      if (t.issueType === 'Bug') bugSp += sp
+      else featureSp += sp
+    }
+    return { featureSp: parseFloat(featureSp.toFixed(2)), bugSp: parseFloat(bugSp.toFixed(2)) }
+  })
+})
+
 const series = computed(() => [
   {
-    name: 'Completed SP',
-    data: props.developer.dailyBreakdown.map(d => parseFloat(d.cumulativeSp.toFixed(2)))
+    name: 'Feature SP',
+    data: dailyCumulatives.value.map(c => c.featureSp)
+  },
+  {
+    name: 'Bug SP',
+    data: dailyCumulatives.value.map(c => c.bugSp)
   },
   {
     name: 'Expected Pace',
@@ -43,14 +60,11 @@ const chartOptions = computed(() => ({
   },
   stroke: {
     curve: 'straight',
-    width: [2, 1],
-    dashArray: [0, 4]
+    width: [2, 2, 1],
+    dashArray: [0, 0, 4]
   },
-  colors: [
-    props.developer.isBehindPace && !props.isGracePeriod ? '#f97316' : '#22c55e',
-    '#6b7280'
-  ],
-  fill: { type: ['solid', 'solid'], opacity: [1, 1] },
+  colors: ['#3b82f6', '#ef4444', '#6b7280'],
+  fill: { type: ['solid', 'solid', 'solid'], opacity: [1, 1, 1] },
   xaxis: {
     categories: xLabels.value,
     labels: { style: { colors: '#9ca3af', fontSize: '10px' } },
@@ -70,20 +84,23 @@ const chartOptions = computed(() => ({
     theme: 'dark',
     custom: ({ dataPointIndex }: { seriesIndex: number; dataPointIndex: number }) => {
       const d: DayBreakdownEntry | undefined = props.developer.dailyBreakdown[dataPointIndex]
-      if (!d) return ''
+      const cum = dailyCumulatives.value[dataPointIndex]
+      if (!d || !cum) return ''
       const date = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
       const tickets = d.completedTickets.length > 0
         ? d.completedTickets.map(t =>
             `<div style="padding:2px 0;color:#d1d5db">
               <span style="font-weight:600;color:#f9fafb">${t.key}</span>
               ${t.storyPoints != null ? `<span style="color:#9ca3af"> · ${t.storyPoints} SP</span>` : ''}
+              <span style="color:${t.issueType === 'Bug' ? '#ef4444' : '#3b82f6'};font-size:11px"> [${t.issueType}]</span>
               <div style="color:#9ca3af;font-size:11px">${t.summary}</div>
             </div>`
           ).join('')
         : '<div style="color:#6b7280;font-size:11px">No completions</div>'
-      return `<div style="background:#1f2937;border:1px solid #374151;border-radius:6px;padding:8px 12px;font-size:12px;max-width:240px" title="Tickets completed on this day with their key, summary, story points, and type.">
+      return `<div style="background:#1f2937;border:1px solid #374151;border-radius:6px;padding:8px 12px;font-size:12px;max-width:240px">
         <div style="color:#9ca3af;margin-bottom:4px;font-weight:500">Day ${d.day} — ${date}</div>
-        <div style="color:#d1d5db;margin-bottom:4px">Cumulative: <strong style="color:#f9fafb">${d.cumulativeSp.toFixed(1)} SP</strong></div>
+        <div style="color:#3b82f6;margin-bottom:2px">Feature: <strong>${cum.featureSp.toFixed(1)} SP</strong></div>
+        <div style="color:#ef4444;margin-bottom:4px">Bug: <strong>${cum.bugSp.toFixed(1)} SP</strong></div>
         ${tickets}
       </div>`
     }
@@ -170,13 +187,11 @@ const cardBorderClass = computed(() =>
 
     <!-- Mini burnup chart -->
     <div v-if="developer.dailyBreakdown.length > 0">
-      <div class="flex items-center gap-1 mb-1">
+      <div class="flex items-center gap-2 mb-1 flex-wrap">
+        <span class="text-xs text-blue-400">Feature</span>
+        <span class="text-xs text-red-400">Bug</span>
         <span
           class="text-xs text-text-muted cursor-help"
-          title="Cumulative story points completed (solid line) vs expected pace (dashed line) per day."
-        >Burnup</span>
-        <span
-          class="text-xs text-text-muted cursor-help ml-2"
           title="Straight diagonal based on assigned SP, capacity, and sprint length in calendar days."
         >— Expected</span>
       </div>

@@ -721,6 +721,8 @@ export interface EpicProgressEntry {
   projectedSprintsRemaining: number | null
   projectionConfidence: string | null
   activeSprintCount: number
+  startedDate: string | null
+  lastWorkDate: string | null
   isCompleted: boolean
   tickets: EpicProgressTicketEntry[]
   coverageRate: number | null

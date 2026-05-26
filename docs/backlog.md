@@ -37,7 +37,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F1 | Project Scaffolding | Done | — | [Scaffolding](plans/Scaffolding/plan.md) |
+| F1 | Project Scaffolding | Done | — | [Scaffolding](specs/F1-Scaffolding/delivery/plan.md) |
 
 .NET solution (API/Domain/Persistence three-project split), Vue SPA with Vite + Tailwind + ApexCharts + Pinia, Vite build → wwwroot, dev proxy setup.
 
@@ -48,7 +48,7 @@ Tier 5: F12
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
 | F2 | Domain Model & Persistence | Done | — | — |
-| F7 | App Shell & Navigation | Done | [AppShell](features/AppShell/spec.md) | [AppShell](plans/AppShell/plan.md) |
+| F7 | App Shell & Navigation | Done | [AppShell](specs/F7-AppShell/definition/spec.md) | [AppShell](specs/F7-AppShell/delivery/plan.md) |
 
 **F2:** All 5 entities (Sprint, Developer, Ticket, SprintMembership, StatusTransition), EF Core configs, composite keys, indexes, SQLite setup, initial migration.
 
@@ -61,7 +61,7 @@ Tier 5: F12
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
 | F3 | Settings System | Done | — | — |
-| F4 | Jira Integration | Done | [JiraSync](features/JiraSync/spec.md) | [JiraSync](plans/JiraSync/plan.md) |
+| F4 | Jira Integration | Done | [JiraSync](specs/F4-JiraSync/definition/spec.md) | [JiraSync](specs/F4-JiraSync/delivery/plan.md) |
 
 **F3:** AppSettings entity (single-row, typed, JSON columns for complex values). CRUD endpoints. Settings UI: board selector, done statuses, health thresholds + weights, workflow stages. Developer sub-team tagging lives here.
 
@@ -73,7 +73,7 @@ Tier 5: F12
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F5 | Sprint Sync | Done | [JiraSync](features/JiraSync/spec.md) | [JiraSync](plans/JiraSync/plan.md) |
+| F5 | Sprint Sync | Done | [JiraSync](specs/F4-JiraSync/definition/spec.md) | [JiraSync](specs/F4-JiraSync/delivery/plan.md) |
 
 SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for configured board). Full flow: fetch from Jira → map → upsert entities → compute WasCommitted. Idempotent (re-sync overwrites). Active sprints allowed but flagged. Returns sync summary with counts.
 
@@ -83,13 +83,13 @@ SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for con
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F6 | Workflow Auto-Detection | Done | [WorkflowAutoDetection](features/WorkflowAutoDetection/spec.md) | [WorkflowAutoDetection](plans/WorkflowAutoDetection/plan.md) |
-| F8 | Sprint Summary Card | Done | [SprintSummaryCard](features/SprintSummaryCard/spec.md) | [SprintSummaryCard](plans/SprintSummaryCard/plan.md) |
-| F9 | Developer Throughput | Done | [DeveloperThroughput](features/DeveloperThroughput/spec.md) | [DeveloperThroughput](plans/DeveloperThroughput/plan.md) |
-| F10 | Scope Change & Disruption | Done | [ScopeChangeDisruption](features/ScopeChangeDisruption/spec.md) | [ScopeChangeDisruption](plans/ScopeChangeDisruption/plan.md) |
-| F11 | Carry-Over Tracker | Done | [CarryOverTracker](features/CarryOverTracker/spec.md) | [CarryOverTracker](plans/CarryOverTracker/plan.md) |
-| F13 | Bug Ratio | Done | [BugRatio](features/BugRatio/spec.md) | [BugRatio](plans/BugRatio/plan.md) |
-| F14 | Epic Progress | Done | [EpicProgress](features/EpicProgress/spec.md) | [EpicProgress](plans/EpicProgress/plan.md) |
+| F6 | Workflow Auto-Detection | Done | [WorkflowAutoDetection](specs/F6-WorkflowAutoDetection/definition/spec.md) | [WorkflowAutoDetection](specs/F6-WorkflowAutoDetection/delivery/plan.md) |
+| F8 | Sprint Summary Card | Done | [SprintSummaryCard](specs/F8-SprintSummaryCard/definition/spec.md) | [SprintSummaryCard](specs/F8-SprintSummaryCard/delivery/plan.md) |
+| F9 | Developer Throughput | Done | [DeveloperThroughput](specs/F9-DeveloperThroughput/definition/spec.md) | [DeveloperThroughput](specs/F9-DeveloperThroughput/delivery/plan.md) |
+| F10 | Scope Change & Disruption | Done | [ScopeChangeDisruption](specs/F10-ScopeChangeDisruption/definition/spec.md) | [ScopeChangeDisruption](specs/F10-ScopeChangeDisruption/delivery/plan.md) |
+| F11 | Carry-Over Tracker | Done | [CarryOverTracker](specs/F11-CarryOverTracker/definition/spec.md) | [CarryOverTracker](specs/F11-CarryOverTracker/delivery/plan.md) |
+| F13 | Bug Ratio | Done | [BugRatio](specs/F13-BugRatio/definition/spec.md) | [BugRatio](specs/F13-BugRatio/delivery/plan.md) |
+| F14 | Epic Progress | Done | [EpicProgress](specs/F14-EpicProgress/definition/spec.md) | [EpicProgress](specs/F14-EpicProgress/delivery/plan.md) |
 
 **F6:** Analyze StatusTransition data after sync, build directed transition graph weighted by frequency, topological sort → suggested workflow stage order. Present in Settings UI for confirmation. Triggered when no WorkflowStages configured.
 
@@ -111,7 +111,7 @@ SyncSprint endpoint (single sprint) + SyncAllSprints (all closed sprints for con
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F12 | Cycle Time | Done | [CycleTime](features/CycleTime/spec.md) | [CycleTime](plans/CycleTime/plan.md) |
+| F12 | Cycle Time | Done | [CycleTime](specs/F12-CycleTime/definition/spec.md) | [CycleTime](specs/F12-CycleTime/delivery/plan.md) |
 
 Multi-stage cycle time. Configurable workflow boundaries (depends on F3 settings + F6 auto-detection). Per-ticket duration, then aggregated: avg, median, p90 per sprint/developer/issue type. Stage funnel chart (stacked horizontal bar, widest = bottleneck). Box plot per sprint. Outlier flags (2x+ sprint median). Percentile toggle (p50/p75/p90).
 
@@ -121,7 +121,7 @@ Multi-stage cycle time. Configurable workflow boundaries (depends on F3 settings
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F15 | Team Management | Done | [TeamManagement](features/TeamManagement/spec.md) | [TeamManagement](plans/TeamManagement/plan.md) |
+| F15 | Team Management | Done | [TeamManagement](specs/F15-TeamManagement/definition/spec.md) | [TeamManagement](specs/F15-TeamManagement/delivery/plan.md) |
 
 Dedicated "Team" page in sidebar. Configure developer roles, default capacity %, sub-team assignment, active toggle. Lazy capacity fallback (default used when no sprint override exists). Cross-cutting exclusion rule: 0% capacity + 0 completed tickets = hidden from all analytics. Resolves GAP-3 (sub-team management UI).
 
@@ -131,34 +131,34 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F16 | Bug Cost & Disruption Split | Done | [BugCostDisruption](features/BugCostDisruption/spec.md) | [BugCostDisruption](plans/BugCostDisruption/plan.md) |
-| F17 | Burnup Bug Overlay | Done | [BurnupBugOverlay](features/BurnupBugOverlay/spec.md) | N/A |
+| F16 | Bug Cost & Disruption Split | Done | [BugCostDisruption](specs/F16-BugCostDisruption/definition/spec.md) | [BugCostDisruption](specs/F16-BugCostDisruption/delivery/plan.md) |
+| F17 | Burnup Bug Overlay | Done | [BurnupBugOverlay](specs/F17-BurnupBugOverlay/definition/spec.md) | N/A |
 
 **F16:** Configurable default SP per bug (fallback for unestimated bugs, applied system-wide). Dashboard disruption rate split into two cards: Scope Disruption Rate + Bug Disruption Rate. Health score unchanged (uses combined total).
 
 **F17:** Semi-transparent red shaded area on the single-sprint Scope Burnup chart showing cumulative bug SP per day. Visualizes when bugs appeared and how much sprint capacity they consumed. Depends on F16 for default SP per bug.
 
-| F19 | Leaderboard Breakdown | Done | [LeaderboardBreakdown](features/LeaderboardBreakdown/spec.md) | [plan](plans/LeaderboardBreakdown/plan.md) |
+| F19 | Leaderboard Breakdown | Done | [LeaderboardBreakdown](specs/F19-LeaderboardBreakdown/definition/spec.md) | [plan](specs/F19-LeaderboardBreakdown/delivery/plan.md) |
 
 **F19:** Dashboard leaderboard Features/Bugs toggle with SP + ticket count columns. New Leaderboard tab on Developers page with stacked bar chart (feature SP blue, bug SP red) and detailed table. Aligns Dashboard excluded-from-scope filtering with Bug Ratio pattern.
 
-| F20 | Normalized Capacity Indicator | Done | [NormalizedCapacityIndicator](features/NormalizedCapacityIndicator/spec.md) | [Plan](plans/NormalizedCapacityIndicator/plan.md) |
+| F20 | Normalized Capacity Indicator | Done | [NormalizedCapacityIndicator](specs/F20-NormalizedCapacityIndicator/definition/spec.md) | [Plan](specs/F20-NormalizedCapacityIndicator/delivery/plan.md) |
 
 **F20:** Bracketed normalized SP value (~X) next to SP completed for developers with <100% capacity. Shows estimated output at full availability. Applies to Throughput tab, Leaderboard tab, and Dashboard leaderboard. Client-side computation using existing capacity data; leaderboard API adds capacity to response.
 
-| F21 | Feature-Only Delivery Metrics | Done | [FeatureOnlyMetrics](features/FeatureOnlyMetrics/spec.md) | [plan](plans/FeatureOnlyMetrics/plan.md) |
+| F21 | Feature-Only Delivery Metrics | Done | [FeatureOnlyMetrics](specs/F21-FeatureOnlyMetrics/definition/spec.md) | [plan](specs/F21-FeatureOnlyMetrics/delivery/plan.md) |
 
 **F21:** Separates delivery metrics from bug metrics across Dashboard, burnup chart, and throughput table. SP Completed and Completion % become feature-only (with bug SP annotation on the card). Health score Completion sub-score uses feature-only completion %. Burnup chart scope/completed lines exclude bugs (red bug area unchanged). Throughput tab excludes bugs. Principle: delivery surfaces show features, bug surfaces show bugs, leaderboard bridges both.
 
-| F22 | Boundary-Driven Completion | Done | [BoundaryDrivenCompletion](features/BoundaryDrivenCompletion/spec.md) | [BoundaryDrivenCompletion](plans/BoundaryDrivenCompletion/plan.md) |
+| F22 | Boundary-Driven Completion | Done | [BoundaryDrivenCompletion](specs/F22-BoundaryDrivenCompletion/definition/spec.md) | [BoundaryDrivenCompletion](specs/F22-BoundaryDrivenCompletion/delivery/plan.md) |
 
 **F22:** Completion across all analytics derived from cycle time end boundary instead of static done statuses list. Changing the cycle time end stage redefines what "completed" means everywhere — dev throughput (end at Testing), end-to-end (end at Done), or any workflow boundary. Done statuses setting retained but no longer drives completion. Affects F8, F9, F10, F11, F12, F13, F14, F21.
 
-| F23 | Transition-Based Sprint Scope | Done | [TransitionBasedSprintScope](features/TransitionBasedSprintScope/spec.md) | [TransitionBasedSprintScope](plans/TransitionBasedSprintScope/plan.md) |
+| F23 | Transition-Based Sprint Scope | Done | [TransitionBasedSprintScope](specs/F23-TransitionBasedSprintScope/definition/spec.md) | [TransitionBasedSprintScope](specs/F23-TransitionBasedSprintScope/delivery/plan.md) |
 
 **F23:** Sprint scope attribution via StatusTransition timestamps instead of snapshot-based WasCommitted/FinalStatus. Both cycle time boundaries drive all metrics: CycleTimeStartStage defines active/committed, CycleTimeEndStage defines completed. No carry-over double-counting. All scope surfaces feature-only with separate bug bars. Supersedes F22 completion mechanism. Affects F8, F9, F10, F11, F12, F13, F14.
 
-| F24 | Planning-Gated Disruption | Done | [PlanningGatedDisruption](features/PlanningGatedDisruption/spec.md) | [PlanningGatedDisruption](plans/PlanningGatedDisruption/plan.md) |
+| F24 | Planning-Gated Disruption | Done | [PlanningGatedDisruption](specs/F24-PlanningGatedDisruption/definition/spec.md) | [PlanningGatedDisruption](specs/F24-PlanningGatedDisruption/delivery/plan.md) |
 
 **F24:** Aligns Committed SP cards and burnup chart into a coherent system. Total = membership at planning close (not activeSp + removedSp). Added/Removed SP gated by planning window + cycle entry — only post-planning, cycle-entered activity counts as disruption. Planning Overflow classification removed. Dashboard disruption rates and mid-sprint flag updated to use planningCutoff. Affects F8, F10.
 
@@ -168,7 +168,7 @@ Dedicated "Team" page in sidebar. Configure developer roles, default capacity %,
 
 | ID | Feature | Status | Spec | Plan |
 |----|---------|--------|------|------|
-| F18 | Authentication & Access Control | Done | [Auth](features/Auth/spec.md) | [Auth](plans/Auth/plan.md) |
+| F18 | Authentication & Access Control | Done | [Auth](specs/F18-Auth/definition/spec.md) | [Auth](specs/F18-Auth/delivery/plan.md) |
 
 **F18:** Google OAuth with invitation-based access. Company domain restriction. Two roles: Admin (full control) and Manager (view-only). First login bootstraps Admin. Invite link flow (no automated email). Settings read-only for Managers. All existing endpoints require auth.
 
@@ -180,17 +180,17 @@ Refactors, infrastructure work, and UX tweaks that don't have a feature spec.
 
 | ID | Improvement | Status | Plan |
 |----|------------|--------|------|
-| I1 | Skill Cleanup | Planned | [SkillCleanup](plans/SkillCleanup/plan.md) |
-| I2 | Skill Enforcement | Planned | [SkillEnforcement](plans/SkillEnforcement/plan.md) |
-| I3 | Skill Alignment (BuildingBlocks & Entities) | Done | [SkillAlignment](plans/SkillAlignment/plan.md) |
-| I4 | Skill Alignment Phase 2 (Endpoints) | Planned | [SkillAlignmentEndpoints](plans/SkillAlignmentEndpoints/plan.md) |
-| I5 | Extract Jira Module | Done | [ExtractJiraModule](plans/ExtractJiraModule/plan.md) |
-| I6 | Jira Module Refactor | Done | [JiraModuleRefactor](plans/JiraModuleRefactor/plan.md) |
-| I7 | Sync Refactoring | Done | [SyncRefactoring](plans/SyncRefactoring/plan.md) |
-| I8 | Settings Dropdowns | Planned | [SettingsDropdowns](plans/SettingsDropdowns/plan.md) |
-| I9 | Team-Managed Sync Fix | Done | [TeamManagedSync](plans/TeamManagedSync/plan.md) |
-| I10 | Tooltip Wiring | Done | [TooltipWiring](plans/TooltipWiring/plan.md) |
-| I11 | Settings Gap Fill (GAP-1 + GAP-2 + GAP-3) | Done | [SettingsGapFill](plans/SettingsGapFill/plan.md) |
+| I1 | Skill Cleanup | Planned | [SkillCleanup](specs/adhoc-SkillCleanup/delivery/plan.md) |
+| I2 | Skill Enforcement | Planned | [SkillEnforcement](specs/adhoc-SkillEnforcement/delivery/plan.md) |
+| I3 | Skill Alignment (BuildingBlocks & Entities) | Done | [SkillAlignment](specs/adhoc-SkillAlignment/delivery/plan.md) |
+| I4 | Skill Alignment Phase 2 (Endpoints) | Planned | [SkillAlignmentEndpoints](specs/adhoc-SkillAlignmentEndpoints/delivery/plan.md) |
+| I5 | Extract Jira Module | Done | [ExtractJiraModule](specs/adhoc-ExtractJiraModule/delivery/plan.md) |
+| I6 | Jira Module Refactor | Done | [JiraModuleRefactor](specs/adhoc-JiraModuleRefactor/delivery/plan.md) |
+| I7 | Sync Refactoring | Done | [SyncRefactoring](specs/adhoc-SyncRefactoring/delivery/plan.md) |
+| I8 | Settings Dropdowns | Planned | [SettingsDropdowns](specs/adhoc-SettingsDropdowns/delivery/plan.md) |
+| I9 | Team-Managed Sync Fix | Done | [TeamManagedSync](specs/adhoc-TeamManagedSync/delivery/plan.md) |
+| I10 | Tooltip Wiring | Done | [TooltipWiring](specs/adhoc-TooltipWiring/delivery/plan.md) |
+| I11 | Settings Gap Fill (GAP-1 + GAP-2 + GAP-3) | Done | [SettingsGapFill](specs/adhoc-SettingsGapFill/delivery/plan.md) |
 
 ---
 
@@ -269,6 +269,10 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 **F34:** Individual developer drill-down page accessible from Daily Progress cards. Cross-sprint velocity trends (stacked feature/bug bar chart, completion % trend, rolling average), work type allocation (bug % per sprint with configurable target threshold), current sprint detail (larger burnup chart, ticket table grouped by state). Configurable bug ratio target in Settings.
 
+| F35 | Epic View Enhancements | Done | [EpicViewEnhancements](specs/F35-EpicViewEnhancements/definition/spec.md) | [plan](specs/F35-EpicViewEnhancements/delivery/plan.md) |
+
+**F35:** Epics page usability improvements: search by epic name/key, sortable column headers, column visibility toggle (localStorage-persisted), activity date columns (Started/Last Work replacing Sprints count, derived from cycle time start boundary transitions), sticky epic name column, and default sort by last work date descending.
+
 ---
 
 ### v2 Cross-Cutting Concerns
@@ -283,16 +287,16 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 ## Bugs & Gaps
 
-New issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gaps — see agents-workflow.md § Slug and Path Resolution). Existing issues remain at legacy `docs/issues/` paths until migrated.
+All issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gaps — see agents-workflow.md § Slug and Path Resolution).
 
 | ID | Issue | Type | Severity | Status | Feature | File |
 |----|-------|------|----------|--------|---------|------|
-| GAP-1 | Excluded from Scope Statuses UI | Gap | High | Open | F10 | [GAP-1](issues/GAP-1-excluded-statuses-ui.md) |
-| GAP-2 | Sprint Range Picker for Sync | Gap | Medium | Open | F5 | [GAP-2](issues/GAP-2-sprint-range-picker.md) |
-| GAP-3 | Sub-Team Management UI | Gap | Medium | Open | F3 | [GAP-3](issues/GAP-3-sub-team-management-ui.md) |
-| GAP-4 | Sprint Cards Total-Scope vs Burnup Feature-Only | Gap | Medium | Open | F21 | [GAP-4](issues/GAP-4-sprint-cards-scope-mismatch.md) |
-| BUG-1 | Bug Count = 0 on Sprint 26 | Bug | High | Open | F10 | [BUG-1](issues/BUG-1-bug-count-zero.md) |
-| BUG-2 | Bar Chart vs Burnup Completed SP Disagree (63 SP gap) | Bug | High | Open | F10/F21 | [BUG-2](issues/BUG-2-barchart-burnup-completed-sp-mismatch.md) |
+| GAP-1 | Excluded from Scope Statuses UI | Gap | High | Open | F10 | [GAP-1](specs/GAP-1-excluded-statuses-ui/definition/spec.md) |
+| GAP-2 | Sprint Range Picker for Sync | Gap | Medium | Open | F5 | [GAP-2](specs/GAP-2-sprint-range-picker/definition/spec.md) |
+| GAP-3 | Sub-Team Management UI | Gap | Medium | Open | F3 | [GAP-3](specs/GAP-3-sub-team-management-ui/definition/spec.md) |
+| GAP-4 | Sprint Cards Total-Scope vs Burnup Feature-Only | Gap | Medium | Open | F21 | [GAP-4](specs/GAP-4-sprint-cards-scope-mismatch/definition/spec.md) |
+| BUG-1 | Bug Count = 0 on Sprint 26 | Bug | High | Open | F10 | [BUG-1](specs/BUG-1-bug-count-zero/definition/bug.md) |
+| BUG-2 | Bar Chart vs Burnup Completed SP Disagree (63 SP gap) | Bug | High | Open | F10/F21 | [BUG-2](specs/BUG-2-barchart-burnup-completed-sp-mismatch/definition/bug.md) |
 
 ---
 
