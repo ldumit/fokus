@@ -1,96 +1,51 @@
 {
-  "env": {
-    "OMC_SKIP_HOOKS": "keyword-detector"
-  },
-  "permissions": {
-    "allow": [
-      "Read",
-      "Edit",
-      "Write",
-      "MultiEdit",
-      "Bash",
-      "Glob",
-      "Grep",
-      "LS",
-      "WebFetch",
-      "WebSearch",
-      "TodoWrite",
-      "Task",
-      "Skill",
-      "mcp__plugin_oh-my-claudecode_t",
-      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\stack-rules.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\stack-rules.md\")",
-      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\csharp.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\csharp.md\")",
-      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\vue.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\vue.md\")",
-      "Bash(mv \"D:\\\\src\\\\fokus\\\\.claude\\\\conventions\\\\ef-core.md\" \"D:\\\\src\\\\fokus\\\\docs\\\\conventions\\\\ef-core.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/architect.md\" \"D:/src/code-forge/agents/architect.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/developer.md\" \"D:/src/code-forge/agents/developer.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/reviewer.md\" \"D:/src/code-forge/agents/reviewer.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/critic.md\" \"D:/src/code-forge/agents/critic.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/po.md\" \"D:/src/code-forge/agents/po.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/agents-workflow.md\" \"D:/src/code-forge/rules/agents-workflow.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/guardrail-enforcement.md\" \"D:/src/code-forge/rules/guardrail-enforcement.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/help-tooltips.md\" \"D:/src/code-forge/rules/help-tooltips.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/kb-navigation.md\" \"D:/src/code-forge/rules/kb-navigation.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/research-before-asking.md\" \"D:/src/code-forge/rules/research-before-asking.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/agents/team-lead.md\" \"D:/src/code-forge/agents/team-lead.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/kb-maintenance.md\" \"D:/src/code-forge/rules/kb-maintenance.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/agent-invocation.md\" \"D:/src/code-forge/rules/agent-invocation.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/spec-authority.md\" \"D:/src/code-forge/rules/spec-authority.md\")",
-      "Bash(cp \"D:/src/fokus/.claude/rules/pipeline-guardrails.md\" \"D:/src/code-forge/rules/pipeline-guardrails.md\")",
-      "mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata",
-      "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
-      "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
-      "mcp__claude_ai_Atlassian__search",
-      "mcp__claude_ai_Atlassian__atlassianUserInfo",
-      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\.claude\\\\hooks\")",
-      "Bash(mkdir -p \"D:\\\\src\\\\fokus\\\\docs\\\\audit\")",
-      "Bash(mkdir -p .claude/conventions)",
-      "Bash(git mv *)"
-    ],
-    "deny": [
-      "Bash(rm -rf /*)",
-      "Bash(sudo *)",
-      "Bash(git push*)",
-      "Bash(docker rm*)"
-    ]
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact|resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"be $CC_AGENT\""
-          }
+    "env": {
+        "OMC_SKIP_HOOKS": "keyword-detector"
+    },
+    "permissions": {
+        "allow": [
+            "Read",
+            "Edit",
+            "Write",
+            "MultiEdit",
+            "Bash",
+            "Glob",
+            "Grep",
+            "LS",
+            "WebFetch",
+            "WebSearch",
+            "TodoWrite",
+            "Task",
+            "Skill",
+            "mcp__plugin_oh-my-claudecode_t",
+            "mcp__claude_ai_Atlassian"
+        ],
+        "deny": [
         ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"be $CC_AGENT\""
-          }
+    },
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "startup|clear|compact|resume",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node .claude/hooks/restore-agent.js"
+                    }
+                ]
+            }
+        ],
+        "PreToolUse": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node .claude/hooks/audit-logger.js",
+                        "timeout": 10,
+                        "async": true
+                    }
+                ]
+            }
         ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/audit-logger.js",
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "echo -n \"\""
-  }
+    }
 }

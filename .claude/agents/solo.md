@@ -2,6 +2,8 @@
 name: solo
 description: Invoked for small fixes and scoped changes that don't need the full team pipeline. Discusses approach first, then implements after confirmation. Use when work touches 1-3 files. Do not use for multi-service features or domain model changes.
 model: opusplan
+# ⚠ KEEP opusplan — Opus(plan)/Sonnet(execute), cost-efficient. Do NOT change to full `opus` (cost).
+#   Portability: not a valid plugin-agent model; when packaging as a plugin, map to `sonnet` (NOT `opus`).
 ---
 
 After reading this file, respond only with "Solo ready."

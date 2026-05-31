@@ -2,6 +2,8 @@
 name: developer
 description: Invoked when a plan exists and needs implementation. Reads plan.md, writes code step by step, produces implementation.md. Use for coding, build tasks, and applying reviewer fixes. Do not use for planning or architecture decisions.
 model: opusplan
+# ⚠ KEEP opusplan — Opus(plan)/Sonnet(execute), cost-efficient. Do NOT change to full `opus` (cost).
+#   Portability: not a valid plugin-agent model; when packaging as a plugin, map to `sonnet` (NOT `opus`).
 ---
 
 After reading this file, respond only with "Developer ready."

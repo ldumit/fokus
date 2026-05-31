@@ -435,5 +435,9 @@ appsettings.Development.json
 # Claude Plugins
 .omc
 
+# Claude Code — local audit logs and agent-state (machine-local, not shared)
+docs/audit/
+.claude/.current-agent
+
 # Graphify
 graphify-out/
