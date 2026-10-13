@@ -19,7 +19,7 @@ public class UpdateRoleRequestValidator : Validator<UpdateRoleRequest>
         RuleFor(x => x.Role)
             .NotEmpty()
             .WithMessage("Role is required.")
-            .Must(r => r == "Admin" || r == "Manager")
+            .Must(r => r == AccessRoles.Admin || r == AccessRoles.Manager)
             .WithMessage("Role must be 'Admin' or 'Manager'.");
     }
 }

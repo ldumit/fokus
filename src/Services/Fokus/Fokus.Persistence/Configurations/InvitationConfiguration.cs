@@ -10,7 +10,7 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
         builder.Property(i => i.Email).IsRequired().HasMaxLength(256);
         builder.HasIndex(i => i.Email).HasDatabaseName("IX_Invitations_Email");
 
-        builder.Property(i => i.Role).IsRequired().HasMaxLength(32).HasDefaultValue("Manager");
+        builder.Property(i => i.Role).IsRequired().HasMaxLength(32).HasDefaultValue(AccessRoles.Manager);
 
         builder.Property(i => i.Token).IsRequired().HasMaxLength(128);
         builder.HasIndex(i => i.Token).IsUnique().HasDatabaseName("IX_Invitations_Token");

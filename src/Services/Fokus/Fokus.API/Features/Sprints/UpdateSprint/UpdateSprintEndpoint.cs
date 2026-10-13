@@ -2,18 +2,14 @@ namespace Fokus.API.Features.Sprints.UpdateSprint;
 
 [HttpPut("/api/sprints/{sprintId}")]
 [Tags("Sprints")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class UpdateSprintEndpoint(IJiraClient jiraClient, SprintRepository sprintRepository)
-    : Endpoint<UpdateSprintRequest, UpdateSprintResponse>
+    : Endpoint<UpdateSprintCommand, UpdateSprintResponse>
 {
-    public override async Task HandleAsync(UpdateSprintRequest req, CancellationToken ct)
+    public override async Task HandleAsync(UpdateSprintCommand req, CancellationToken ct)
     {
-        var sprint = await sprintRepository.GetByIdAsync(req.SprintId, ct);
-        if (sprint is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        var sprint = (await sprintRepository.GetByIdAsync(req.SprintId, ct))
+            .OrThrowNotFound($"Sprint {req.SprintId} was not found.");
 
         await jiraClient.UpdateSprintAsync(sprint.Id, req.Name, req.StartDate, req.EndDate, req.Goal, ct);
 
@@ -24,7 +20,7 @@ public class UpdateSprintEndpoint(IJiraClient jiraClient, SprintRepository sprin
 
         await sprintRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(new UpdateSprintResponse
+        await Send.OkAsync(new UpdateSprintResponse
         {
             Id = sprint.Id,
             Name = sprint.Name,

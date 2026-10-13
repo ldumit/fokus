@@ -25,7 +25,7 @@ Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in
 Create `{FeatureName}Endpoint.cs` in `Features/{Domain}/{FeatureName}/`:
 
 ```csharp
-[Authorize(Roles = Role.{RequiredRole})]
+[Authorize(Policy = AccessPolicies.{PolicyName})]
 [Http{Method}("{route}")]
 [Tags("{Domain}")]
 public class {FeatureName}Endpoint({Dependencies})
@@ -37,7 +37,7 @@ public class {FeatureName}Endpoint({Dependencies})
         // Execute domain logic
         // Save changes
 
-        await SendOkAsync(new {ResponseType}(...), ct);
+        await Send.OkAsync(new {ResponseType}(...), ct);
     }
 }
 ```
@@ -71,7 +71,7 @@ public partial class {FeatureName}Endpoint
 {
     public override void Configure()
     {
-        AllowAnonymous(); // or Roles(...)
+        AllowAnonymous(); // or Policies(AccessPolicies.{PolicyName})
         Post("{route}");
         Description(x => x.WithSummary("...").WithTags("{Domain}"));
     }
@@ -92,12 +92,12 @@ catch (SomeDomainException ex)
 }
 ```
 
-Never write `catch → SendAsync(statusCode)` or `catch → SendUnauthorizedAsync()` in an endpoint.
+Never write a `catch` that answers through `Send.*` (a status code, an unauthorized reply) in an endpoint.
 
 ## Notes
 
 - If the service defines a custom base validator (check service CLAUDE.md), extend it instead of `Validator<T>`
-- Use `SendOkAsync()` for all FastEndpoints responses — the pattern used across all services
+- Use `Send.OkAsync()` for FastEndpoints success replies (`Send.NoContentAsync()`, `Send.ResponseAsync(reply, status)` for the others) — the FastEndpoints 8 API (`framework-currency`)
 - Domain events: dispatched automatically via interceptor on SaveChanges, or via `await PublishAsync(new {Event}(...))` for FastEndpoints events
 
 Check the service's CLAUDE.md for which variant to use.

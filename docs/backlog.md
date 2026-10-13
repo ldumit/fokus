@@ -287,6 +287,10 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 **F37:** The F36 lean campaign (Phase 3): fix the owner-triaged findings from the F36 code-quality mining (`docs/specs/F36-PublicReleaseCleanup/delivery/mining/consolidated.md` § Recommended lean campaign) — the Xray-secret overwrite and Re-detect guard, the burnup bug area, the zombie-flag window, the throughput rolling window, transition-attribution rescans, not-found status codes, hidden UI errors, read-only query tracking — plus TD-1 and TD-3. Private-only record, like F36.
 
+| F38 | Dotnet Skill Alignment | Done | — (plan-only definition; architect-led fast lane, full checks; operator check owed before merge) | [plan](specs/F38-DotnetSkillAlignment/delivery/plan.md) |
+
+**F38:** Bring the code in line with eight nexus-dotnet skills rated 6+ with S/S–M effort (`docs/specs/F36-PublicReleaseCleanup/delivery/nexus-dotnet-skill-fit.md`): central-package-management, framework-currency, error-handling, authorization-patterns, extract-endpoint-types, add-hosted-service, persistence-patterns (seeding), create-service-claude-md. Step 1 copies/merges those skills into `.claude/skills/` (3 new, 5 refreshed without losing Fokus edits); the code is then aligned from the local copies. Builds after F37 (shared endpoint files). Private-only record, like F36.
+
 ---
 
 ### v2 Cross-Cutting Concerns

@@ -19,17 +19,13 @@ public class GetQaMetricsEndpoint(
         var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
 
         // 3. Find the requested sprint
-        var sprintInfo = sprints.FirstOrDefault(s => s.Id == req.SprintId);
-        if (sprintInfo is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        sprints.FirstOrDefault(s => s.Id == req.SprintId)
+            .OrThrowNotFound($"Sprint {req.SprintId} was not found.");
 
         // 4. If Xray disabled, return hasQaData=false with empty metrics
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(BuildEmptyResponse(), ct);
+            await Send.OkAsync(BuildEmptyResponse(), ct);
             return;
         }
 
@@ -119,7 +115,7 @@ public class GetQaMetricsEndpoint(
             settings,
             subTeam);
 
-        await SendOkAsync(MapResponse(result), ct);
+        await Send.OkAsync(MapResponse(result), ct);
     }
 
     private static QaMetricsResponse BuildEmptyResponse() => new()

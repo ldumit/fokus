@@ -29,6 +29,8 @@ For business rules, computation logic, and edge cases, see the relevant [KB entr
 
 **Sub-Team** — Optional grouping label on Developer for filtering analytics. Manually managed, not from Jira. Code: `Developer.SubTeam`.
 
+**Access Role** — What a signed-in Fokus user may do in the app: Admin (configures settings, syncs, manages users and invitations) or Manager (reads the dashboards, analytics and settings; changes nothing). Code: `AccessRole` / `AccessRoles` (`Fokus.Domain/Auth/`), stored in `AppUser.Role` and `Invitation.Role`. Distinct from a developer's team role (`Developer.Role` — Developer, Tech Lead, Tester, PO). Avoid: "role" alone where the two could be confused.
+
 ---
 
 ## Ticket Classification

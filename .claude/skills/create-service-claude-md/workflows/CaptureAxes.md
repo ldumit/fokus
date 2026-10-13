@@ -33,8 +33,6 @@ Create `.Application` when the service has any of:
 - State machines (aggregate transition rules)
 - Cross-feature DTOs
 - Shared access checkers
-- Seed helpers
-- Shared mapping utilities
 
 Skip `.Application` when the service has none of these — logic lives entirely in endpoints/handlers.
 
@@ -42,11 +40,12 @@ Skip `.Application` when the service has none of these — logic lives entirely 
 
 ### 6. Port assignment
 - Check root CLAUDE.md for the current service index table. Next available index = last assigned + 1.
-- Ports derive mechanically from the port convention: `{AppPrefix}{ProtocolSlot}{ServiceIndex}`.
+- Ports derive from the repo's port convention, as its root CLAUDE.md writes it — for example a prefix, a
+  protocol slot and the service index.
 
 ### 7. Uses docker? (Y/N)
-- Y (default) → Developer's scaffold generates `Dockerfile`, adds a service block to `src/docker-compose.yml`, adds a `<ProjectReference>` to `src/docker-compose.dcproj`, and sets `<DockerComposeProjectPath>` in the service's csproj.
-- N → no docker files generated.
+- Y (default) → the scaffold writes the service's `Dockerfile` and adds a service block to the repo's compose file.
+- N → no docker files generated; the CLAUDE.md carries a `**Docker:** N` line, which the scaffold reads.
 
 ### 8. gRPC clients consumed
 - List the interfaces from `{ProjectName}.Grpc.Contracts` that this service will call.
@@ -64,6 +63,12 @@ Skip `.Application` when the service has none of these — logic lives entirely 
 ### 11. Integration events consumed
 - List the integration events this service will subscribe to.
 - Each consumed event needs a MassTransit consumer in the service.
+
+### 12. Modules used
+- List the modules this service runs on, if the repo has any. Only those: a service references modules
+  selectively, each through its contracts project where it has one.
+- Never another service's projects — another service is reached by an event or a gRPC client.
+- Empty list is fine.
 
 ## Ask-in-one-batch rule
 

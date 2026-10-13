@@ -20,10 +20,7 @@ public class GetDeveloperDetailEndpoint(
         var allDevelopers = await developerRepository.GetAllAsync(ct);
         var developer = allDevelopers.FirstOrDefault(d => d.Id == req.AccountId);
         if (developer is null || !developer.IsActive)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+            throw new NotFoundException($"Developer {req.AccountId} was not found or is inactive.");
 
         // 2. Load analytics sprints (active + closed)
         var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
@@ -78,10 +75,7 @@ public class GetDeveloperDetailEndpoint(
         });
 
         if (!hasAnyActivity)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+            throw new NotFoundException($"Developer {req.AccountId} has no activity in closed sprints.");
 
         // 9. Load active sprint with memberships (if any)
         var activeSprintInfo = analyticsSprints.FirstOrDefault(s => s.State == SprintState.Active);
@@ -118,6 +112,6 @@ public class GetDeveloperDetailEndpoint(
             settings.BugRatioTarget,
             jiraOptions.Value.InstanceUrl);
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 }

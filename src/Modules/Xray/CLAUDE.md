@@ -15,7 +15,7 @@ Typed HTTP client for the Xray Cloud GraphQL API. Handles bearer token authentic
 
 ## Host wiring
 
-Host services reference `Xray.Contracts` + `Xray.GraphQL`. The DI extension registers `IXrayClient` as `GraphQLXrayClient` (scoped) and `XrayBearerTokenManager` as singleton (token cache is cross-request). Credentials are NOT read from appsettings.json — they are runtime-configurable via AppSettings (stored in DB). Credentials are passed per-call to `IXrayClient` methods, not via IOptions at startup.
+Host services reference `Xray.Contracts` + `Xray.GraphQL`. The DI extension registers `IXrayClient` as `GraphQLXrayClient` (scoped) and `XrayBearerTokenManager` as singleton (token cache is cross-request). An optional `Xray` config section (`XrayOptions`: client id and secret) is copied into the settings row by a start-up line in the Fokus service (`ApplyConfiguredXrayCredentialsAsync()`, `Fokus.API/Features/Xray/XrayCredentialsStartupExtensions.cs`) when both values are set. The settings row (stored in DB, editable in the Settings UI) is the runtime source; credentials are passed per-call to `IXrayClient` methods.
 
 ## Credential passing pattern
 

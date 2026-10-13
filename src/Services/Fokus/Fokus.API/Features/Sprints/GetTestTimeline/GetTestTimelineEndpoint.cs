@@ -22,17 +22,13 @@ public class GetTestTimelineEndpoint(
         var ascending = sprints.OrderBy(s => s.StartDate).ToList();
 
         // 3. Find requested sprint — 404 if not found
-        var sprintInfo = ascending.FirstOrDefault(s => s.Id == req.SprintId);
-        if (sprintInfo is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        var sprintInfo = ascending.FirstOrDefault(s => s.Id == req.SprintId)
+            .OrThrowNotFound($"Sprint {req.SprintId} was not found.");
 
         // 4. Xray disabled — return hasQaData=false, isXrayEnabled=false
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: false), ct);
+            await Send.OkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: false), ct);
             return;
         }
 
@@ -47,7 +43,7 @@ public class GetTestTimelineEndpoint(
         var hasAnyRuns = sprintTEs.Any(te => te.TestRuns.Any());
         if (!hasAnyRuns)
         {
-            await SendOkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: true), ct);
+            await Send.OkAsync(BuildEmptyResponse(sprintInfo, settings, isXrayEnabled: true), ct);
             return;
         }
 
@@ -99,7 +95,7 @@ public class GetTestTimelineEndpoint(
             settings,
             subTeam);
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 
     private static TestTimelineResponse BuildEmptyResponse(Sprint sprint, AppSettings settings, bool isXrayEnabled) =>

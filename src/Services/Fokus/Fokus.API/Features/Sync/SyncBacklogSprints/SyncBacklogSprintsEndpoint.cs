@@ -2,7 +2,7 @@ namespace Fokus.API.Features.Sync.SyncBacklogSprints;
 
 [HttpPost("/api/sync/backlog")]
 [Tags("Sync")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class SyncBacklogSprintsEndpoint(
     IJiraClient jiraClient,
     AppSettingsRepository settingsRepository,
@@ -37,7 +37,7 @@ public class SyncBacklogSprintsEndpoint(
             };
         }
 
-        await SendOkAsync(new SyncBacklogSprintsResponse
+        await Send.OkAsync(new SyncBacklogSprintsResponse
         {
             BacklogSprintsSynced = sprintResult.SprintsSynced,
             EpicTicketsDiscovered = epicResult.TicketsDiscovered,

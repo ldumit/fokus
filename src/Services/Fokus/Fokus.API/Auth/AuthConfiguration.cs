@@ -11,7 +11,8 @@ public static class AuthConfiguration
 {
     public static IServiceCollection AddFokusAuth(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        services.AddAuthorization();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(AccessPolicies.Admins, policy => policy.RequireRole(AccessRoles.Admin));
 
         services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

@@ -1,5 +1,4 @@
 using Blocks.Domain.Entities;
-using Blocks.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,8 +17,6 @@ public abstract class EntityConfiguration<TEntity> : IEntityTypeConfiguration<TE
             builder.Property(e => e.Id).ValueGeneratedOnAdd();
         else
             builder.Property(e => e.Id).ValueGeneratedNever();
-
-        builder.SeedFromJsonFile();
     }
 }
 
@@ -36,7 +33,5 @@ public abstract class EntityConfiguration<TEntity, TKey> : IEntityTypeConfigurat
             builder.Property(e => e.Id).ValueGeneratedOnAdd();
         else
             builder.Property(e => e.Id).ValueGeneratedNever();
-
-        builder.SeedFromJsonFile();
     }
 }

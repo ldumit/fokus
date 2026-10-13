@@ -10,7 +10,7 @@ public partial class AppUser
             Email = email,
             DisplayName = displayName,
             AvatarUrl = avatarUrl,
-            Role = "Admin",
+            Role = AccessRoles.Admin,
             CreatedAt = DateTime.UtcNow,
             IsActive = true
         };

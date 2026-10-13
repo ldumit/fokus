@@ -15,27 +15,19 @@ public class GetFailingTicketsEndpoint(
 
         // 2. Find the requested sprint
         var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
-        var sprintInfo = sprints.FirstOrDefault(s => s.Id == req.SprintId);
-        if (sprintInfo is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        sprints.FirstOrDefault(s => s.Id == req.SprintId)
+            .OrThrowNotFound($"Sprint {req.SprintId} was not found.");
 
         // 3. If Xray disabled, return empty list
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(new FailingTicketsResponse(), ct);
+            await Send.OkAsync(new FailingTicketsResponse(), ct);
             return;
         }
 
         // 4. Load sprint with memberships to get sprint dates
-        var sprint = await sprintRepository.GetSprintWithMembershipsAsync(req.SprintId, ct);
-        if (sprint is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        var sprint = (await sprintRepository.GetSprintWithMembershipsAsync(req.SprintId, ct))
+            .OrThrowNotFound($"Sprint {req.SprintId} was not found.");
 
         // 5. Resolve transition-based stage boundaries from settings
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
@@ -70,7 +62,7 @@ public class GetFailingTicketsEndpoint(
             })
             .ToList();
 
-        await SendOkAsync(new FailingTicketsResponse { Tickets = failing }, ct);
+        await Send.OkAsync(new FailingTicketsResponse { Tickets = failing }, ct);
     }
 
     private static bool IsInSubTeam(TicketCoverageInfo ticket, Sprint sprint, string subTeam)

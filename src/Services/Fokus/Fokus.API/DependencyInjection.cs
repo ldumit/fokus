@@ -1,5 +1,4 @@
 using FastEndpoints.Swagger;
-using Fokus.API.Auth;
 using Fokus.API.Features.Analytics;
 using Fokus.API.Features.Auth.Login;
 using Fokus.API.Features.Settings;

@@ -18,7 +18,7 @@ public class AppUserRepository(FokusDbContext db)
         await db.AppUsers.CountAsync(ct);
 
     public async Task<int> CountActiveAdminsAsync(CancellationToken ct = default) =>
-        await db.AppUsers.CountAsync(u => u.Role == "Admin" && u.IsActive, ct);
+        await db.AppUsers.CountAsync(u => u.Role == AccessRoles.Admin && u.IsActive, ct);
 
     public async Task AddAsync(AppUser user, CancellationToken ct = default) =>
         await db.AppUsers.AddAsync(user, ct);

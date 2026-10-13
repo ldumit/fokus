@@ -19,13 +19,13 @@ public class GetBugRatioEndpoint(
         // An explicit sprint id must exist, even when there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new BugRatioResponse("multi", null, null), ct);
+            await Send.OkAsync(new BugRatioResponse("multi", null, null), ct);
             return;
         }
 
@@ -72,7 +72,7 @@ public class GetBugRatioEndpoint(
             var singleResult = bugRatioService.ComputeSingleSprint(
                 target, priorSprint, allSprints, filteredActive, settings, statusTransitions, subTeam, excludedIds);
 
-            await SendOkAsync(new BugRatioResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new BugRatioResponse("single", null, singleResult), ct);
         }
         else
         {
@@ -92,7 +92,7 @@ public class GetBugRatioEndpoint(
             var multiResult = bugRatioService.ComputeMultiSprint(
                 selectedSprints, allSprints, filteredActive, settings, statusTransitions, subTeam, excludedInAll);
 
-            await SendOkAsync(new BugRatioResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new BugRatioResponse("multi", multiResult, null), ct);
         }
     }
 }

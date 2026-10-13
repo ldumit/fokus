@@ -19,13 +19,13 @@ public class GetCarryOverEndpoint(
         // An explicit sprint id must exist, even when there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new CarryOverResponse("multi", null, null), ct);
+            await Send.OkAsync(new CarryOverResponse("multi", null, null), ct);
             return;
         }
 
@@ -68,7 +68,7 @@ public class GetCarryOverEndpoint(
             var singleResult = carryOverService.ComputeSingleSprint(
                 target, priorSprint, allSprints, statusTransitions, settings, subTeam, excludedIds);
 
-            await SendOkAsync(new CarryOverResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new CarryOverResponse("single", null, singleResult), ct);
         }
         else
         {
@@ -92,7 +92,7 @@ public class GetCarryOverEndpoint(
             var multiResult = carryOverService.ComputeMultiSprint(
                 selectedSprints, allSprints, statusTransitions, settings, subTeam, excludedInAll);
 
-            await SendOkAsync(new CarryOverResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new CarryOverResponse("multi", multiResult, null), ct);
         }
     }
 }

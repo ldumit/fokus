@@ -4,21 +4,17 @@ namespace Fokus.API.Features.Auth.UpdateRole;
 
 [HttpPut("/api/users/{id}/role")]
 [Tags("Users")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class UpdateRoleEndpoint(AppUserRepository appUserRepository)
     : Endpoint<UpdateRoleRequest, UserResponse>
 {
     public override async Task HandleAsync(UpdateRoleRequest req, CancellationToken ct)
     {
-        var user = await appUserRepository.GetByIdAsync(req.Id, ct);
-        if (user is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        var user = (await appUserRepository.GetByIdAsync(req.Id, ct))
+            .OrThrowNotFound($"User {req.Id} was not found.");
 
         // Last-Admin protection: prevent demoting the last active Admin
-        if (user.Role == "Admin" && req.Role == "Manager")
+        if (user.Role == AccessRoles.Admin && req.Role == AccessRoles.Manager)
         {
             var adminCount = await appUserRepository.CountActiveAdminsAsync(ct);
             if (adminCount <= 1)
@@ -28,7 +24,7 @@ public class UpdateRoleEndpoint(AppUserRepository appUserRepository)
         user.Role = req.Role;
         await appUserRepository.SaveChangesAsync(ct);
 
-        await SendOkAsync(new UserResponse
+        await Send.OkAsync(new UserResponse
         {
             Id = user.Id,
             Email = user.Email,

@@ -10,7 +10,7 @@ Programming conventions for C# / .NET specific to this codebase. Referenced by d
 ## Error Handling in Handlers
 
 - Inside `HandleAsync`, throw domain exceptions (`NotFoundException`, `BadRequestException`, etc.). The `GlobalExceptionMiddleware` maps them to HTTP responses.
-- `AddError`/`SendErrorsAsync` is only for FluentValidation pre-handler validation, not for handler business logic errors.
+- A handler never writes an error reply (`AddError`, `Send.ErrorsAsync`); FluentValidation validators report input errors, and a handler throws.
 
 ## Method Overrides
 
@@ -70,7 +70,7 @@ Programming conventions for C# / .NET specific to this codebase. Referenced by d
 
 - **Don't catch `Exception` without a filter or re-throw.** Swallowing the base type hides bugs.
 - **Use exception filters** (`catch (HttpException ex) when (ex.StatusCode == ...)`) to narrow catches.
-- **Don't use exceptions for expected control flow.** Validation failures, "not found" — these are domain results, not exceptions.
+- **A required lookup that finds nothing throws `NotFoundException`** (the `error-handling` skill); an optional lookup returns null and its caller decides. Input validation stays in validators.
 - **Order catch blocks most-derived first.** Otherwise specific handlers are unreachable.
 - **Centralize unhandled exceptions via middleware** — endpoints let exceptions propagate, not catch-all.
 

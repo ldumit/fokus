@@ -4,7 +4,7 @@ namespace Fokus.API.Features.Auth.CreateInvitation;
 
 [HttpPost("/api/invitations")]
 [Tags("Invitations")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class CreateInvitationEndpoint(
     AppUserRepository appUserRepository,
     InvitationRepository invitationRepository,
@@ -15,7 +15,7 @@ public class CreateInvitationEndpoint(
     {
         var settings = await appSettingsRepository.GetAsync(ct);
         var email = req.Email.Trim().ToLowerInvariant();
-        var role = req.Role ?? "Manager";
+        var role = req.Role ?? AccessRoles.Manager;
 
         if (settings.CompanyDomain is not null)
         {
@@ -43,7 +43,7 @@ public class CreateInvitationEndpoint(
 
         var inviteLink = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/invite/{invitation.Token}";
 
-        await SendAsync(new CreateInvitationResponse
+        await Send.ResponseAsync(new CreateInvitationResponse
         {
             Id = invitation.Id,
             Email = invitation.Email,

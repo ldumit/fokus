@@ -15,7 +15,7 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 
         builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(256);
         builder.Property(u => u.AvatarUrl).HasMaxLength(1024);
-        builder.Property(u => u.Role).IsRequired().HasMaxLength(32).HasDefaultValue("Manager");
+        builder.Property(u => u.Role).IsRequired().HasMaxLength(32).HasDefaultValue(AccessRoles.Manager);
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
     }
 }

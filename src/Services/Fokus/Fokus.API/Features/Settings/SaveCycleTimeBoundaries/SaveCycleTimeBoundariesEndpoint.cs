@@ -1,34 +1,12 @@
 namespace Fokus.API.Features.Settings.SaveCycleTimeBoundaries;
 
-public class SaveCycleTimeBoundariesRequest
-{
-    public string StartStage { get; set; } = string.Empty;
-    public string EndStage { get; set; } = string.Empty;
-}
-
-public class SaveCycleTimeBoundariesRequestValidator : Validator<SaveCycleTimeBoundariesRequest>
-{
-    public SaveCycleTimeBoundariesRequestValidator()
-    {
-        RuleFor(x => x.StartStage)
-            .NotEmpty()
-            .WithMessage("StartStage is required.");
-
-        RuleFor(x => x.EndStage)
-            .NotEmpty()
-            .WithMessage("EndStage is required.");
-    }
-}
-
-public record SaveCycleTimeBoundariesResponse(string StartStage, string EndStage);
-
 [HttpPut("/api/settings/cycle-time-boundaries")]
 [Tags("Settings")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class SaveCycleTimeBoundariesEndpoint(AppSettingsRepository repository)
-    : Endpoint<SaveCycleTimeBoundariesRequest, SaveCycleTimeBoundariesResponse>
+    : Endpoint<SaveCycleTimeBoundariesCommand, SaveCycleTimeBoundariesResponse>
 {
-    public override async Task HandleAsync(SaveCycleTimeBoundariesRequest req, CancellationToken ct)
+    public override async Task HandleAsync(SaveCycleTimeBoundariesCommand req, CancellationToken ct)
     {
         var settings = await repository.GetAsync(ct);
 
@@ -41,30 +19,18 @@ public class SaveCycleTimeBoundariesEndpoint(AppSettingsRepository repository)
         var endIndex = orderedStages.IndexOf(req.EndStage);
 
         if (startIndex < 0)
-        {
-            AddError(r => r.StartStage, "StartStage does not match any configured workflow stage or done status.");
-            await SendErrorsAsync(400, ct);
-            return;
-        }
+            throw new BadRequestException("StartStage does not match any configured workflow stage or done status.");
 
         if (endIndex < 0)
-        {
-            AddError(r => r.EndStage, "EndStage does not match any configured workflow stage or done status.");
-            await SendErrorsAsync(400, ct);
-            return;
-        }
+            throw new BadRequestException("EndStage does not match any configured workflow stage or done status.");
 
         if (startIndex >= endIndex)
-        {
-            AddError(r => r.StartStage, "StartStage must precede EndStage in the configured order.");
-            await SendErrorsAsync(400, ct);
-            return;
-        }
+            throw new BadRequestException("StartStage must precede EndStage in the configured order.");
 
         settings.CycleTimeStartStage = req.StartStage;
         settings.CycleTimeEndStage = req.EndStage;
         await repository.SaveAsync(settings, ct);
 
-        await SendOkAsync(new SaveCycleTimeBoundariesResponse(settings.CycleTimeStartStage, settings.CycleTimeEndStage), ct);
+        await Send.OkAsync(new SaveCycleTimeBoundariesResponse(settings.CycleTimeStartStage, settings.CycleTimeEndStage), ct);
     }
 }

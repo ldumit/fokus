@@ -19,13 +19,13 @@ public class GetScopeChangeEndpoint(
         // An explicit sprint id must exist, even when there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new ScopeChangeResponse("multi", null, null), ct);
+            await Send.OkAsync(new ScopeChangeResponse("multi", null, null), ct);
             return;
         }
 
@@ -71,7 +71,7 @@ public class GetScopeChangeEndpoint(
             var singleResult = scopeChangeService.ComputeSingleSprint(
                 targetSprint, priorSprint, statusTransitions, settings, subTeam, excludedIds);
 
-            await SendOkAsync(new ScopeChangeResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new ScopeChangeResponse("single", null, singleResult), ct);
         }
         else
         {
@@ -102,7 +102,7 @@ public class GetScopeChangeEndpoint(
             // 10a. Compute multi-sprint response
             var multiResult = scopeChangeService.ComputeMultiSprint(loadedSprints, statusTransitions, settings, subTeam, excludedInAll);
 
-            await SendOkAsync(new ScopeChangeResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new ScopeChangeResponse("multi", multiResult, null), ct);
         }
     }
 }

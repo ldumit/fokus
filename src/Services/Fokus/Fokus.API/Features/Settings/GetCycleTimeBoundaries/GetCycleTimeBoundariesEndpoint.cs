@@ -1,11 +1,5 @@
 namespace Fokus.API.Features.Settings.GetCycleTimeBoundaries;
 
-public record GetCycleTimeBoundariesResponse(
-    string StartStage,
-    string EndStage,
-    List<string> AvailableStages,
-    int WorkflowStageCount);
-
 [HttpGet("/api/settings/cycle-time-boundaries")]
 [Tags("Settings")]
 public class GetCycleTimeBoundariesEndpoint(AppSettingsRepository repository)
@@ -26,6 +20,6 @@ public class GetCycleTimeBoundariesEndpoint(AppSettingsRepository repository)
         var endStage = settings.CycleTimeEndStage
             ?? (settings.DoneStatuses.Count > 0 ? settings.DoneStatuses[0] : string.Empty);
 
-        await SendOkAsync(new GetCycleTimeBoundariesResponse(startStage, endStage, availableStages, settings.WorkflowStages.Count), ct);
+        await Send.OkAsync(new GetCycleTimeBoundariesResponse(startStage, endStage, availableStages, settings.WorkflowStages.Count), ct);
     }
 }

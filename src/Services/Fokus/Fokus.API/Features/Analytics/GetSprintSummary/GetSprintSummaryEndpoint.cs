@@ -22,13 +22,13 @@ public class GetSprintSummaryEndpoint(
         // 2. An explicit sprint id must exist, even when there are no sprints at all
         var requestedSprint = req.SprintId.HasValue
             ? sprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 3. No sprints — return empty response
         if (sprints.Count == 0)
         {
-            await SendOkAsync(new SprintSummaryResponse(null, null, null, [], [], new FlagsResult([], null, [], false)), ct);
+            await Send.OkAsync(new SprintSummaryResponse(null, null, null, [], [], new FlagsResult([], null, [], false)), ct);
             return;
         }
 
@@ -128,6 +128,6 @@ public class GetSprintSummaryEndpoint(
         // 12. Compute summary (exclusion applied internally via excludedIds)
         var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, zombieSprintCounts, excludedIds, qualitySubScore, qualityBreakdown, hasQaData, testingCrunch);
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 }

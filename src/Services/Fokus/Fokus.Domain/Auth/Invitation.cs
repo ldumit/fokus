@@ -3,7 +3,7 @@ namespace Fokus.Domain.Auth;
 public partial class Invitation : Entity<int>
 {
     public required string Email { get; set; }
-    public string Role { get; set; } = "Manager";
+    public string Role { get; set; } = AccessRoles.Manager;
     public int InvitedByUserId { get; set; }
     public required string Token { get; set; }
     public DateTime CreatedAt { get; set; }

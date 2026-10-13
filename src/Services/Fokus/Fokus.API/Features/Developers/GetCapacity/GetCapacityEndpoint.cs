@@ -7,12 +7,8 @@ public class GetCapacityEndpoint(DeveloperRepository developerRepository)
 {
     public override async Task HandleAsync(GetCapacityRequest req, CancellationToken ct)
     {
-        var developer = await developerRepository.GetByIdAsync(req.AccountId, ct);
-        if (developer is null)
-        {
-            await SendNotFoundAsync(ct);
-            return;
-        }
+        (await developerRepository.GetByIdAsync(req.AccountId, ct))
+            .OrThrowNotFound($"Developer {req.AccountId} was not found.");
 
         var capacities = await developerRepository.GetCapacitiesForDeveloperAsync(req.AccountId, req.SprintId, ct);
 
@@ -20,6 +16,6 @@ public class GetCapacityEndpoint(DeveloperRepository developerRepository)
             .Select(c => new CapacityEntry { SprintId = c.SprintId, CapacityPercent = c.CapacityPercent })
             .ToList();
 
-        await SendOkAsync(entries, ct);
+        await Send.OkAsync(entries, ct);
     }
 }

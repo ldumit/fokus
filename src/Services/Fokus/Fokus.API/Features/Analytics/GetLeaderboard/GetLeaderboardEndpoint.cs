@@ -19,13 +19,13 @@ public class GetLeaderboardEndpoint(
         // An explicit sprint id must exist, even when there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new LeaderboardResponse("multi", null, null), ct);
+            await Send.OkAsync(new LeaderboardResponse("multi", null, null), ct);
             return;
         }
 
@@ -79,7 +79,7 @@ public class GetLeaderboardEndpoint(
             var singleResult = leaderboardService.ComputeSingleSprint(
                 target, priorSprint, filteredActive, settings, statusTransitions, subTeam, capacityLookup, allDevelopers, excludedIds);
 
-            await SendOkAsync(new LeaderboardResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new LeaderboardResponse("single", null, singleResult), ct);
         }
         else
         {
@@ -99,7 +99,7 @@ public class GetLeaderboardEndpoint(
             var multiResult = leaderboardService.ComputeMultiSprint(
                 selectedSprints, filteredActive, settings, statusTransitions, subTeam, capacityLookup, allDevelopers, excludedInAll);
 
-            await SendOkAsync(new LeaderboardResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new LeaderboardResponse("multi", multiResult, null), ct);
         }
     }
 }

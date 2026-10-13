@@ -28,7 +28,7 @@ public class CreateInvitationRequestValidator : Validator<CreateInvitationReques
             .WithMessage("A valid email address is required.");
 
         RuleFor(x => x.Role)
-            .Must(r => r is null || r == "Admin" || r == "Manager")
+            .Must(r => r is null || r == AccessRoles.Admin || r == AccessRoles.Manager)
             .WithMessage("Role must be 'Admin' or 'Manager'.")
             .When(x => x.Role is not null);
     }

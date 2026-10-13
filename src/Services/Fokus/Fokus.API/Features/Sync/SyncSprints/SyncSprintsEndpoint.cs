@@ -5,7 +5,7 @@ namespace Fokus.API.Features.Sync.SyncSprints;
 
 [HttpPost("/api/sync/sprints")]
 [Tags("Sync")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class SyncSprintsEndpoint(
     IJiraClient jiraClient,
     AppSettingsRepository settingsRepository,
@@ -26,9 +26,9 @@ public class SyncSprintsEndpoint(
         var ordered = allSprints.OrderBy(s => s.StartDate).ToList();
 
         var fromSprint = ordered.FirstOrDefault(s => s.Id == command.FromSprintId)
-            ?? throw new NotFoundException("FromSprintId was not found in the Jira board's started sprints.");
+            .OrThrowNotFound("FromSprintId was not found in the Jira board's started sprints.");
         var toSprint = ordered.FirstOrDefault(s => s.Id == command.ToSprintId)
-            ?? throw new NotFoundException("ToSprintId was not found in the Jira board's started sprints.");
+            .OrThrowNotFound("ToSprintId was not found in the Jira board's started sprints.");
 
         if (fromSprint.StartDate > toSprint.StartDate)
             throw new BadRequestException("FromSprintId must have an earlier or equal start date than ToSprintId.");
@@ -65,7 +65,7 @@ public class SyncSprintsEndpoint(
             };
         }
 
-        await SendOkAsync(new SyncSprintsResponse
+        await Send.OkAsync(new SyncSprintsResponse
         {
             SprintsAttempted = sprintsInRange.Count,
             SprintsSynced = result.SprintsSynced,

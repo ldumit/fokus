@@ -19,13 +19,13 @@ public class GetDeveloperThroughputEndpoint(
         // An explicit sprint id must exist, even when there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. No closed sprints — return empty response
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new DeveloperThroughputResponse([], []), ct);
+            await Send.OkAsync(new DeveloperThroughputResponse([], []), ct);
             return;
         }
 
@@ -100,6 +100,6 @@ public class GetDeveloperThroughputEndpoint(
             allDevelopers,
             statusTransitions);
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 }

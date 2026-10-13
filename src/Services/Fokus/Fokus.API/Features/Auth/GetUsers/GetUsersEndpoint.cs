@@ -2,7 +2,7 @@ namespace Fokus.API.Features.Auth.GetUsers;
 
 [HttpGet("/api/users")]
 [Tags("Users")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class GetUsersEndpoint(AppUserRepository appUserRepository)
     : EndpointWithoutRequest<List<UserResponse>>
 {
@@ -21,6 +21,6 @@ public class GetUsersEndpoint(AppUserRepository appUserRepository)
             IsActive = u.IsActive
         }).ToList();
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 }

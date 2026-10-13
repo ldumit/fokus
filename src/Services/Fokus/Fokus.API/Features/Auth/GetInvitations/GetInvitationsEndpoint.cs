@@ -2,7 +2,7 @@ namespace Fokus.API.Features.Auth.GetInvitations;
 
 [HttpGet("/api/invitations")]
 [Tags("Invitations")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class GetInvitationsEndpoint(InvitationRepository invitationRepository)
     : EndpointWithoutRequest<List<InvitationResponse>>
 {
@@ -20,6 +20,6 @@ public class GetInvitationsEndpoint(InvitationRepository invitationRepository)
             ExpiresAt = i.ExpiresAt
         }).ToList();
 
-        await SendOkAsync(result, ct);
+        await Send.OkAsync(result, ct);
     }
 }

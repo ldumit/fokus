@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace Fokus.API.Auth;
 
@@ -21,17 +20,6 @@ public class ActiveUserPreProcessor : IGlobalPreProcessor
         if (user is not null && user.IsActive)
             return;
 
-        var message = user is null ? "Account not found." : "Your account has been deactivated.";
-
-        httpContext.Response.StatusCode = 401;
-        httpContext.Response.ContentType = "application/json";
-
-        await httpContext.Response.WriteAsync(JsonSerializer.Serialize(new
-        {
-            statusCode = 401,
-            message
-        }), ct);
-
-        await httpContext.Response.CompleteAsync();
+        throw new UnauthorizedException(user is null ? "Account not found." : "Your account has been deactivated.");
     }
 }

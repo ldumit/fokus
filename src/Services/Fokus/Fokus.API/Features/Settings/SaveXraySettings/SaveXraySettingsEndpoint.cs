@@ -1,30 +1,12 @@
 namespace Fokus.API.Features.Settings.SaveXraySettings;
 
-public class SaveXraySettingsRequest
-{
-    public bool XrayEnabled { get; set; }
-    public string? XrayClientId { get; set; }
-    public string? XrayClientSecret { get; set; }
-}
-
-public class SaveXraySettingsRequestValidator : Validator<SaveXraySettingsRequest>
-{
-    public SaveXraySettingsRequestValidator()
-    {
-        RuleFor(x => x.XrayClientId)
-            .NotEmpty()
-            .WithMessage("Client ID is required when Xray is enabled.")
-            .When(x => x.XrayEnabled);
-    }
-}
-
 [HttpPut("/api/settings/xray")]
 [Tags("Settings")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = AccessPolicies.Admins)]
 public class SaveXraySettingsEndpoint(AppSettingsRepository repository)
-    : Endpoint<SaveXraySettingsRequest, SaveXraySettingsResponse>
+    : Endpoint<SaveXraySettingsCommand, SaveXraySettingsResponse>
 {
-    public override async Task HandleAsync(SaveXraySettingsRequest req, CancellationToken ct)
+    public override async Task HandleAsync(SaveXraySettingsCommand req, CancellationToken ct)
     {
         var existing = await repository.GetAsync(ct);
 
@@ -36,11 +18,6 @@ public class SaveXraySettingsEndpoint(AppSettingsRepository repository)
 
         await repository.SaveAsync(existing, ct);
 
-        await SendOkAsync(new SaveXraySettingsResponse { Success = true }, ct);
+        await Send.OkAsync(new SaveXraySettingsResponse { Success = true }, ct);
     }
-}
-
-public class SaveXraySettingsResponse
-{
-    public bool Success { get; set; }
 }

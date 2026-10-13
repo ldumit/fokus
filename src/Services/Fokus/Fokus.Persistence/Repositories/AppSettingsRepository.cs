@@ -2,17 +2,9 @@ namespace Fokus.Persistence.Repositories;
 
 public class AppSettingsRepository(FokusDbContext db)
 {
-    public async Task<AppSettings> GetAsync(CancellationToken ct = default)
-    {
-        var settings = await db.AppSettings.SingleOrDefaultAsync(s => s.Id == 1, ct);
-        if (settings is null)
-        {
-            settings = AppSettings.CreateDefault();
-            db.AppSettings.Add(settings);
-            await db.SaveChangesAsync(ct);
-        }
-        return settings;
-    }
+    public async Task<AppSettings> GetAsync(CancellationToken ct = default) =>
+        await db.AppSettings.SingleOrDefaultAsync(s => s.Id == 1, ct)
+            ?? throw new InvalidOperationException("The settings row is missing; start-up seeds it.");
 
     public async Task SaveAsync(AppSettings settings, CancellationToken ct = default)
     {

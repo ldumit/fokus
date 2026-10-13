@@ -2,7 +2,8 @@
 
 **Endpoint framework:** FastEndpoints
 **Database:** SQLite (FokusDb)
-**Port:** TBD (service index not yet assigned in docker-compose)
+**Port:** `http://localhost:5000` (development profile, `Fokus.API/Properties/launchSettings.json`); no compose service index — the service is not containerised
+**Docker:** N
 
 ## Purpose
 
@@ -17,7 +18,7 @@ Fokus is a sprint analytics service that syncs data from Jira (sprints, tickets,
 
 ## Endpoint pattern
 
-Class extending `Endpoint<TRequest, TResponse>` or `EndpointWithoutRequest<TResponse>`. Handler logic lives directly in `HandleAsync`. Validators extend `Validator<T>` as sibling classes in the same feature folder. Endpoints are auto-discovered by `AddFastEndpoints()`.
+Class extending `Endpoint<TRequest, TResponse>` or `EndpointWithoutRequest<TResponse>`. Handler logic lives directly in `HandleAsync`. The endpoint file holds the endpoint class only; its request, reply and validator (`Validator<T>`) live in `{Operation}Command.cs` or `{Operation}Query.cs` in the same feature folder (`extract-endpoint-types`). Endpoints are auto-discovered by `AddFastEndpoints()`.
 
 ## MediatR pipeline behaviors
 
@@ -35,18 +36,30 @@ N/A — FastEndpoints native, no MediatR.
 - **Sync-from-external:** All data originates from Jira API. `JiraMapper` maps Jira DTOs → domain entities.
 - **Natural keys:** Ticket.Id = Jira issue key (e.g. "FOK-123"), Developer.Id = Jira accountId. Sprint.Id = Jira sprint ID. These are never auto-generated (`ValueGeneratedNever`).
 - **Computed metrics:** Health scores are computed on-the-fly in endpoints — never stored in the DB.
-- **Thin domain (v1):** Entities are data containers. No behavior methods in v1. Behaviors folder will be added when domain logic is needed.
-- **AppSettings singleton:** Single row (Id=1), seeded on startup if missing. Holds board config, done-status list, workflow stages, health thresholds, health weights.
+- **Domain split:** each aggregate is a partial class — state in `{Aggregate}.cs`, behaviour in `Behaviors/{Aggregate}.cs`. Most behaviour is factory mapping from Jira/Xray DTOs (`FromJira`, `FromXray`); the Auth aggregates carry real behaviour (`AppUser.CreateBootstrapAdmin`/`CreateFromInvitation`/`RecordLogin`, `Invitation.Create`/`Accept`/`Revoke`).
+- **AppSettings singleton:** Single row (Id=1). Added by the start-up line `SeedDefaultAppSettingsAsync()` (`Fokus.Persistence/SeedExtensions.cs`, called from `Program.cs` after `MigrateFokusDatabase()`) when the table is empty, in every environment. `AppSettingsRepository.GetAsync` only reads; a missing row is a start-up fault (500). Holds board config, done-status list, workflow stages, health thresholds, health weights.
+- **Errors:** a required lookup throws (`OrThrowNotFound(message)`, or `throw new NotFoundException(message)` where a rule decides the 404); a handler throws `BadRequestException` for a rule it checks. No endpoint or pre-processor writes an error reply — `GlobalExceptionMiddleware` writes every one (`error-handling`).
+- **Access roles:** `AccessRole` / `AccessRoles` (`Admin`, `Manager`) in `Fokus.Domain/Auth/`, never a literal. Admin-only endpoints carry `[Authorize(Policy = AccessPolicies.Admins)]` (`Fokus.API/Auth/AccessPolicies.cs`, registered in `AuthConfiguration.cs`); every other endpoint takes authentication only (`authorization-patterns`), except the two sign-in endpoints that allow anonymous calls: `Auth/Login` (`/auth/login`) and `Auth/ValidateInvitation` (`/api/invitations/{token}/validate`).
+- **Replies:** FastEndpoints 8's `Send.*` API (`Send.OkAsync`, `Send.NoContentAsync`, `Send.ResponseAsync`) — never the removed `Send…Async` instance methods (`framework-currency`).
 - **Focused operation services:** When handler logic is shared across endpoints in the same feature area, extract into a service class named after the operation (not the entity). Lives in the feature area root (e.g., `Features/Sync/SprintIssueSyncService.cs`). Must stay single-purpose — if it grows beyond one operation, split it.
 
 ## Existing features
 
-- `GET /api/settings` — retrieve current AppSettings
-- `POST /api/settings` — save AppSettings
-- `GET /api/sync/boards` — list Jira boards
-- `GET /api/sync/sprints` — list Jira sprints for a board
-- `POST /api/sync/sprints` — sync sprint range from Jira
-- `POST /api/sync/backlog` — sync future sprints and epic tickets from Jira
+Feature areas under `Fokus.API/Features/`, one folder per operation inside each:
+
+- `Analytics` — sprint summary, carry-over, cycle time, bug ratio, scope change, leaderboard, developer detail/progress/quality/throughput, epic progress, QA metrics/trends/workload, failing and untested tickets
+- `Auth` — sign-in, sign-out, current user, users (role and status), invitations (create, list, revoke, validate)
+- `Developers` — developer list, sub-teams, capacity
+- `Settings` — the settings row, workflow-stage detection, and each Settings tab's read and save
+- `Sprints` — sprint list, sprint update, test timeline
+- `Sync` — Jira boards, sprints and statuses; sprint and backlog sync
+- `Team` — team roster, a developer's team config
+- `Xray` — Xray sync, connection test
+
+## Modules
+
+- **Jira** — `Jira.Contracts` + `Jira.RestApi` (`src/Modules/Jira/`)
+- **Xray** — `Xray.Contracts` + `Xray.GraphQL` (`src/Modules/Xray/`)
 
 ## gRPC clients
 

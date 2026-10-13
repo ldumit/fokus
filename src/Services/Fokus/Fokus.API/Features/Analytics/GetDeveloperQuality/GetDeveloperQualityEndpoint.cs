@@ -20,13 +20,13 @@ public class GetDeveloperQualityEndpoint(
         // An explicit sprint id must exist, even when Xray is disabled or there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. If Xray disabled, return empty response
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
+            await Send.OkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
             return;
         }
 
@@ -35,7 +35,7 @@ public class GetDeveloperQualityEndpoint(
 
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
+            await Send.OkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
             return;
         }
 
@@ -65,7 +65,7 @@ public class GetDeveloperQualityEndpoint(
 
         if (targetSprintIds.Count == 0)
         {
-            await SendOkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
+            await Send.OkAsync(new DeveloperQualityResponse { HasQaData = false, Sprints = [], Developers = [] }, ct);
             return;
         }
 
@@ -196,7 +196,7 @@ public class GetDeveloperQualityEndpoint(
             streakTEsBySprintId);
 
         // 12. Map result to response
-        await SendOkAsync(MapResponse(result), ct);
+        await Send.OkAsync(MapResponse(result), ct);
     }
 
     private static DeveloperQualityResponse MapResponse(DeveloperQualityResult result) => new()

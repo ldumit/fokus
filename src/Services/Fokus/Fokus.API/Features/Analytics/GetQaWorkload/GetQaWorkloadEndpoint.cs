@@ -19,13 +19,13 @@ public class GetQaWorkloadEndpoint(
         // An explicit sprint id must exist (active or closed), even when Xray is disabled or there are no closed sprints
         var requestedSprint = req.SprintId.HasValue
             ? allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
             : null;
 
         // 2. If Xray disabled, return hasQaData = false
         if (!settings.XrayEnabled)
         {
-            await SendOkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
+            await Send.OkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
             return;
         }
 
@@ -34,7 +34,7 @@ public class GetQaWorkloadEndpoint(
 
         if (ascending.Count == 0)
         {
-            await SendOkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
+            await Send.OkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
             return;
         }
 
@@ -72,7 +72,7 @@ public class GetQaWorkloadEndpoint(
 
         if (targetIds.Count == 0)
         {
-            await SendOkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
+            await Send.OkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "multi" }, ct);
             return;
         }
 
@@ -104,7 +104,7 @@ public class GetQaWorkloadEndpoint(
             settings,
             subTeam);
 
-        await SendOkAsync(MapMultiResponse(result), ct);
+        await Send.OkAsync(MapMultiResponse(result), ct);
     }
 
     private async Task HandleSingleSprintAsync(
@@ -126,7 +126,7 @@ public class GetQaWorkloadEndpoint(
         var withQaData = await testExecutionRepository.GetSprintIdsWithQaDataAsync([targetSprint.Id], ct);
         if (!withQaData.Contains(targetSprint.Id))
         {
-            await SendOkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "single" }, ct);
+            await Send.OkAsync(new QaWorkloadResponseDto { HasQaData = false, Mode = "single" }, ct);
             return;
         }
 
@@ -194,7 +194,7 @@ public class GetQaWorkloadEndpoint(
             settings,
             subTeam);
 
-        await SendOkAsync(MapSingleResponse(result), ct);
+        await Send.OkAsync(MapSingleResponse(result), ct);
     }
 
     // --- Mapping ---

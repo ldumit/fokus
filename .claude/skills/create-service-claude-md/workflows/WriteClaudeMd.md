@@ -20,6 +20,7 @@ Match the shape of existing service CLAUDE.md files. Check `src/Services/` for e
 **Endpoint framework:** {framework}
 **Database:** {persistence details — e.g., "SQL Server ({Name}Db)", "PostgreSQL ({Name}Db)", "Redis ({Name}.OM)", "SQL Server ({Name}Db) + MongoGridFS (files)"}
 **Port:** {http} / {https}
+**Docker:** {Y | N}
 
 ## Purpose
 
@@ -36,20 +37,20 @@ Match the shape of existing service CLAUDE.md files. Check `src/Services/` for e
 {paragraph describing the chosen framework's pattern. Use the appropriate canned text below based on framework axis}
 
 ### FastEndpoints (canned text)
-> Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in `HandleAsync`. Attribute-based routing (`[HttpPost]`, `[HttpGet]`, `[Tags]`). Validators extend `Validator<T>` (or `BaseValidator<T>` if you add a custom base). Endpoints are auto-discovered by `AddFastEndpoints()`.
+> Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in `HandleAsync`. Attribute-based routing (`[HttpPost]`, `[HttpGet]`, `[Tags]`). Validators extend `Validator<T>`, or a base validator named for its command family. Endpoints are auto-discovered by `AddFastEndpoints()`.
 
 ### Carter + MediatR (canned text)
-> `ICarterModule` with `AddRoutes(IEndpointRouteBuilder)`. Endpoints dispatch to MediatR via `ISender.Send()`. Handlers live in `{Name}.Application/Features/{Aggregate}/{Feature}/`. Pipeline behaviors: `ValidationBehavior`, `LoggingBehavior`, `AssignUserIdBehavior`. Endpoints auto-discovered by `AddCarter()`.
+> `ICarterModule` with `AddRoutes(IEndpointRouteBuilder)`. Endpoints dispatch to MediatR via `ISender.Send()`. Handlers live in `{Name}.Application/Features/{Aggregate}/{Feature}/`. Pipeline behaviors, in order: `StampActionBehavior`, `ValidationBehavior`, `LoggingBehavior`. Endpoints auto-discovered by `AddCarter()`.
 
 ### Minimal APIs + MediatR (canned text)
-> Static class with `Map()` extension method, composed via `EndpointRegistration.MapAllEndpoints()`. Endpoints dispatch to MediatR via `ISender.Send()`. Handlers live in `{Name}.Application/Features/{Aggregate}/{Feature}/`. Pipeline behaviors: `ValidationBehavior`, `LoggingBehavior`, `AssignUserIdBehavior`. Endpoints registered manually in `Program.cs`.
+> Static class with `Map()` extension method, composed via `EndpointExtensions.MapAllEndpoints()`. Endpoints dispatch to MediatR via `ISender.Send()`. Handlers live in `{Name}.Application/Features/{Aggregate}/{Feature}/`. Pipeline behaviors, in order: `StampActionBehavior`, `ValidationBehavior`, `LoggingBehavior`. Each endpoint is mapped by one line in the API project's endpoint extensions.
 
 ### Carter read-model (canned text)
 > `ICarterModule` with `AddRoutes(IEndpointRouteBuilder)`. No MediatR — queries and consumers live directly in the `.API` project. No domain behavior — pure read model populated by MassTransit integration event consumers.
 
 ## MediatR pipeline behaviors
 
-{list if MediatR; "N/A" otherwise. Standard list: AssignUserIdBehavior, ValidationBehavior, LoggingBehavior}
+{list if MediatR; "N/A" otherwise. Standard list, in order: StampActionBehavior, ValidationBehavior, LoggingBehavior}
 
 ## File storage
 
@@ -58,6 +59,10 @@ Match the shape of existing service CLAUDE.md files. Check `src/Services/` for e
 ## Existing features
 
 None — new service. Populated as features are added.
+
+## Modules
+
+{list each module the service runs on, or "None"}
 
 ## gRPC clients
 

@@ -1,0 +1,39 @@
+# F38 — Dotnet Skill Alignment — Lessons
+
+## Architect Lessons
+
+- **A skill-fit summary is not the skill.** The fit file said "move start-up work into a start-up task" and "make the seed reader throw". The skills' own text says the opposite: work that must finish before requests stays a start-up line, and the seed hook runs on every table. Read each mapped skill's relevant section before scoping a step from a summary of it, and re-present any scope fact the read changes.
+- **Check a suggested type name against inherited members, not only against the class's own properties.** `Roles` would have bound to FastEndpoints' inherited `Endpoint.Roles(...)` method in every endpoint. A name suggested in a plan step is checked against the base types of the classes that will use it.
+- **A flattened set comparison does not pin a per-item contract.** A wire-name check must compare per operation and per property location, not as one global set of names.
+- **Give an environment override in the exact form its consumer parses.** A connection-string key needs `Data Source=…`, not a bare path. Check the consuming call (`UseSqlite`, `SqliteConnectionStringBuilder`) before writing the instruction.
+- **When merging an outside skill into a repo, re-verify the repo's own facts too.** The old local `persistence-patterns` copy described helpers that no longer exist (`ApplicationDbContext` cache helpers, `DefaultDateSql`). A "keep the Fokus facts" instruction would have carried them forward.
+- **Must-NOT-Change missed a body change: a 404 that used to be empty.** When a plan sends every error reply through one central mapper, list every reply-body change in the exemptions, not only the replies that already had a body. Here the 13 converted 6.0 `SendNotFoundAsync` 404s went from an empty body to the envelope with a message and Error-level logging, and only the 400 and 401 were named. Plan-time check: grep the legacy calls that send no body (`SendNotFoundAsync`, `SendNoContentAsync`, `SendUnauthorizedAsync`) and name each class in the table. **Evidence:** [F38-DotnetSkillAlignment]
+- **Skill copies written for the target state (D14 / Q1) passed the done check cleanly** because every target fact had its own `target — lands in Step N` line in `implementation.md`, and the copies cited no line numbers. The re-check was a grep per line. Keep line numbers out of skill copies that describe code a later step will move. **Evidence:** [F38-DotnetSkillAlignment]
+
+## Skill Gaps
+
+### Bringing a plugin skill into a repo as a self-contained local copy
+- **Seen in:** F38 Step 1 (plan).
+- **What was needed:** a recipe to copy a plugin skill into `.claude/skills/`, or merge it into an older local copy. The recipe must keep the repo's verified facts, strip plugin-only markers, paths and vocabulary, reword references to skills the repo does not have, check every `conventions/` section pointer, and update the skill count in `.claude/README.md`.
+- **Why no skill fits:** the local `improve-skills` handles lesson-driven fixes and new skills from gaps, logging to `docs/skill-backlog.md`; it has no copy-and-merge path. The plugin's `improve-skills` routes plugin-bound changes away from the repo.
+- **Plan disposition:** Step 1 is `Skill: None`, with its acceptance written inline.
+
+## Developer Lessons
+
+- **A new local skill can be invoked in the same session.** When a `SKILL.md` is written under `.claude/skills/{name}/`, the Skill tool's list picks it up within that session (seen for all three new copies in F38 Step 1). A step that creates a skill and a later step that applies it need no session restart, and the bare name resolves to the local copy. The Phase 1 worry that it might resolve to the plugin's `nexus-dotnet:*` copy did not hold.
+- **When merging a plugin skill, check its § pointers into other local skills as well as its `conventions/` pointers.** Five of them (`create-feature` § Requests, Replies and Names; § Shared Base Endpoint; `create-aggregate` § The Aggregate Base; § Field-Length Constants; `create-domain-event-handler` § Decision 3) named headings that exist only in the plugin's versions of those skills. Grep `` `{skill}` § `` in the merged folders and check each against the local skill's headings.
+- **"Latest stable on NuGet" has a one-line, memory-free read.** `central-package-management` and `framework-currency` say to read the version on NuGet but give no command. The flat-container index lists every version oldest first: `curl -s https://api.nuget.org/v3-flatcontainer/{id-lowercase}/index.json`, then drop entries containing `-` and take the last. `.../{id}/{version}/{id}.nuspec` gives a version's dependency floors (FastEndpoints 8.3.0 → FluentValidation ≥ 12.1.1), and the installed `FastEndpoints.xml` under the NuGet cache confirms member names before a `Send.*` migration. Used in F38 Steps 2 and 4.
+- **`OrThrowNotFound` on an un-parenthesised `await` compiles and never throws.** `await repo.GetAsync(...).OrThrowNotFound(msg)` binds the guard to the `Task` (a non-null class), so a missing row slips through as `null` and fails later as a 500. The only signal is a CS8602 warning further down. Write `(await repo.GetAsync(...)).OrThrowNotFound(msg)`; check with `grep -rn -B1 "\.OrThrowNotFound(" | grep "await [^(]"`. Seen in F38 Step 3 (`UpdateTeamConfigEndpoint`), caught in Step 7.
+- **The fast step close cuts once a full build passes 30 s.** `roles.unit` starts with `dotnet build src/Fokus.slnx`; after Step 7 touched `Blocks.EntityFrameworkCore` (rebuilding every project above it), the build alone took ~31 s, and two step closes in a row came back `reason: "timeout"`. A step that edits a shared library should expect a cut close; raising `stepLimitSeconds` in `.claude/verify.json`, or building only the changed project in the unit role, would keep it a real gate.
+
+### Improvement Proposal
+**Target:** `.claude/skills/error-handling/SKILL.md` (§ Guard Utilities)
+**Change:** add one line: a guard extension on an awaited lookup wraps the `await` in parentheses — `(await …).OrThrowNotFound(…)` — because the un-parenthesised form binds to the `Task` and never throws.
+**Evidence:** [F38-DotnetSkillAlignment]
+**Priority:** medium
+
+## Reviewer Lessons
+
+- **Prove a framework-behaviour risk with a 60-line scratch host outside the repo, not by reading IL.** The F38 risk was "FastEndpoints 8 might ignore `[Authorize(Policy = …)]`", which would open 23 admin writes. A scratch web project in the session scratchpad (FastEndpoints 8.3.0, a stub auth scheme that reads the role from a header, the policy and the legacy `Roles` form side by side) answered it in two builds: 401 / 403 / 200 for anonymous / Manager / Admin, identical for both forms. The same host showed that an exception thrown from a global pre-processor reaches an outer mapping middleware. Stop the host by its process name from PowerShell: `pkill` does not stop a Windows exe and a locked `apphost.exe` fails the next build with MSB3027. **Evidence:** [F38-DotnetSkillAlignment]
+- **When a before/after API-document diff moves a security attribute from roles to a policy, compare the `security` entries too, not only the schemas.** FastEndpoints' swagger lists role names as scopes and no policy names, so the 23 operations lost `["Admin"]` while every property-name check stayed green. Add `security` (and tags and response codes) to the Must-NOT-Change comparison when a step changes how an endpoint is gated. **Evidence:** [F38-DotnetSkillAlignment]
+- **A self-containedness grep on marker strings misses the word that points at the missing source.** `nexus|{plugin}|claude-plugins` passed while seven lines still said "the plugin form". For skills copied into a repo to stand alone, also grep the bare word `plugin` in the copies. **Evidence:** [F38-DotnetSkillAlignment]
