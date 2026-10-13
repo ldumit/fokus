@@ -1,0 +1,296 @@
+{
+  "commit": "3d1722aee84c2d6735b73f6776e8a56417aaa222",
+  "at": "2026-10-13",
+  "thresholdMs": 2000,
+  "n": 3,
+  "runner": "vstest",
+  "tests": {
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ComputePaceAndBreakdown_When_DeveloperCompletesTicketOnDay3": {
+      "median_ms": 4.5,
+      "spread": 0.97,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_DetectBehindPace_When_AfterGracePeriodAndBehindByMoreThanOneDay": {
+      "median_ms": 1.7,
+      "spread": 0.83,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_DetectStalledTicket_When_LastTransitionMoreThan2BusinessDaysAgo": {
+      "median_ms": 1.9,
+      "spread": 0.82,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ExcludeDeveloper_When_InExcludedDeveloperIds": {
+      "median_ms": 0.8,
+      "spread": 0.65,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_FilterBySubTeam_When_SubTeamSpecified": {
+      "median_ms": 2.1,
+      "spread": 1.17,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_IncludeBugSp_When_ComputingAssignedAndCompletedSp": {
+      "median_ms": 0.7,
+      "spread": 0.91,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_NotIncludeInAlerts_When_GapUnchanged": {
+      "median_ms": 1,
+      "spread": 0.06,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_PartitionCompletedSp_When_DeveloperCompletesBothBugsAndFeatures": {
+      "median_ms": 0.9,
+      "spread": 0.98,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ReturnHasActiveSprintFalse_When_NoActiveSprint": {
+      "median_ms": 2.1,
+      "spread": 0.84,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ReturnZeroPace_When_DeveloperHasNoAssignedSp": {
+      "median_ms": 1,
+      "spread": 0.93,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ShowImprovingAlert_When_GapShrankSincePreviousDay": {
+      "median_ms": 8.7,
+      "spread": 0.47,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ShowNewStallAlert_When_TicketJustBecameStalled": {
+      "median_ms": 1.9,
+      "spread": 1.06,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ShowWorseningAlert_When_GapGrewSincePreviousDay": {
+      "median_ms": 0.7,
+      "spread": 1.04,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_SortAlerts_WithWorseningGroupBeforeImprovingGroup": {
+      "median_ms": 1.7,
+      "spread": 0.27,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_SuppressAlerts_When_GracePeriod": {
+      "median_ms": 31,
+      "spread": 0.45,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_SuppressBehindPace_When_WithinGracePeriod": {
+      "median_ms": 0.5,
+      "spread": 1.38,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_UseDefaultSpPerBug_When_BugHasNullSp": {
+      "median_ms": 0.6,
+      "spread": 0.24,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ZeroBothPartitions_When_DeveloperCompletesNothing": {
+      "median_ms": 1.7,
+      "spread": 0.93,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests::Fokus.Tests.Features.Analytics.DeveloperProgressServiceTests.Should_ZeroFeatureSp_When_DeveloperCompletesOnlyBugs": {
+      "median_ms": 0.6,
+      "spread": 1.08,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests::Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests.Should_AverageTargetAndTwoEarlierQualifyingSprints_When_PriorSprintHasZeroCapacity": {
+      "median_ms": 4.1,
+      "spread": 0.55,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests::Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests.Should_ReturnNull_When_HistoryHoldsFewerThanThreeQualifyingSprints": {
+      "median_ms": 4.2,
+      "spread": 0.43,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests::Fokus.Tests.Features.Analytics.DeveloperThroughputServiceTests.Should_ReturnNull_When_OnlyTwoSprintsBeforeTargetAreLoaded": {
+      "median_ms": 28.5,
+      "spread": 0.37,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_CountBugFromAddedDayToRemovalDay_When_BugAddedDay2AndRemovedDay4": {
+      "median_ms": 0.6,
+      "spread": 0.32,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_CountBugUntilRemovalDay_When_BugPresentAtStartIsRemovedOnDay3": {
+      "median_ms": 13.1,
+      "spread": 0.51,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_ExitOnceOnCompletionDay_When_BugCompletedDay3ThenRemovedDay5": {
+      "median_ms": 0.9,
+      "spread": 0.22,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_IgnoreBug_When_FinalStatusIsExcludedAndBugIsRemovedMidSprint": {
+      "median_ms": 51.3,
+      "spread": 0.46,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_KeepFeatureAndCommittedSeries_When_FeaturesAndBugsAreAddedAndRemoved": {
+      "median_ms": 4.2,
+      "spread": 0.45,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.ScopeChangeServiceTests::Fokus.Tests.Features.Analytics.ScopeChangeServiceTests.Should_NeverGoNegative_When_BugCompletedDay2ButAddedDay4": {
+      "median_ms": 2,
+      "spread": 0.54,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.SprintSummaryServiceTests::Fokus.Tests.Features.Analytics.SprintSummaryServiceTests.Should_FlagWindowTicket_When_TicketIsAbsentFromSelectedSprintButInHistory": {
+      "median_ms": 0.6,
+      "spread": 0.31,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.SprintSummaryServiceTests::Fokus.Tests.Features.Analytics.SprintSummaryServiceTests.Should_FlagWithHistoryCount_When_WindowHoldsOnlyOneOfTheTicketsSprints": {
+      "median_ms": 42.8,
+      "spread": 0.51,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.SprintSummaryServiceTests::Fokus.Tests.Features.Analytics.SprintSummaryServiceTests.Should_HideZombie_When_TicketBelongsToAnotherSubTeam": {
+      "median_ms": 39.5,
+      "spread": 0.41,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.SprintSummaryServiceTests::Fokus.Tests.Features.Analytics.SprintSummaryServiceTests.Should_NotFlag_When_WindowTicketIsAbsentFromHistoryCounts": {
+      "median_ms": 0.8,
+      "spread": 0.74,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.SprintSummaryServiceTests::Fokus.Tests.Features.Analytics.SprintSummaryServiceTests.Should_OrderZombiesByHistoryCountDescending_When_TwoZombiesInWindow": {
+      "median_ms": 12.9,
+      "spread": 0.53,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_CountTransitions_When_TheyFallExactlyOnSprintStartAndEnd": {
+      "median_ms": 0.3,
+      "spread": 0.57,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_NotComplete_When_TicketOnlyReachesStageBeforeEndBoundary": {
+      "median_ms": 0.4,
+      "spread": 1.39,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_NotMatch_When_TicketIdDiffersOnlyInCase": {
+      "median_ms": 0.5,
+      "spread": 0.16,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_ReturnEarliestQualifyingTimestamp_When_SeveralTransitionsQualifyInAnyListOrder": {
+      "median_ms": 0.4,
+      "spread": 2.02,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_ReturnFalse_When_BoundaryIndexIsNegative": {
+      "median_ms": 0.4,
+      "spread": 0.37,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_ReturnFalse_When_TicketHasNoTransitions": {
+      "median_ms": 0.3,
+      "spread": 1.01,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_ReturnNotStartedOrCompleted_When_TransitionsFallBeforeOrAfterSprint": {
+      "median_ms": 0.4,
+      "spread": 0.25,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    },
+    "Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests::Fokus.Tests.Features.Analytics.TransitionAttributionCheckerTests.Should_ReturnStartedAndCompletedWithTimestamps_When_TransitionsFallInsideSprint": {
+      "median_ms": 29.1,
+      "spread": 0.35,
+      "n": 3,
+      "unstable": false,
+      "provisional": false
+    }
+  }
+}

@@ -16,6 +16,12 @@ public class GetBugRatioEndpoint(
         var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
         var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
+        // An explicit sprint id must exist, even when there are no closed sprints
+        var requestedSprint = req.SprintId.HasValue
+            ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
+
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
@@ -43,19 +49,16 @@ public class GetBugRatioEndpoint(
 
         // 8. Load status transitions for all closed sprint tickets
         var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allClosedIds, ct);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // 9. Determine mode
-        if (req.SprintId.HasValue)
+        if (requestedSprint is not null)
         {
-            // Single-sprint mode — accept active or closed sprint
-            var target = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
-            if (target is null)
-            {
-                AddError(r => r.SprintId, "Sprint not found.");
-                await SendErrorsAsync(400, ct);
-                return;
-            }
-
+            // Single-sprint mode — accept active or closed sprint.
+            // Only closed sprints are loaded with memberships; an active target has none here.
+            var target = requestedSprint.State == SprintState.Closed
+                ? allSprints.First(s => s.Id == requestedSprint.Id)
+                : requestedSprint;
             // Prior sprint is the last closed sprint before the target (by start date)
             var targetIndex = allSprints.FindIndex(s => s.Id == target.Id);
             var priorSprint = targetIndex > 0
@@ -63,7 +66,7 @@ public class GetBugRatioEndpoint(
                 : (target.State == SprintState.Active && allSprints.Count > 0 ? allSprints[^1] : null);
 
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                target, allDevelopers, capacityRecords, statusTransitions, settings);
+                target, allDevelopers, capacityRecords, transitionIndex, settings);
             var filteredActive = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
             var singleResult = bugRatioService.ComputeSingleSprint(
@@ -80,7 +83,7 @@ public class GetBugRatioEndpoint(
             // For multi-sprint: exclude developers excluded in ALL selected sprints
             var excludedInAll = activeDevelopers
                 .Where(dev => selectedSprints.All(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings)
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, transitionIndex, settings)
                         .Contains(dev.Id)))
                 .Select(dev => dev.Id)
                 .ToHashSet();

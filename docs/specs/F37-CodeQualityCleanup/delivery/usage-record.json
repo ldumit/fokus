@@ -1,0 +1,339 @@
+{
+  "format_version": 1,
+  "feature": "F37-CodeQualityCleanup",
+  "kind_of_run": "team run",
+  "state": "partial",
+  "started": "2026-10-13T08:06:36.750Z",
+  "closed": "2026-10-13T19:11:02.515Z",
+  "plugin_versions": [
+    "2.4.12"
+  ],
+  "claude_code_versions": [
+    "2.1.296"
+  ],
+  "spawns": [
+    {
+      "role": "architect",
+      "name": "architect-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 64,
+      "tokens": {
+        "input": 140,
+        "cache_written_5m": 0,
+        "cache_written_1h": 999663,
+        "cache_read": 29429284,
+        "output": 83565
+      },
+      "peak_context": 540880,
+      "compactions": 0,
+      "first_activity": "2026-10-13T08:06:36.750Z",
+      "last_activity": "2026-10-13T16:49:55.368Z",
+      "active_ms": 6454892
+    },
+    {
+      "role": "critic",
+      "name": "critic-second-2",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      },
+      "calls": 62,
+      "tokens": {
+        "input": 126,
+        "cache_written_5m": 321528,
+        "cache_written_1h": 0,
+        "cache_read": 12735557,
+        "output": 88439
+      },
+      "peak_context": 321530,
+      "compactions": 0,
+      "first_activity": "2026-10-13T11:32:20.496Z",
+      "last_activity": "2026-10-13T12:02:05.084Z",
+      "active_ms": 1784588
+    },
+    {
+      "role": "helper",
+      "agent_type": "Explore",
+      "name": "helper-1",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 8,
+      "tokens": {
+        "input": 16,
+        "cache_written_5m": 86242,
+        "cache_written_1h": 0,
+        "cache_read": 494611,
+        "output": 6493
+      },
+      "peak_context": 86244,
+      "compactions": 0,
+      "first_activity": "2026-10-13T16:30:41.787Z",
+      "last_activity": "2026-10-13T16:39:20.266Z",
+      "active_ms": 518479
+    },
+    {
+      "role": "helper",
+      "agent_type": "Explore",
+      "name": "helper-2",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 14,
+      "tokens": {
+        "input": 28,
+        "cache_written_5m": 86343,
+        "cache_written_1h": 0,
+        "cache_read": 957639,
+        "output": 11019
+      },
+      "peak_context": 95929,
+      "compactions": 0,
+      "first_activity": "2026-10-13T16:30:47.333Z",
+      "last_activity": "2026-10-13T16:49:33.350Z",
+      "active_ms": 1126017
+    },
+    {
+      "role": "helper",
+      "agent_type": "Explore",
+      "name": "helper-3",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 12,
+      "tokens": {
+        "input": 24,
+        "cache_written_5m": 68238,
+        "cache_written_1h": 0,
+        "cache_read": 708907,
+        "output": 6976
+      },
+      "peak_context": 77824,
+      "compactions": 0,
+      "first_activity": "2026-10-13T16:30:52.479Z",
+      "last_activity": "2026-10-13T16:47:33.813Z",
+      "active_ms": 1001334
+    },
+    {
+      "role": "helper",
+      "agent_type": "Explore",
+      "name": "helper-4",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 10,
+      "tokens": {
+        "input": 20,
+        "cache_written_5m": 85258,
+        "cache_written_1h": 0,
+        "cache_read": 631298,
+        "output": 8004
+      },
+      "peak_context": 94844,
+      "compactions": 0,
+      "first_activity": "2026-10-13T16:30:57.698Z",
+      "last_activity": "2026-10-13T16:45:48.980Z",
+      "active_ms": 891282
+    },
+    {
+      "role": "critic",
+      "name": "critic-1",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      },
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 29,
+      "tokens": {
+        "input": 218996,
+        "cache_written": 0,
+        "cache_read": 3236864,
+        "output": 23751
+      },
+      "first_activity": "2026-10-13T11:32:33.487Z",
+      "last_activity": "2026-10-13T11:49:25.010Z",
+      "active_ms": 1011523
+    },
+    {
+      "role": "critic",
+      "name": "critic-2",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "plan",
+        "round": 2
+      },
+      "plugin_versions": [
+        "2.4.12"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 18,
+      "tokens": {
+        "input": 201954,
+        "cache_written": 0,
+        "cache_read": 1956096,
+        "output": 16958
+      },
+      "first_activity": "2026-10-13T12:10:57.524Z",
+      "last_activity": "2026-10-13T12:22:06.836Z",
+      "active_ms": 669312
+    },
+    {
+      "role": "reviewer",
+      "name": "code-round-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-1",
+      "models": [
+        "model unknown"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      }
+    }
+  ],
+  "plan_steps": "steps not marked",
+  "review_rounds": {
+    "spec": [],
+    "plan": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "critic-second-2",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-1",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "critic-2",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      }
+    ],
+    "code": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "code-round-1",
+            "models": [
+              "model unknown"
+            ]
+          },
+          {
+            "name": "reviewer-1",
+            "models": [
+              "model unknown"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fix_cycles": 0,
+  "test_build_runs": {
+    "count": 0,
+    "total_duration_ms": 0,
+    "runs": []
+  },
+  "owner_touches": {
+    "question_box_answered": 3,
+    "typed_message": 10
+  },
+  "completeness": {
+    "spawns": [
+      {
+        "name": "code-round-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "reviewer-1",
+        "reason": "out of reach"
+      },
+      {
+        "name": "developer-1",
+        "reason": "out of reach"
+      }
+    ],
+    "fields": []
+  },
+  "output_tokens_note": "output tokens are as the platform recorded them, which can fall short of what the model produced"
+}

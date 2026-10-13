@@ -55,7 +55,6 @@ function syncFromStore() {
     bugRatioTarget: s.bugRatioTarget,
     xrayEnabled: s.xrayEnabled,
     xrayClientId: s.xrayClientId,
-    xrayClientSecret: s.xrayClientSecret,
     qaHealthThresholds: { ...s.qaHealthThresholds },
     qualityHealthWeight: s.qualityHealthWeight,
     qualitySubScoreWeights: { ...s.qualitySubScoreWeights },
@@ -78,6 +77,7 @@ onMounted(async () => {
   statusesLoading.value = true
   const [, boardsResult, statusesResult] = await Promise.allSettled([
     store.fetchSettings().then(() => {
+      if (store.loadError) return
       syncFromStore()
       if (form.workflowStages.length === 0) {
         return store.runDetectWorkflowStages().then(() => {
@@ -115,6 +115,8 @@ const tabs = [
     </div>
 
     <div v-if="store.loading" class="text-gray-400">Loading settings...</div>
+
+    <div v-else-if="store.loadError" class="text-sm text-status-danger">{{ store.loadError }}</div>
 
     <template v-else>
       <div class="flex gap-1 border-b border-border-default mb-6">

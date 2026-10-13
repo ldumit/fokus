@@ -6,11 +6,11 @@ public class InvitationRepository(FokusDbContext db)
         await db.Invitations.SingleOrDefaultAsync(i => i.Token == token, ct);
 
     public async Task<Invitation?> GetPendingByEmailAsync(string email, CancellationToken ct = default) =>
-        await db.Invitations.SingleOrDefaultAsync(
+        await db.Invitations.AsNoTracking().SingleOrDefaultAsync(
             i => i.Email.ToLower() == email.ToLower() && i.Status == "Pending", ct);
 
     public async Task<List<Invitation>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Invitations.OrderByDescending(i => i.CreatedAt).ToListAsync(ct);
+        await db.Invitations.AsNoTracking().OrderByDescending(i => i.CreatedAt).ToListAsync(ct);
 
     public async Task<Invitation?> GetByIdAsync(int id, CancellationToken ct = default) =>
         await db.Invitations.SingleOrDefaultAsync(i => i.Id == id, ct);

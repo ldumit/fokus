@@ -90,6 +90,7 @@ public class LeaderboardService
 
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var sortedTarget = targetSprints.OrderBy(s => s.StartDate).ToList();
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
@@ -104,7 +105,7 @@ public class LeaderboardService
             {
                 var memberships = GetDeveloperMemberships(s, dev.Id, subTeam);
                 var completed = GetTransitionCompletedMemberships(
-                    memberships, statusTransitions, s.StartDate, s.EndDate,
+                    memberships, transitionIndex, s.StartDate, s.EndDate,
                     orderedStages, endIndex, excludedStatuses);
                 var featureSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var bugSp = completed.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
@@ -170,6 +171,7 @@ public class LeaderboardService
 
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var sprintInfo = new LeaderboardSprintInfo(
             targetSprint.Id, targetSprint.Name, targetSprint.StartDate, targetSprint.EndDate);
@@ -178,7 +180,7 @@ public class LeaderboardService
         {
             var devMemberships = GetDeveloperMemberships(targetSprint, dev.Id, subTeam);
             var devCompleted = GetTransitionCompletedMemberships(
-                devMemberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+                devMemberships, transitionIndex, targetSprint.StartDate, targetSprint.EndDate,
                 orderedStages, endIndex, excludedStatuses);
             var featureSp = devCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
             var bugSp = devCompleted.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
@@ -192,7 +194,7 @@ public class LeaderboardService
             {
                 var priorMemberships = GetDeveloperMemberships(priorSprint, dev.Id, subTeam);
                 var priorCompleted = GetTransitionCompletedMemberships(
-                    priorMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                    priorMemberships, transitionIndex, priorSprint.StartDate, priorSprint.EndDate,
                     orderedStages, endIndex, excludedStatuses);
                 var priorFeatureSp = priorCompleted.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
                 var priorBugSp = priorCompleted.Where(m => IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
@@ -241,25 +243,20 @@ public class LeaderboardService
 
     private static List<SprintMembership> GetTransitionCompletedMemberships(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
         int endIndex,
         List<string> excludedStatuses)
     {
-        var transitionsByTicket = statusTransitions
-            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
-
         return memberships
             .Where(m =>
             {
                 if (m.RemovedAt != null) return false;
                 if (excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)) return false;
-                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
                 return isCompleted;
             })
             .ToList();

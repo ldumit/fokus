@@ -12,35 +12,27 @@ public class GetSprintSummaryEndpoint(
     QaMetricsService qaMetricsService)
     : Endpoint<GetSprintSummaryRequest, SprintSummaryResponse>
 {
+    private const int ZombieMinSprintCount = 3;
+
     public override async Task HandleAsync(GetSprintSummaryRequest req, CancellationToken ct)
     {
         // 1. Load all analytics sprints (lightweight, no memberships)
         var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
 
-        // 2. No sprints — return empty response
+        // 2. An explicit sprint id must exist, even when there are no sprints at all
+        var requestedSprint = req.SprintId.HasValue
+            ? sprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
+
+        // 3. No sprints — return empty response
         if (sprints.Count == 0)
         {
             await SendOkAsync(new SprintSummaryResponse(null, null, null, [], [], new FlagsResult([], null, [], false)), ct);
             return;
         }
 
-        // 3. Determine selected sprint
-        Sprint selectedSprintInfo;
-        if (req.SprintId.HasValue)
-        {
-            var match = sprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
-            if (match is null)
-            {
-                AddError(r => r.SprintId, "Sprint not found.");
-                await SendErrorsAsync(400, ct);
-                return;
-            }
-            selectedSprintInfo = match;
-        }
-        else
-        {
-            selectedSprintInfo = sprints[0]; // most recent (sorted descending)
-        }
+        var selectedSprintInfo = requestedSprint ?? sprints[0]; // most recent (sorted descending)
 
         // 4. Build sparkline window: up to 4 closed sprints ending at selected, from ascending list
         // Sparklines use closed sprints only — active sprint is not a data point
@@ -81,11 +73,12 @@ public class GetSprintSummaryEndpoint(
 
         // 8b. Load status transitions for all window sprint tickets
         var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(windowIds, ct);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // 9. Apply cross-cutting exclusion for the selected sprint
         var selectedSprint = windowSprints.First(s => s.Id == selectedSprintInfo.Id);
         var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-            selectedSprint, allDevelopers, capacityRecords, statusTransitions, settings);
+            selectedSprint, allDevelopers, capacityRecords, transitionIndex, settings);
         var filteredActiveDevelopers = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
         // 10. Load all epic tickets for F8/F14 alignment (BR20)
@@ -130,8 +123,10 @@ public class GetSprintSummaryEndpoint(
                 subTeam);
         }
 
+        var zombieSprintCounts = await sprintRepository.GetZombieSprintCountsAsync(ZombieMinSprintCount, ct);
+
         // 12. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, excludedIds, qualitySubScore, qualityBreakdown, hasQaData, testingCrunch);
+        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, zombieSprintCounts, excludedIds, qualitySubScore, qualityBreakdown, hasQaData, testingCrunch);
 
         await SendOkAsync(result, ct);
     }

@@ -87,7 +87,7 @@ public static class TransitionAttributionChecker
     /// </summary>
     public static (bool IsStarted, DateTime? StartedAt) IsStartedInSprint(
         string ticketId,
-        List<StatusTransition> transitions,
+        StatusTransitionIndex transitions,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
@@ -96,11 +96,10 @@ public static class TransitionAttributionChecker
         if (startIndex < 0)
             return (false, null);
 
-        var qualifying = transitions
-            .Where(t => t.TicketId == ticketId
-                        && t.Timestamp >= sprintStart
-                        && t.Timestamp <= sprintEnd
-                        && GetStageIndex(t.ToStatus, orderedStages) >= startIndex)
+        var qualifying = transitions.ForTicket(ticketId)
+            .Where(t => t.Timestamp >= sprintStart
+                && t.Timestamp <= sprintEnd
+                && GetStageIndex(t.ToStatus, orderedStages) >= startIndex)
             .OrderBy(t => t.Timestamp)
             .FirstOrDefault();
 
@@ -117,7 +116,7 @@ public static class TransitionAttributionChecker
     /// </summary>
     public static (bool IsCompleted, DateTime? CompletedAt) IsCompletedInSprint(
         string ticketId,
-        List<StatusTransition> transitions,
+        StatusTransitionIndex transitions,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
@@ -126,11 +125,10 @@ public static class TransitionAttributionChecker
         if (endIndex < 0)
             return (false, null);
 
-        var qualifying = transitions
-            .Where(t => t.TicketId == ticketId
-                        && t.Timestamp >= sprintStart
-                        && t.Timestamp <= sprintEnd
-                        && GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
+        var qualifying = transitions.ForTicket(ticketId)
+            .Where(t => t.Timestamp >= sprintStart
+                && t.Timestamp <= sprintEnd
+                && GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
             .OrderBy(t => t.Timestamp)
             .FirstOrDefault();
 

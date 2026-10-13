@@ -9,7 +9,7 @@ namespace Fokus.API.Auth;
 
 public static class AuthConfiguration
 {
-    public static IServiceCollection AddFokusAuth(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFokusAuth(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddAuthorization();
 
@@ -19,7 +19,9 @@ public static class AuthConfiguration
             {
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SecurePolicy = environment.IsDevelopment()
+                    ? CookieSecurePolicy.SameAsRequest
+                    : CookieSecurePolicy.Always;
                 options.ExpireTimeSpan = TimeSpan.FromDays(30);
                 options.SlidingExpiration = true;
                 options.LoginPath = "/auth/login";

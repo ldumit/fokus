@@ -108,10 +108,11 @@ public class EpicProgressService
             .GroupBy(t => t.EpicKey!)
             .ToList();
 
-        // Build once — used for velocity, date derivation, and sprint completion checks across all epics
+        // Activity dates match ticket ids case-insensitively; sprint completion checks match them ordinally
         var transitionsByTicket = statusTransitions
             .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var epicEntries = new List<EpicProgressEntry>();
 
@@ -214,9 +215,8 @@ public class EpicProgressService
                         .Where(sm =>
                         {
                             if (sm.RemovedAt != null) return false;
-                            var ticketTransitions = transitionsByTicket.GetValueOrDefault(sm.TicketId, []);
                             var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                                sm.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                                sm.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
                             return isCompleted;
                         })
                         .Sum(sm => sm.GetEffectiveSp(defaultSpPerBug) ?? 0m);

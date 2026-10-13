@@ -71,6 +71,7 @@ public class TicketRepository(FokusDbContext db)
 
     public async Task<List<StatusTransition>> GetStatusTransitionsForTicketsAsync(List<string> ticketIds, CancellationToken ct = default) =>
         await DbContext.StatusTransitions
+            .AsNoTracking()
             .Where(st => ticketIds.Contains(st.TicketId))
             .ToListAsync(ct);
 
@@ -90,18 +91,21 @@ public class TicketRepository(FokusDbContext db)
             return new List<StatusTransition>();
 
         return await DbContext.StatusTransitions
+            .AsNoTracking()
             .Where(st => ticketIds.Contains(st.TicketId))
             .ToListAsync(ct);
     }
 
     public async Task<List<Ticket>> GetTicketsWithEpicAsync(CancellationToken ct = default) =>
         await Entity
+            .AsNoTracking()
             .Where(t => t.EpicKey != null)
             .Include(t => t.Assignee)
             .ToListAsync(ct);
 
     public async Task<List<Ticket>> GetTicketsWithoutEpicInSprintsAsync(CancellationToken ct = default) =>
         await Entity
+            .AsNoTracking()
             .Where(t => t.EpicKey == null && DbContext.SprintMemberships.Any(sm => sm.TicketId == t.Id))
             .Include(t => t.Assignee)
             .ToListAsync(ct);

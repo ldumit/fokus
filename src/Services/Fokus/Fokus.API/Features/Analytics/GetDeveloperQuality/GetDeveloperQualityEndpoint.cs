@@ -13,8 +13,15 @@ public class GetDeveloperQualityEndpoint(
 {
     public override async Task HandleAsync(GetDeveloperQualityRequest req, CancellationToken ct)
     {
-        // 1. Load settings
+        // 1. Load settings and analytics sprints
         var settings = await appSettingsRepository.GetAsync(ct);
+        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+
+        // An explicit sprint id must exist, even when Xray is disabled or there are no closed sprints
+        var requestedSprint = req.SprintId.HasValue
+            ? allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
 
         // 2. If Xray disabled, return empty response
         if (!settings.XrayEnabled)
@@ -23,8 +30,7 @@ public class GetDeveloperQualityEndpoint(
             return;
         }
 
-        // 3. Load analytics sprints — multi-sprint averaging, sparkline, and streak use closed sprints only
-        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        // 3. Multi-sprint averaging, sparkline, and streak use closed sprints only
         var ascending = allSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         if (ascending.Count == 0)
@@ -37,16 +43,9 @@ public class GetDeveloperQualityEndpoint(
         var isSingleSprint = req.SprintId.HasValue;
         List<int> targetSprintIds;
 
-        if (req.SprintId.HasValue)
+        if (requestedSprint is Sprint match)
         {
             // Single sprint — accept active or closed
-            var match = allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
-            if (match is null)
-            {
-                AddError(r => r.SprintId, "Sprint not found.");
-                await SendErrorsAsync(400, ct);
-                return;
-            }
             targetSprintIds = [match.Id];
         }
         else if (req.Last.HasValue)

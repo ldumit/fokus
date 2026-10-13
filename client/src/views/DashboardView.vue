@@ -104,6 +104,8 @@ const bugSpAnnotation = computed(() => {
       <div class="text-text-muted text-sm">Loading...</div>
     </div>
 
+    <div v-else-if="store.error" class="text-sm text-status-danger">{{ store.error }}</div>
+
     <!-- No closed sprints -->
     <template v-else-if="!store.summary?.sprint">
       <EmptyState
@@ -150,12 +152,19 @@ const bugSpAnnotation = computed(() => {
           <MetricCardComponent :metric="store.summary.metrics.carryOverRate" />
         </div>
 
+        <div
+          v-if="settingsStore.settings.xrayEnabled && store.qaMetricsError"
+          class="text-sm text-status-danger"
+        >{{ store.qaMetricsError }}</div>
+
         <!-- QA metrics section (Xray enabled + data available) -->
         <QaMetricsSection
           v-if="settingsStore.settings.xrayEnabled && store.qaMetrics !== null"
           :qa-metrics="store.qaMetrics!"
           :untested-tickets="store.untestedTickets"
           :failing-tickets="store.failingTickets"
+          :untested-error="store.untestedError"
+          :failing-error="store.failingError"
           :qa-loading="store.qaLoading"
           @load-untested="store.fetchUntestedTickets()"
           @load-failing="store.fetchFailingTickets()"

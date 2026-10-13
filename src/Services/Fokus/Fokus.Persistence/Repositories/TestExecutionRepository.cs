@@ -23,6 +23,7 @@ public class TestExecutionRepository(FokusDbContext db)
 
     public async Task<List<TestExecution>> GetByIssueIdsAsync(List<string> issueIds, CancellationToken ct = default) =>
         await Query()
+            .AsNoTracking()
             .Where(t => issueIds.Contains(t.Id))
             .ToListAsync(ct);
 
@@ -105,6 +106,7 @@ public class TestExecutionRepository(FokusDbContext db)
 
         // "Cancelled" raw string required — EF Core cannot translate the computed IsCancelled property.
         return await Entity
+            .AsNoTracking()
             .Where(te => targetTeIds.Contains(te.Id) && te.Status != "Cancelled")
             .Include(te => te.Links)
                 .ThenInclude(l => l.Ticket)
@@ -130,6 +132,7 @@ public class TestExecutionRepository(FokusDbContext db)
     {
         // Load sprint memberships with full ticket and assignee data
         var memberships = await DbContext.SprintMemberships
+            .AsNoTracking()
             .Where(sm => sm.SprintId == sprintId && sm.RemovedAt == null)
             .Include(sm => sm.Ticket)
                 .ThenInclude(t => t!.Assignee)
@@ -151,6 +154,7 @@ public class TestExecutionRepository(FokusDbContext db)
 
         // Load status transitions for these tickets to apply IsStartedInSprint filter
         var transitions = await DbContext.StatusTransitions
+            .AsNoTracking()
             .Where(st => ticketIds.Contains(st.TicketId))
             .ToListAsync(ct);
 
@@ -187,6 +191,7 @@ public class TestExecutionRepository(FokusDbContext db)
         var teIdsWithLinks = teLinks.Select(l => l.TestExecutionIssueId).Distinct().ToList();
         var testRuns = teIdsWithLinks.Count > 0
             ? await DbContext.TestRuns
+                .AsNoTracking()
                 .Where(r => teIdsWithLinks.Contains(r.TestExecutionIssueId))
                 .ToListAsync(ct)
             : [];
@@ -358,6 +363,7 @@ public class TestExecutionRepository(FokusDbContext db)
         var teIds = teLinks.Select(l => l.TestExecutionIssueId).Distinct().ToList();
         var testRuns = teIds.Count > 0
             ? await DbContext.TestRuns
+                .AsNoTracking()
                 .Where(r => teIds.Contains(r.TestExecutionIssueId))
                 .ToListAsync(ct)
             : new List<TestRun>();

@@ -17,6 +17,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const untestedTickets = ref<UntestedTicket[]>([])
   const failingTickets = ref<FailingTicket[]>([])
   const qaLoading = ref(false)
+  const qaMetricsError = ref<string | null>(null)
+  const untestedError = ref<string | null>(null)
+  const failingError = ref<string | null>(null)
 
   async function initialize() {
     initializing.value = true
@@ -69,15 +72,19 @@ export const useDashboardStore = defineStore('dashboard', () => {
     qaMetrics.value = null
     untestedTickets.value = []
     failingTickets.value = []
+    qaMetricsError.value = null
+    untestedError.value = null
+    failingError.value = null
   }
 
   async function fetchQaMetrics() {
     if (selectedSprintId.value === null) return
     qaLoading.value = true
+    qaMetricsError.value = null
     try {
       qaMetrics.value = await getQaMetrics(selectedSprintId.value, selectedSubTeam.value ?? undefined)
-    } catch {
-      // non-fatal — QA section will remain hidden
+    } catch (e) {
+      qaMetricsError.value = e instanceof Error ? e.message : 'Failed to load QA metrics'
     } finally {
       qaLoading.value = false
     }
@@ -85,21 +92,23 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function fetchUntestedTickets() {
     if (selectedSprintId.value === null) return
+    untestedError.value = null
     try {
       const result = await getUntestedTickets(selectedSprintId.value, selectedSubTeam.value ?? undefined)
       untestedTickets.value = result.tickets
-    } catch {
-      // non-fatal
+    } catch (e) {
+      untestedError.value = e instanceof Error ? e.message : 'Failed to load untested tickets'
     }
   }
 
   async function fetchFailingTickets() {
     if (selectedSprintId.value === null) return
+    failingError.value = null
     try {
       const result = await getFailingTickets(selectedSprintId.value, selectedSubTeam.value ?? undefined)
       failingTickets.value = result.tickets
-    } catch {
-      // non-fatal
+    } catch (e) {
+      failingError.value = e instanceof Error ? e.message : 'Failed to load failing tickets'
     }
   }
 
@@ -116,6 +125,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     untestedTickets,
     failingTickets,
     qaLoading,
+    qaMetricsError,
+    untestedError,
+    failingError,
     initialize,
     selectSprint,
     selectSubTeam,

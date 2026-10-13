@@ -56,8 +56,8 @@ Weights and thresholds are configurable in AppSettings. See [Settings](../domain
 **Leaderboard:** Active developers ordered by SP completed desc, then name asc.
 
 **Flags:**
-- Zombie: tickets in 3+ distinct sprints (across all synced sprints)
-- Mid-sprint disruption: tickets added >2 days after sprint start, not removed (hardcoded 2 days, not PlanningWindowDays)
+- Zombie: candidates are the (filtered) tickets of the sparkline-window sprints; a candidate is flagged when it appears in 3+ distinct analytics sprints (Closed + Active, Future excluded) over the whole synced history. `SprintCount` shown and sorted on (desc) is that whole-history count. Source: `SprintRepository.GetZombieSprintCountsAsync(3)` — one SQL projection, ticket ids grouped case-insensitively, removed memberships counted. The Carry-Over page's zombie list (`CarryOverService.GetZombieTicketKeys`) counts closed sprints only, so the two counts can differ by the active sprint.
+- Mid-sprint disruption: tickets added after `sprint start + PlanningWindowDays`, not removed (`AppSettings.PlanningWindowDays`, default 2)
 - Zero-SP developers: active devs who completed 0 SP
 
 **Sparklines:** Window of up to 4 sprints ending at the selected sprint.

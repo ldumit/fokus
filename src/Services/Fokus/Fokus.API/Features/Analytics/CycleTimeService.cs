@@ -120,12 +120,13 @@ public class CycleTimeService
     {
         var (startStage, endStage, orderedStages) = ResolveBoundaries(settings);
         var endIndex = TransitionAttributionChecker.GetStageIndex(endStage, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
         var boundaries = new CycleTimeBoundaries(startStage, endStage);
 
         var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
 
         var ticketResults = ComputeTicketCycleTime(
-            memberships, statusTransitions,
+            memberships, transitionIndex,
             orderedStages, endIndex, startStage, endStage,
             targetSprint.StartDate, targetSprint.EndDate);
 
@@ -152,7 +153,7 @@ public class CycleTimeService
             var priorMemberships = FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds);
             // Status transitions passed in include both target and prior sprint tickets
             var priorResults = ComputeTicketCycleTime(
-                priorMemberships, statusTransitions,
+                priorMemberships, transitionIndex,
                 orderedStages, endIndex, startStage, endStage,
                 priorSprint.StartDate, priorSprint.EndDate);
 
@@ -192,6 +193,7 @@ public class CycleTimeService
     {
         var (startStage, endStage, orderedStages) = ResolveBoundaries(settings);
         var endIndex = TransitionAttributionChecker.GetStageIndex(endStage, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
         var boundaries = new CycleTimeBoundaries(startStage, endStage);
 
         var sortedSprints = sprints.OrderBy(s => s.StartDate).ToList();
@@ -207,7 +209,7 @@ public class CycleTimeService
         {
             var memberships = FilterMemberships(sprint.Memberships, subTeam, excludedDeveloperIds);
             var results = ComputeTicketCycleTime(
-                memberships, statusTransitions,
+                memberships, transitionIndex,
                 orderedStages, endIndex, startStage, endStage,
                 sprint.StartDate, sprint.EndDate);
             perSprintResults.Add((sprint, results));
@@ -307,7 +309,7 @@ public class CycleTimeService
 
     private static List<TicketCycleResult> ComputeTicketCycleTime(
         List<SprintMembership> memberships,
-        List<StatusTransition> allTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int endIndex,
         string startStage,
@@ -321,19 +323,13 @@ public class CycleTimeService
             {
                 if (m.RemovedAt != null) return false;
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, allTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
                 return isCompleted;
             })
             .ToList();
 
         if (completedMemberships.Count == 0)
             return [];
-
-        var ticketIds = completedMemberships.Select(m => m.TicketId).ToHashSet();
-        var transitionsByTicket = allTransitions
-            .Where(t => ticketIds.Contains(t.TicketId))
-            .GroupBy(t => t.TicketId)
-            .ToDictionary(g => g.Key, g => g.OrderBy(t => t.Timestamp).ToList());
 
         // Determine which stages are within boundaries
         var startIdx = orderedStages.IndexOf(startStage);
@@ -344,7 +340,8 @@ public class CycleTimeService
         foreach (var membership in completedMemberships)
         {
             var ticketId = membership.TicketId;
-            if (!transitionsByTicket.TryGetValue(ticketId, out var transitions))
+            var transitions = transitionIndex.ForTicket(ticketId).OrderBy(t => t.Timestamp).ToList();
+            if (transitions.Count == 0)
                 continue;
 
             // BR19: Find earliest qualifying completion transition within sprint window

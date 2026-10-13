@@ -9,6 +9,8 @@ const props = defineProps<{
   qaMetrics: QaMetricsResponse
   untestedTickets: UntestedTicket[]
   failingTickets: FailingTicket[]
+  untestedError: string | null
+  failingError: string | null
   qaLoading: boolean
 }>()
 
@@ -79,6 +81,7 @@ function toggleFailing() {
 
       <div v-if="untestedExpanded" class="mt-2">
         <div v-if="qaLoading" class="text-xs text-text-muted">Loading...</div>
+        <div v-else-if="untestedError" class="text-sm text-status-danger">{{ untestedError }}</div>
         <div v-else-if="untestedTickets.length === 0" class="text-xs text-text-muted">No untested tickets.</div>
         <div v-else class="flex flex-col gap-1.5">
           <div
@@ -114,6 +117,7 @@ function toggleFailing() {
 
       <div v-if="failingExpanded" class="mt-2">
         <div v-if="qaLoading" class="text-xs text-text-muted">Loading...</div>
+        <div v-else-if="failingError" class="text-sm text-status-danger">{{ failingError }}</div>
         <div v-else-if="failingTickets.length === 0" class="text-xs text-text-muted">No failing tickets.</div>
         <div v-else class="flex flex-col gap-1.5">
           <div

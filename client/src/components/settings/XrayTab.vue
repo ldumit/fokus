@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { testXrayConnection, syncXrayData } from '../../api/settings'
 import type { TestConnectionResponse, XraySyncResponse } from '../../types'
 import {
@@ -28,6 +28,11 @@ const xraySyncResult = ref<XraySyncResponse | null>(null)
 const xraySyncError = ref('')
 const selectedXraySprints = ref<number[]>([])
 
+const secretPlaceholder = computed(() =>
+  store.settings.xrayClientSecret
+    ? 'Secret configured (leave blank to keep it)'
+    : 'Enter Xray Client Secret')
+
 async function saveXrayPanel() {
   xraySaved.value = false
   xrayError.value = ''
@@ -35,6 +40,7 @@ async function saveXrayPanel() {
   try {
     await store.saveXraySettingsAction(form.xrayEnabled, form.xrayClientId ?? '', form.xrayClientSecret || null)
     if (!store.error) {
+      form.xrayClientSecret = null
       xraySaved.value = true
       setTimeout(() => xraySaved.value = false, 3000)
     } else {
@@ -128,7 +134,7 @@ async function runXraySync() {
           <input
             v-model="form.xrayClientSecret"
             type="password"
-            placeholder="Enter Xray Client Secret (leave blank to keep existing)"
+            :placeholder="secretPlaceholder"
             :disabled="isReadOnly"
             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />

@@ -155,6 +155,8 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
       <div class="text-text-muted text-sm">Loading...</div>
     </div>
 
+    <div v-else-if="store.error && store.sprints.length === 0" class="text-sm text-status-danger">{{ store.error }}</div>
+
     <!-- No closed sprints -->
     <template v-else-if="store.sprints.length === 0">
       <EmptyState
@@ -170,6 +172,8 @@ function onCapacityChange(accountId: string, sprintId: number, value: number) {
     </template>
 
     <template v-else>
+      <div v-if="store.error" class="text-sm text-status-danger mb-4">{{ store.error }}</div>
+
       <!-- Tab bar -->
       <div class="flex gap-1 border-b border-border-default mb-6">
         <button

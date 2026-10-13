@@ -25,6 +25,7 @@ ticketsCarriedOver = count where isStarted AND !isCompleted AND !Removed AND !Is
 
 ## Rolling Average (3-sprint, capacity-aware, transition-based)
 
+- Window: every closed sprint before the earliest target sprint, plus the targets (`DeveloperThroughputService.SelectRollingWindowSprintIds`; all closed sprints when the target is active). Loading only a fixed number of prior sprints would return null for a developer with a 0%-capacity sprint in that range.
 - Walks backward from current sprint (inclusive)
 - Skips sprints where developer has 0% effective capacity
 - Collects up to 3 qualifying sprints

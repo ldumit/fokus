@@ -12,8 +12,15 @@ public class GetQaWorkloadEndpoint(
 {
     public override async Task HandleAsync(GetQaWorkloadRequest req, CancellationToken ct)
     {
-        // 1. Load settings
+        // 1. Load settings and analytics sprints
         var settings = await appSettingsRepository.GetAsync(ct);
+        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+
+        // An explicit sprint id must exist (active or closed), even when Xray is disabled or there are no closed sprints
+        var requestedSprint = req.SprintId.HasValue
+            ? allSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
 
         // 2. If Xray disabled, return hasQaData = false
         if (!settings.XrayEnabled)
@@ -22,8 +29,7 @@ public class GetQaWorkloadEndpoint(
             return;
         }
 
-        // 3. Load analytics sprints — workload alert baseline and sparkline use closed sprints only
-        var allSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
+        // 3. Workload alert baseline and sparkline use closed sprints only
         var ascending = allSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
         if (ascending.Count == 0)
@@ -39,9 +45,9 @@ public class GetQaWorkloadEndpoint(
         var allDevelopers = await developerRepository.GetAllAsync(ct);
 
         // 6. Determine mode
-        if (req.SprintId.HasValue)
+        if (requestedSprint is not null)
         {
-            await HandleSingleSprintAsync(req, allSprints, ascending, allDevelopers, settings, subTeam, ct);
+            await HandleSingleSprintAsync(requestedSprint, ascending, allDevelopers, settings, subTeam, ct);
         }
         else
         {
@@ -102,23 +108,13 @@ public class GetQaWorkloadEndpoint(
     }
 
     private async Task HandleSingleSprintAsync(
-        GetQaWorkloadRequest req,
-        List<Sprint> allSprints,
+        Sprint targetSprintInfo,
         List<Sprint> ascending,
         List<Developer> allDevelopers,
         AppSettings settings,
         string? subTeam,
         CancellationToken ct)
     {
-        // Search allSprints so active sprints are accepted, not just closed ones
-        var targetSprintInfo = allSprints.FirstOrDefault(s => s.Id == req.SprintId!.Value);
-        if (targetSprintInfo is null)
-        {
-            AddError(r => r.SprintId, "Sprint not found.");
-            await SendErrorsAsync(400, ct);
-            return;
-        }
-
         // Load target sprint with memberships
         var targetLoaded = await sprintRepository.GetSprintsWithMembershipsAsync([targetSprintInfo.Id], ct);
         var targetSprint = targetLoaded[0];

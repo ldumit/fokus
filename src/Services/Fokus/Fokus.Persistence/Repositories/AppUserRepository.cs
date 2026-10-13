@@ -6,13 +6,13 @@ public class AppUserRepository(FokusDbContext db)
         await db.AppUsers.SingleOrDefaultAsync(u => u.GoogleId == googleId, ct);
 
     public async Task<AppUser?> GetByEmailAsync(string email, CancellationToken ct = default) =>
-        await db.AppUsers.SingleOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
+        await db.AppUsers.AsNoTracking().SingleOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), ct);
 
     public async Task<AppUser?> GetByIdAsync(int id, CancellationToken ct = default) =>
         await db.AppUsers.SingleOrDefaultAsync(u => u.Id == id, ct);
 
     public async Task<List<AppUser>> GetAllAsync(CancellationToken ct = default) =>
-        await db.AppUsers.OrderBy(u => u.DisplayName).ToListAsync(ct);
+        await db.AppUsers.AsNoTracking().OrderBy(u => u.DisplayName).ToListAsync(ct);
 
     public async Task<int> CountAsync(CancellationToken ct = default) =>
         await db.AppUsers.CountAsync(ct);

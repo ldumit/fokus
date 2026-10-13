@@ -283,6 +283,10 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 **F36:** Prepare Fokus for a free public release to Udemy students: scrub private material, mine code quality and the architecture map, run a cleanup campaign, refresh product docs and conventions, and publish a rewritten feature-by-feature history in a new public repo. Private-only — this row and the F36 folder are left out of the public copy.
 
+| F37 | Code Quality Cleanup | Done | — (plan-only definition) | [plan](specs/F37-CodeQualityCleanup/delivery/plan.md) |
+
+**F37:** The F36 lean campaign (Phase 3): fix the owner-triaged findings from the F36 code-quality mining (`docs/specs/F36-PublicReleaseCleanup/delivery/mining/consolidated.md` § Recommended lean campaign) — the Xray-secret overwrite and Re-detect guard, the burnup bug area, the zombie-flag window, the throughput rolling window, transition-attribution rescans, not-found status codes, hidden UI errors, read-only query tracking — plus TD-1 and TD-3. Private-only record, like F36.
+
 ---
 
 ### v2 Cross-Cutting Concerns
@@ -307,6 +311,7 @@ All issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gap
 | GAP-4 | Sprint Cards Total-Scope vs Burnup Feature-Only | Gap | Medium | Open | F21 | [GAP-4](specs/GAP-4-sprint-cards-scope-mismatch/definition/spec.md) |
 | BUG-1 | Bug Count = 0 on Sprint 26 | Bug | High | Open | F10 | [BUG-1](specs/BUG-1-bug-count-zero/definition/bug.md) |
 | BUG-2 | Bar Chart vs Burnup Completed SP Disagree (63 SP gap) | Bug | High | Open | F10/F21 | [BUG-2](specs/BUG-2-barchart-burnup-completed-sp-mismatch/definition/bug.md) |
+| GAP-5 | Active sprint as single target on Carry-Over, Bug Ratio and Leaderboard computes over nothing (memberships, transitions and capacities not loaded; pre-dates F37) | Gap | Medium | Open | F37 (owner ruling Q1: leave for later) | — |
 
 ---
 
@@ -314,9 +319,10 @@ All issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gap
 
 | ID | Item | Priority | Notes |
 |----|------|----------|-------|
-| TD-1 | Cookie `SecurePolicy.Always` for production | High | Currently `SameAsRequest` — cookies not marked Secure over HTTP. Must be `Always` before Azure deployment behind HTTPS. |
-| TD-3 | Front-end package advisories (carry-over from F36 Phase 1) | Medium | `npm audit` in `client/` reports 6 high-severity advisories (`@vue/server-renderer`, `vue`, `vite`, `postcss`, `nanoid`, `source-map-js`); report kept in `docs/specs/F36-PublicReleaseCleanup/delivery/npm-audit.json`. Owner triage at F36 Phase 2 (spec O2). |
+| TD-1 | Cookie `SecurePolicy.Always` for production | High | **Done (F37 Step 9):** `Always` outside Development, `SameAsRequest` in Development. Currently `SameAsRequest` — cookies not marked Secure over HTTP. Must be `Always` before Azure deployment behind HTTPS. |
+| TD-3 | Front-end package advisories (carry-over from F36 Phase 1) | Medium | **Done (F37 Step 10):** `npm audit fix` (no `--force`) → 0 vulnerabilities. `npm audit` in `client/` reports 6 high-severity advisories (`@vue/server-renderer`, `vue`, `vite`, `postcss`, `nanoid`, `source-map-js`); report kept in `docs/specs/F36-PublicReleaseCleanup/delivery/npm-audit.json`. Owner triage at F36 Phase 2 (spec O2). |
 | TD-2 | Google OAuth options pattern | Medium | `AuthConfiguration` reads `Google:ClientId`/`ClientSecret` via `configuration[]` + inline `Bind`. Should use a typed `GoogleAuthOptions` class with `ValidateDataAnnotations().ValidateOnStart()` like `JiraOptions`. |
+| TD-4 | Database test harness + `GetZombieSprintCountsAsync` test (follow-up from F37) | Medium | `Fokus.Tests` has no database harness, so the F37 zombie-count query (`SprintRepository.GetZombieSprintCountsAsync`, SQL grouping on `TicketId.ToUpper()`) has no kept test; a translation failure would 500 the Dashboard summary. Add an in-memory SQLite harness and a test for the query. |
 
 ---
 

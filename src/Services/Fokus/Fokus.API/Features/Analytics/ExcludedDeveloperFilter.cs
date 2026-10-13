@@ -10,7 +10,7 @@ public static class ExcludedDeveloperFilter
         Sprint sprint,
         List<Developer> developers,
         List<DeveloperSprintCapacity> capacityRecords,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         AppSettings settings)
     {
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
@@ -38,7 +38,7 @@ public static class ExcludedDeveloperFilter
                 if (m.Ticket?.AssigneeId != developer.Id) return false;
                 if (m.RemovedAt != null) return false;
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, statusTransitions, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
                 return isCompleted;
             });
 

@@ -38,7 +38,11 @@ Only tickets that qualify as Added SP (AddedAt > planningCutoff AND cycle-entere
 
 - **Scope line (orange):** Cumulative feature SP that have transitioned to CycleTimeStartStage (or beyond) within [sprintStart, current day]. Starts near zero and grows as tickets enter the pipeline.
 - **Completed line (green):** Cumulative feature SP that have transitioned to CycleTimeEndStage (or beyond) within [sprintStart, current day].
-- **Bug area (red):** Unchanged — tracks remaining bug work (starts at bug SP present at sprint start, grows with bug additions, shrinks with bug completions and removals).
+- **Bug area (red):** Tracks remaining bug work. Each bug is a span `[entry day, exit day)` built once (`ScopeChangeService.BuildBugAreaSpans`); a day's `BugSp` / `BugTickets` = eligible bugs with `entry <= day < exit`, so the area never goes negative and each bug leaves at most once.
+  - **Eligible:** IssueType "Bug", effective SP (`GetEffectiveSp(defaultSpPerBug)`), final status not in `ExcludedFromScopeStatuses`, and not removed at or before sprint start (`RemovedAt <= StartDate` → never enters). Removed bugs are otherwise eligible (they enter, then exit on removal).
+  - **Entry day:** sprint day 1 when `AddedAt <= StartDate`, else the `AddedAt` day.
+  - **Exit day:** the later of the entry day and the earlier of {first in-sprint transition to CycleTimeEndStage or beyond, removal day}. A bug completed before it was added enters and exits on its entry day (adds 0).
+  - Feature series (scope, completed, committed total) are unaffected; their lookups still skip removed memberships.
 - Phase shading: days 1-2 = "planning", day 3+ = "execution".
 - `TotalScopeSp` semantic changed from "plan-based scope" to "cumulative started tickets SP."
 

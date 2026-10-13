@@ -9,7 +9,7 @@ using Xray.GraphQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddFokusServices(builder.Configuration);
+builder.Services.AddFokusServices(builder.Configuration, builder.Environment);
 builder.Services.AddFokusPersistence(builder.Configuration);
 
 var app = builder.Build();

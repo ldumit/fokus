@@ -45,6 +45,9 @@ const excludedStatusOpen = ref(false)
 const excludedSaving = ref(false)
 const excludedSaved = ref(false)
 const excludedError = ref('')
+const excludedLoading = ref(true)
+const excludedLoadError = ref('')
+const excludedLocked = computed(() => isReadOnly.value || excludedLoading.value || excludedLoadError.value !== '')
 
 const availableStatuses = computed(() => {
   const notAdded = statuses.value.filter(s => !form.doneStatuses.includes(s.name))
@@ -60,8 +63,10 @@ const availableExcludedStatuses = computed(() => {
 onMounted(async () => {
   try {
     excludedStatuses.value = await getExcludedStatuses()
-  } catch {
-    // silently ignore — statuses will be empty
+  } catch (e: any) {
+    excludedLoadError.value = e.message || 'Failed to load excluded statuses.'
+  } finally {
+    excludedLoading.value = false
   }
 })
 
@@ -320,6 +325,7 @@ async function saveExcluded() {
   <section class="bg-gray-900 rounded-lg p-6 space-y-4">
     <h2 class="text-lg font-semibold text-gray-200">Excluded From Scope Statuses</h2>
     <p class="text-sm text-gray-400">Tickets in these statuses are excluded from committed scope when computing metrics. Useful for parked or blocked statuses that shouldn't count as active work.</p>
+    <div v-if="excludedLoadError" class="text-sm text-status-danger">{{ excludedLoadError }}</div>
     <div class="flex flex-wrap gap-2">
       <span
         v-for="(status, i) in excludedStatuses"
@@ -327,7 +333,7 @@ async function saveExcluded() {
         class="inline-flex items-center gap-1 bg-gray-800 text-gray-200 px-3 py-1 rounded-full text-sm"
       >
         {{ status }}
-        <button @click="removeExcludedStatus(i)" :disabled="isReadOnly" class="text-gray-500 hover:text-red-400 ml-1 disabled:opacity-50 disabled:cursor-not-allowed">&times;</button>
+        <button @click="removeExcludedStatus(i)" :disabled="excludedLocked" class="text-gray-500 hover:text-red-400 ml-1 disabled:opacity-50 disabled:cursor-not-allowed">&times;</button>
       </span>
     </div>
     <!-- Dropdown mode -->
@@ -338,7 +344,7 @@ async function saveExcluded() {
           <button
             type="button"
             @click="excludedStatusOpen = !excludedStatusOpen"
-            :disabled="isReadOnly"
+            :disabled="excludedLocked"
             class="w-full flex items-center justify-between bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             :class="excludedStatusOpen ? 'border-blue-500' : ''"
           >
@@ -366,7 +372,7 @@ async function saveExcluded() {
         </div>
         <button
           @click="addExcludedStatus"
-          :disabled="!selectedExcludedStatus.length || isReadOnly"
+          :disabled="!selectedExcludedStatus.length || excludedLocked"
           class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded"
         >Add</button>
       </div>
@@ -389,7 +395,7 @@ async function saveExcluded() {
     <div class="flex items-center gap-4">
       <button
         @click="saveExcluded"
-        :disabled="excludedSaving || isReadOnly"
+        :disabled="excludedSaving || excludedLocked"
         class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
       >
         {{ excludedSaving ? 'Saving...' : 'Save Excluded Statuses' }}

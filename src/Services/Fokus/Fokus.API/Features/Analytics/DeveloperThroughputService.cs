@@ -58,6 +58,7 @@ public class DeveloperThroughputService
 
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // C2: sub-team filtering (active developers only for display)
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
@@ -101,13 +102,13 @@ public class DeveloperThroughputService
                 var capacity = GetCapacity(capacityLookup, developer.Id, sprint.Id, allDevelopers);
 
                 var (spAssigned, spCompleted, ticketsDone, ticketsCarriedOver) = ComputeMetrics(
-                    memberships, statusTransitions, sprint.StartDate, sprint.EndDate,
+                    memberships, transitionIndex, sprint.StartDate, sprint.EndDate,
                     orderedStages, startIndex, endIndex, defaultSpPerBug);
 
                 var completionPercent = spAssigned > 0 ? spCompleted / spAssigned * 100 : 0;
 
                 var rollingAverage = ComputeRollingAverage(
-                    developer.Id, sprint.Id, sortedAllSprints, capacityLookup, statusTransitions,
+                    developer.Id, sprint.Id, sortedAllSprints, capacityLookup, transitionIndex,
                     settings, subTeam, allDevelopers, defaultSpPerBug);
 
                 // Deltas (single-sprint only)
@@ -132,7 +133,7 @@ public class DeveloperThroughputService
                     var priorMemberships = GetDeveloperMemberships(priorSprint, developer.Id, subTeam);
 
                     var (priorSpAssigned, priorSpCompleted, priorTicketsDone, priorTicketsCarriedOver) = ComputeMetrics(
-                        priorMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                        priorMemberships, transitionIndex, priorSprint.StartDate, priorSprint.EndDate,
                         orderedStages, startIndex, endIndex, defaultSpPerBug);
 
                     var priorCompletionPercent = priorSpAssigned > 0 ? priorSpCompleted / priorSpAssigned * 100 : 0;
@@ -188,11 +189,23 @@ public class DeveloperThroughputService
         return new DeveloperThroughputResponse(sprintSummaryItems, developerEntries);
     }
 
+    public static IReadOnlyList<int> SelectRollingWindowSprintIds(
+        IReadOnlyList<Sprint> ascendingClosedSprints,
+        IReadOnlyList<int> targetSprintIds)
+    {
+        var earliestTargetIndex = ascendingClosedSprints.ToList().FindIndex(s => s.Id == targetSprintIds[0]);
+        var rollingWindowBase = earliestTargetIndex >= 0 ? earliestTargetIndex : ascendingClosedSprints.Count;
+        return ascendingClosedSprints
+            .Take(rollingWindowBase)
+            .Select(s => s.Id)
+            .ToList();
+    }
+
     // --- Core metrics computation (transition-based, feature-only) ---
 
     private static (decimal SpAssigned, decimal SpCompleted, int TicketsDone, int TicketsCarriedOver) ComputeMetrics(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
@@ -208,7 +221,7 @@ public class DeveloperThroughputService
         foreach (var m in memberships.Where(m => m.RemovedAt == null && !IsBug(m)))
         {
             var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                m.TicketId, statusTransitions, sprintStart, sprintEnd, orderedStages, startIndex);
+                m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, startIndex);
 
             if (!isStarted)
                 continue;
@@ -217,7 +230,7 @@ public class DeveloperThroughputService
             spAssigned += sp;
 
             var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                m.TicketId, statusTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
 
             if (isCompleted)
             {
@@ -278,7 +291,7 @@ public class DeveloperThroughputService
         int currentSprintId,
         List<Sprint> sortedAllSprints,
         Dictionary<string, Dictionary<int, int>> capacityLookup,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         AppSettings settings,
         string? subTeam,
         List<Developer> developers,
@@ -300,7 +313,7 @@ public class DeveloperThroughputService
 
             var memberships = GetDeveloperMemberships(sprint, developerId, subTeam);
             var (_, spCompleted, _, _) = ComputeMetrics(
-                memberships, statusTransitions, sprint.StartDate, sprint.EndDate,
+                memberships, transitionIndex, sprint.StartDate, sprint.EndDate,
                 orderedStages, startIndex, endIndex, defaultSpPerBug);
 
             qualifyingSpCompleted.Add(spCompleted);

@@ -15,9 +15,9 @@ namespace Fokus.API;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddFokusServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFokusServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        services.AddFokusAuth(configuration);
+        services.AddFokusAuth(configuration, environment);
 
         services.AddFastEndpoints();
         services.SwaggerDocument();

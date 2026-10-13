@@ -81,6 +81,7 @@ public class DeveloperDetailService
     {
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
         var defaultSpPerBug = settings.DefaultSpPerBug;
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
 
@@ -107,7 +108,7 @@ public class DeveloperDetailService
 
             // Completed memberships (transition-based, excludedStatuses filter)
             var completed = GetTransitionCompletedMemberships(
-                memberships, statusTransitions, sprint.StartDate, sprint.EndDate,
+                memberships, transitionIndex, sprint.StartDate, sprint.EndDate,
                 orderedStages, endIndex, excludedStatuses);
 
             var featureSp = completed.Where(m => !IsBug(m)).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
@@ -132,7 +133,7 @@ public class DeveloperDetailService
 
             // Rolling average: 3-sprint window over all-types SP, computed over full qualifying list
             // so the window is stable regardless of how many sprints TakeLast will return.
-            decimal? rollingAverage = ComputeRollingAverage(accountId, i, qualifyingSprints, capacityLookup, statusTransitions, settings, devList, defaultSpPerBug);
+            decimal? rollingAverage = ComputeRollingAverage(accountId, i, qualifyingSprints, capacityLookup, transitionIndex, settings, devList, defaultSpPerBug);
 
             allSprintTrends.Add(new SprintTrendEntry(
                 sprint.Id,
@@ -171,7 +172,7 @@ public class DeveloperDetailService
         {
             currentSprintDetail = ComputeCurrentSprintDetail(
                 accountId, developer, activeSprint, capacityRecords, settings,
-                statusTransitions, orderedStages, startIndex, endIndex, defaultSpPerBug);
+                transitionIndex, orderedStages, startIndex, endIndex, defaultSpPerBug);
         }
 
         // --- Developer info ---
@@ -200,7 +201,7 @@ public class DeveloperDetailService
         Sprint activeSprint,
         List<DeveloperSprintCapacity> capacityRecords,
         AppSettings settings,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int startIndex,
         int endIndex,
@@ -238,7 +239,7 @@ public class DeveloperDetailService
         foreach (var m in memberships)
         {
             var (isCompleted, completedAt) = TransitionAttributionChecker.IsCompletedInSprint(
-                m.TicketId, statusTransitions,
+                m.TicketId, transitionIndex,
                 activeSprint.StartDate, activeSprint.EndDate,
                 orderedStages, endIndex);
 
@@ -294,7 +295,7 @@ public class DeveloperDetailService
 
         // Ticket state derivation (BR10)
         var tickets = BuildTicketDetails(
-            memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex);
+            memberships, transitionIndex, activeSprint, orderedStages, startIndex, endIndex);
 
         var sprintInfo = new DeveloperProgressSprintInfo(
             activeSprint.Id, activeSprint.Name, activeSprint.StartDate, activeSprint.EndDate);
@@ -319,7 +320,7 @@ public class DeveloperDetailService
 
     private static List<TicketDetailEntry> BuildTicketDetails(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         Sprint sprint,
         List<string> orderedStages,
         int startIndex,
@@ -331,12 +332,12 @@ public class DeveloperDetailService
         foreach (var m in memberships)
         {
             var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                m.TicketId, statusTransitions,
+                m.TicketId, transitionIndex,
                 sprint.StartDate, sprint.EndDate,
                 orderedStages, startIndex);
 
             var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                m.TicketId, statusTransitions,
+                m.TicketId, transitionIndex,
                 sprint.StartDate, sprint.EndDate,
                 orderedStages, endIndex);
 
@@ -344,8 +345,7 @@ public class DeveloperDetailService
             bool isStalled = false;
             int daysInCurrentStatus;
 
-            var ticketTransitions = statusTransitions
-                .Where(t => t.TicketId == m.TicketId)
+            var ticketTransitions = transitionIndex.ForTicket(m.TicketId)
                 .OrderByDescending(t => t.Timestamp)
                 .ToList();
 
@@ -415,7 +415,7 @@ public class DeveloperDetailService
         int currentIndexInDisplayed,
         List<Sprint> displayedSprints,
         Dictionary<string, Dictionary<int, int>> capacityLookup,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         AppSettings settings,
         List<Developer> developers,
         int defaultSpPerBug)
@@ -434,7 +434,7 @@ public class DeveloperDetailService
 
             var memberships = GetDeveloperMemberships(sprint, accountId);
             var completed = GetTransitionCompletedMemberships(
-                memberships, statusTransitions, sprint.StartDate, sprint.EndDate,
+                memberships, transitionIndex, sprint.StartDate, sprint.EndDate,
                 orderedStages, endIndex, excludedStatuses);
 
             var totalSp = completed.Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);
@@ -458,25 +458,20 @@ public class DeveloperDetailService
 
     private static List<SprintMembership> GetTransitionCompletedMemberships(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
         int endIndex,
         List<string> excludedStatuses)
     {
-        var transitionsByTicket = statusTransitions
-            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
-
         return memberships
             .Where(m =>
             {
                 if (m.RemovedAt != null) return false;
                 if (excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)) return false;
-                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
                 return isCompleted;
             })
             .ToList();

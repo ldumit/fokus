@@ -27,6 +27,8 @@ const boundariesLoading = ref(false)
 const boundariesSaving = ref(false)
 const boundariesSaved = ref(false)
 const boundariesError = ref('')
+const boundariesLoadError = ref('')
+const boundariesLocked = computed(() => isReadOnly.value || boundariesLoadError.value !== '')
 
 const reDetectDisabled = computed(() => {
   if (store.detecting) return true
@@ -42,6 +44,8 @@ onMounted(async () => {
     boundaryStartStage.value = result.startStage
     boundaryEndStage.value = result.endStage
     boundaryAvailableStages.value = result.availableStages
+  } catch (e: any) {
+    boundariesLoadError.value = e.message || 'Failed to load cycle time boundaries.'
   } finally {
     boundariesLoading.value = false
   }
@@ -86,7 +90,7 @@ async function saveBoundaries() {
 
 async function reDetect() {
   await store.runDetectWorkflowStages()
-  if (store.detectionResult) {
+  if (store.detectionResult?.stages.length) {
     form.workflowStages = [...store.detectionResult.stages]
   }
 }
@@ -225,6 +229,7 @@ function moveStage(index: number, direction: -1 | 1) {
     <div v-if="boundariesLoading" class="text-gray-400 text-sm">Loading boundaries...</div>
 
     <template v-else>
+      <div v-if="boundariesLoadError" class="text-sm text-status-danger">{{ boundariesLoadError }}</div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm text-gray-300 mb-1 cursor-help" title="Which workflow stage starts the cycle time clock. Default: first active work stage.">
@@ -233,7 +238,7 @@ function moveStage(index: number, direction: -1 | 1) {
           <select
             v-model="boundaryStartStage"
             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="boundaryAvailableStages.length === 0 || isReadOnly"
+            :disabled="boundaryAvailableStages.length === 0 || boundariesLocked"
           >
             <option v-if="boundaryAvailableStages.length === 0" value="">No stages configured</option>
             <option
@@ -250,7 +255,7 @@ function moveStage(index: number, direction: -1 | 1) {
           <select
             v-model="boundaryEndStage"
             class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="boundaryAvailableStages.length === 0 || isReadOnly"
+            :disabled="boundaryAvailableStages.length === 0 || boundariesLocked"
           >
             <option v-if="boundaryAvailableStages.length === 0" value="">No stages configured</option>
             <option
@@ -265,7 +270,7 @@ function moveStage(index: number, direction: -1 | 1) {
       <div class="flex items-center gap-4">
         <button
           @click="saveBoundaries"
-          :disabled="boundariesSaving || !boundaryStartStage || !boundaryEndStage || isReadOnly"
+          :disabled="boundariesSaving || !boundaryStartStage || !boundaryEndStage || boundariesLocked"
           class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium text-sm"
         >
           {{ boundariesSaving ? 'Saving...' : 'Save Boundaries' }}

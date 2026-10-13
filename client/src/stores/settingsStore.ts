@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import type { AppSettings, DetectionResult, HealthThresholdConfig, HealthWeightConfig, QaHealthThresholdConfig, QualitySubScoreWeightConfig } from '../types'
 import { getSettings, saveBoard, saveDoneStatuses, saveWorkflowStages, saveHealthConfig, saveBugRatioAlerts, saveSyncConfig, detectWorkflowStages, saveXraySettings, saveAnalyticsTargets } from '../api/settings'
 
+const MASKED_SECRET = '****'
+
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<AppSettings>({
     boardId: null,
@@ -48,17 +50,18 @@ export const useSettingsStore = defineStore('settings', () => {
   const loading = ref(false)
   const saving = ref(false)
   const error = ref<string | null>(null)
+  const loadError = ref<string | null>(null)
 
   const detectionResult = ref<DetectionResult | null>(null)
   const detecting = ref(false)
 
   async function fetchSettings() {
     loading.value = true
-    error.value = null
     try {
       settings.value = await getSettings()
+      loadError.value = null
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load settings'
+      loadError.value = e instanceof Error ? e.message : 'Failed to load settings'
     } finally {
       loading.value = false
     }
@@ -171,6 +174,7 @@ export const useSettingsStore = defineStore('settings', () => {
   async function runDetectWorkflowStages() {
     detecting.value = true
     error.value = null
+    detectionResult.value = null
     try {
       detectionResult.value = await detectWorkflowStages()
     } catch (e) {
@@ -186,7 +190,12 @@ export const useSettingsStore = defineStore('settings', () => {
     error.value = null
     try {
       await saveXraySettings(xrayEnabled, xrayClientId, xrayClientSecret)
-      settings.value = { ...settings.value, xrayEnabled, xrayClientId: xrayClientId || null }
+      settings.value = {
+        ...settings.value,
+        xrayEnabled,
+        xrayClientId: xrayClientId || null,
+        xrayClientSecret: xrayClientSecret ? MASKED_SECRET : settings.value.xrayClientSecret,
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to save Xray settings'
     } finally {
@@ -219,6 +228,7 @@ export const useSettingsStore = defineStore('settings', () => {
     loading,
     saving,
     error,
+    loadError,
     detectionResult,
     detecting,
     fetchSettings,

@@ -9,7 +9,7 @@ public class DeveloperRepository(FokusDbContext db)
         await Entity.SingleOrDefaultAsync(d => d.Id == id, ct);
 
     public async Task<List<Developer>> GetAllAsync(CancellationToken ct = default) =>
-        await Entity.OrderBy(d => d.DisplayName).ToListAsync(ct);
+        await Entity.AsNoTracking().OrderBy(d => d.DisplayName).ToListAsync(ct);
 
     public async Task<List<string>> GetDistinctSubTeamsAsync(CancellationToken ct = default) =>
         await Entity
@@ -21,6 +21,7 @@ public class DeveloperRepository(FokusDbContext db)
 
     public async Task<List<Developer>> GetActiveDevelopersAsync(CancellationToken ct = default) =>
         await Entity
+            .AsNoTracking()
             .Where(d => d.IsActive)
             .OrderBy(d => d.DisplayName)
             .ToListAsync(ct);
@@ -43,11 +44,13 @@ public class DeveloperRepository(FokusDbContext db)
 
     public async Task<DeveloperSprintCapacity?> GetCapacityAsync(string accountId, int sprintId, CancellationToken ct = default) =>
         await db.DeveloperSprintCapacities
+            .AsNoTracking()
             .SingleOrDefaultAsync(c => c.DeveloperAccountId == accountId && c.SprintId == sprintId, ct);
 
     public async Task<List<DeveloperSprintCapacity>> GetCapacitiesForDeveloperAsync(string accountId, int? sprintId, CancellationToken ct = default)
     {
         var query = db.DeveloperSprintCapacities
+            .AsNoTracking()
             .Where(c => c.DeveloperAccountId == accountId);
 
         if (sprintId.HasValue)
@@ -78,6 +81,7 @@ public class DeveloperRepository(FokusDbContext db)
 
     public async Task<List<DeveloperSprintCapacity>> GetCapacitiesForSprintsAsync(List<int> sprintIds, CancellationToken ct = default) =>
         await db.DeveloperSprintCapacities
+            .AsNoTracking()
             .Where(c => sprintIds.Contains(c.SprintId))
             .ToListAsync(ct);
 

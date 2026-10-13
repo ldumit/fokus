@@ -39,10 +39,11 @@ public class GetDeveloperProgressEndpoint(
         var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync([activeSprint.Id], ct);
         var settings = await appSettingsRepository.GetAsync(ct);
         var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync([activeSprint.Id], ct);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // 6. Compute excluded developer IDs
         var excludedDeveloperIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-            sprintWithMemberships, allDevelopers, capacityRecords, statusTransitions, settings);
+            sprintWithMemberships, allDevelopers, capacityRecords, transitionIndex, settings);
 
         // 7. Normalize sub-team
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;

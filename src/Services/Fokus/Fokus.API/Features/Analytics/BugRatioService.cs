@@ -130,6 +130,7 @@ public class BugRatioService
     {
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var defaultSpPerBug = settings.DefaultSpPerBug;
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
@@ -146,7 +147,7 @@ public class BugRatioService
         {
             var memberships = FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds);
             var (bugSp, nonBugSp) = ComputeCompletedBugNonBugSp(
-                memberships, statusTransitions, s.StartDate, s.EndDate,
+                memberships, transitionIndex, s.StartDate, s.EndDate,
                 orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
             var completedSp = bugSp + nonBugSp;
             var ratioPercent = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
@@ -175,7 +176,7 @@ public class BugRatioService
         var allCompletedMemberships = sortedTarget
             .SelectMany(s => GetTransitionCompletedMemberships(
                 FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds),
-                statusTransitions, s.StartDate, s.EndDate,
+                transitionIndex, s.StartDate, s.EndDate,
                 orderedStages, endIndex, excludedStatuses))
             .ToList();
         var issueTypeBreakdown = BuildIssueTypeBreakdown(allCompletedMemberships, defaultSpPerBug);
@@ -187,12 +188,12 @@ public class BugRatioService
             {
                 var memberships = GetDeveloperMemberships(s, dev.Id, subTeam);
                 var (bugSp, nonBugSp) = ComputeCompletedBugNonBugSp(
-                    memberships, statusTransitions, s.StartDate, s.EndDate,
+                    memberships, transitionIndex, s.StartDate, s.EndDate,
                     orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
                 var completedSp = bugSp + nonBugSp;
                 var ratio = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
                 var completed = GetTransitionCompletedMemberships(
-                    memberships, statusTransitions, s.StartDate, s.EndDate,
+                    memberships, transitionIndex, s.StartDate, s.EndDate,
                     orderedStages, endIndex, excludedStatuses);
                 var bugCount = completed.Count(IsBug);
                 var nonBugCount = completed.Count(m => !IsBug(m));
@@ -214,7 +215,7 @@ public class BugRatioService
             var devNonBugCount = sprintBreakdowns.Sum(b => b.NonBugTicketCount);
 
             var alert = EvaluateAlert(
-                dev.Id, allClosedSprints, statusTransitions, orderedStages, endIndex,
+                dev.Id, allClosedSprints, transitionIndex, orderedStages, endIndex,
                 excludedStatuses, settings.BugRatioAlertThreshold,
                 settings.BugRatioConsecutiveSprintCount, subTeam, defaultSpPerBug);
 
@@ -245,6 +246,7 @@ public class BugRatioService
     {
         var excludedStatuses = settings.ExcludedFromScopeStatuses;
         var defaultSpPerBug = settings.DefaultSpPerBug;
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
         var filteredDevelopers = FilterDevelopers(activeDevelopers, subTeam);
 
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
@@ -256,7 +258,7 @@ public class BugRatioService
         // Team metrics for current sprint
         var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var (bugSp, nonBugSp) = ComputeCompletedBugNonBugSp(
-            memberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+            memberships, transitionIndex, targetSprint.StartDate, targetSprint.EndDate,
             orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
         var completedSp = bugSp + nonBugSp;
         var ratio = completedSp > 0 ? bugSp / completedSp * 100 : 0m;
@@ -270,7 +272,7 @@ public class BugRatioService
         {
             var priorMemberships = FilterMemberships(priorSprint.Memberships, subTeam, excludedDeveloperIds);
             var (pBugSp, pNonBugSp) = ComputeCompletedBugNonBugSp(
-                priorMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                priorMemberships, transitionIndex, priorSprint.StartDate, priorSprint.EndDate,
                 orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
             priorBugSp = pBugSp;
             priorNonBugSp = pNonBugSp;
@@ -288,7 +290,7 @@ public class BugRatioService
 
         // Issue type breakdown for current sprint completed tickets (BR18)
         var completed = GetTransitionCompletedMemberships(
-            memberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+            memberships, transitionIndex, targetSprint.StartDate, targetSprint.EndDate,
             orderedStages, endIndex, excludedStatuses);
         var issueTypeBreakdown = BuildIssueTypeBreakdown(completed, defaultSpPerBug);
 
@@ -297,12 +299,12 @@ public class BugRatioService
         {
             var devMemberships = GetDeveloperMemberships(targetSprint, dev.Id, subTeam);
             var (devBugSp, devNonBugSp) = ComputeCompletedBugNonBugSp(
-                devMemberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+                devMemberships, transitionIndex, targetSprint.StartDate, targetSprint.EndDate,
                 orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
             var devCompletedSp = devBugSp + devNonBugSp;
             var devRatio = devCompletedSp > 0 ? devBugSp / devCompletedSp * 100 : 0m;
             var devCompleted = GetTransitionCompletedMemberships(
-                devMemberships, statusTransitions, targetSprint.StartDate, targetSprint.EndDate,
+                devMemberships, transitionIndex, targetSprint.StartDate, targetSprint.EndDate,
                 orderedStages, endIndex, excludedStatuses);
             var devBugCount = devCompleted.Count(IsBug);
             var devNonBugCount = devCompleted.Count(m => !IsBug(m));
@@ -312,12 +314,12 @@ public class BugRatioService
             {
                 var priorDevMemberships = GetDeveloperMemberships(priorSprint, dev.Id, subTeam);
                 var (priorDevBugSp, priorDevNonBugSp) = ComputeCompletedBugNonBugSp(
-                    priorDevMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                    priorDevMemberships, transitionIndex, priorSprint.StartDate, priorSprint.EndDate,
                     orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
                 var priorDevCompletedSp = priorDevBugSp + priorDevNonBugSp;
                 var priorDevRatio = priorDevCompletedSp > 0 ? priorDevBugSp / priorDevCompletedSp * 100 : 0m;
                 var priorDevCompleted = GetTransitionCompletedMemberships(
-                    priorDevMemberships, statusTransitions, priorSprint.StartDate, priorSprint.EndDate,
+                    priorDevMemberships, transitionIndex, priorSprint.StartDate, priorSprint.EndDate,
                     orderedStages, endIndex, excludedStatuses);
                 var priorDevBugCount = priorDevCompleted.Count(IsBug);
                 var priorDevNonBugCount = priorDevCompleted.Count(m => !IsBug(m));
@@ -337,7 +339,7 @@ public class BugRatioService
             }
 
             var alert = EvaluateAlert(
-                dev.Id, allClosedSprints, statusTransitions, orderedStages, endIndex,
+                dev.Id, allClosedSprints, transitionIndex, orderedStages, endIndex,
                 excludedStatuses, settings.BugRatioAlertThreshold,
                 settings.BugRatioConsecutiveSprintCount, subTeam, defaultSpPerBug);
 
@@ -361,7 +363,7 @@ public class BugRatioService
     private BugRatioAlertStatus EvaluateAlert(
         string developerId,
         List<Sprint> allClosedSprints,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int endIndex,
         List<string> excludedStatuses,
@@ -378,7 +380,7 @@ public class BugRatioService
         {
             var memberships = GetDeveloperMemberships(sprint, developerId, subTeam);
             var (bugSp, nonBugSp) = ComputeCompletedBugNonBugSp(
-                memberships, statusTransitions, sprint.StartDate, sprint.EndDate,
+                memberships, transitionIndex, sprint.StartDate, sprint.EndDate,
                 orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
             var completedSp = bugSp + nonBugSp;
 
@@ -408,25 +410,20 @@ public class BugRatioService
     /// </summary>
     private static List<SprintMembership> GetTransitionCompletedMemberships(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
         int endIndex,
         List<string> excludedStatuses)
     {
-        var transitionsByTicket = statusTransitions
-            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
-
         return memberships
             .Where(m =>
             {
                 if (m.RemovedAt != null) return false;
                 if (excludedStatuses.Contains(m.FinalStatus, StringComparer.OrdinalIgnoreCase)) return false;
-                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
                 return isCompleted;
             })
             .ToList();
@@ -437,7 +434,7 @@ public class BugRatioService
     /// </summary>
     private static (decimal BugSp, decimal NonBugSp) ComputeCompletedBugNonBugSp(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         DateTime sprintStart,
         DateTime sprintEnd,
         List<string> orderedStages,
@@ -446,7 +443,7 @@ public class BugRatioService
         int defaultSpPerBug)
     {
         var completed = GetTransitionCompletedMemberships(
-            memberships, statusTransitions, sprintStart, sprintEnd,
+            memberships, transitionIndex, sprintStart, sprintEnd,
             orderedStages, endIndex, excludedStatuses);
 
         var bugSp = completed.Where(IsBug).Sum(m => m.GetEffectiveSp(defaultSpPerBug) ?? 0m);

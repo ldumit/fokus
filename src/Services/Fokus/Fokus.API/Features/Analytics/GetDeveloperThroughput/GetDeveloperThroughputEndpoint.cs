@@ -16,6 +16,12 @@ public class GetDeveloperThroughputEndpoint(
         var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
         var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
+        // An explicit sprint id must exist, even when there are no closed sprints
+        var requestedSprint = req.SprintId.HasValue
+            ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
+
         // 2. No closed sprints — return empty response
         if (ascending.Count == 0)
         {
@@ -26,16 +32,9 @@ public class GetDeveloperThroughputEndpoint(
         // 3. Determine target sprint IDs based on mode
         List<int> targetSprintIds;
 
-        if (req.SprintId.HasValue)
+        if (requestedSprint is Sprint match)
         {
             // Single sprint mode — accept active or closed sprint
-            var match = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
-            if (match is null)
-            {
-                AddError(r => r.SprintId, "Sprint not found.");
-                await SendErrorsAsync(400, ct);
-                return;
-            }
             targetSprintIds = new List<int> { match.Id };
         }
         else if (req.Last.HasValue)
@@ -52,15 +51,9 @@ public class GetDeveloperThroughputEndpoint(
             targetSprintIds = ascending.Select(s => s.Id).ToList();
         }
 
-        // 4. Rolling average window expansion: need up to 2 extra closed sprints before the earliest target
-        // For an active sprint target, all closed sprints are available as rolling window candidates
-        var earliestTargetIndex = ascending.FindIndex(s => s.Id == targetSprintIds[0]);
-        var rollingWindowBase = earliestTargetIndex >= 0 ? earliestTargetIndex : ascending.Count;
-        var extraSprintIds = ascending
-            .Take(rollingWindowBase)
-            .TakeLast(2)
-            .Select(s => s.Id)
-            .ToList();
+        // 4. Rolling average window: every closed sprint before the earliest target, so the walk-back
+        // can skip 0%-capacity sprints and still find three qualifying ones
+        var extraSprintIds = DeveloperThroughputService.SelectRollingWindowSprintIds(ascending, targetSprintIds);
 
         var allSprintIds = extraSprintIds.Concat(targetSprintIds).Distinct().ToList();
 
@@ -82,12 +75,13 @@ public class GetDeveloperThroughputEndpoint(
 
         // 10. Load status transitions for all sprint tickets (covers target + rolling average window)
         var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allSprintIds, ct);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // 11. Apply cross-cutting exclusion: remove developers excluded in ALL target sprints
         var targetSprintsLoaded = loadedSprints.Where(s => targetSprintIds.Contains(s.Id)).ToList();
         var excludedInAllTargets = activeDevelopers
             .Where(dev => targetSprintsLoaded.All(sprint =>
-                ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings)
+                ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, transitionIndex, settings)
                     .Contains(dev.Id)))
             .Select(dev => dev.Id)
             .ToHashSet();

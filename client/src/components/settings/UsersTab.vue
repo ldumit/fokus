@@ -13,17 +13,33 @@ const inviting = ref(false)
 const inviteResult = ref<CreateInvitationResponse | null>(null)
 const inviteError = ref('')
 const userMgmtError = ref('')
+const usersLoadError = ref('')
+const invitationsLoadError = ref('')
 
 onMounted(async () => {
   await loadUserManagement()
 })
 
+function loadFailureMessage(reason: unknown, fallback: string): string {
+  return reason instanceof Error && reason.message ? reason.message : fallback
+}
+
 async function loadUserManagement() {
   usersLoading.value = true
   try {
     const [usersResult, invitationsResult] = await Promise.allSettled([getUsers(), getInvitations()])
-    if (usersResult.status === 'fulfilled') users.value = usersResult.value
-    if (invitationsResult.status === 'fulfilled') invitations.value = invitationsResult.value
+    if (usersResult.status === 'fulfilled') {
+      users.value = usersResult.value
+      usersLoadError.value = ''
+    } else {
+      usersLoadError.value = loadFailureMessage(usersResult.reason, 'Failed to load users.')
+    }
+    if (invitationsResult.status === 'fulfilled') {
+      invitations.value = invitationsResult.value
+      invitationsLoadError.value = ''
+    } else {
+      invitationsLoadError.value = loadFailureMessage(invitationsResult.reason, 'Failed to load invitations.')
+    }
   } finally {
     usersLoading.value = false
   }
@@ -86,6 +102,8 @@ function copyInviteLink(link: string) {
   <section class="bg-gray-900 rounded-lg p-6 space-y-6">
     <h2 class="text-lg font-semibold text-gray-200">User Management</h2>
 
+    <div v-if="usersLoadError" class="text-red-400 text-sm">{{ usersLoadError }}</div>
+    <div v-if="invitationsLoadError" class="text-red-400 text-sm">{{ invitationsLoadError }}</div>
     <div v-if="userMgmtError" class="text-red-400 text-sm">{{ userMgmtError }}</div>
 
     <!-- Invite form -->
@@ -147,7 +165,8 @@ function copyInviteLink(link: string) {
             <td class="py-2 text-right">
               <button
                 @click="revokeInvite(inv.id)"
-                class="text-xs text-red-400 hover:text-red-300"
+                :disabled="!!invitationsLoadError"
+                class="text-xs text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >Revoke</button>
             </td>
           </tr>
@@ -182,7 +201,8 @@ function copyInviteLink(link: string) {
               <select
                 :value="u.role"
                 @change="changeUserRole(u.id, ($event.target as HTMLSelectElement).value)"
-                class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-500"
+                :disabled="!!usersLoadError"
+                class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-100 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="Admin">Admin</option>
                 <option value="Manager">Manager</option>
@@ -194,8 +214,9 @@ function copyInviteLink(link: string) {
             <td class="py-2">
               <button
                 @click="toggleUserStatus(u.id, !u.isActive)"
+                :disabled="!!usersLoadError"
                 :class="u.isActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'"
-                class="px-2 py-1 rounded text-xs text-white transition-colors"
+                class="px-2 py-1 rounded text-xs text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ u.isActive ? 'Active' : 'Inactive' }}
               </button>

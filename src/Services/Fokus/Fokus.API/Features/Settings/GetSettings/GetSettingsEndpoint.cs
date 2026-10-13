@@ -24,13 +24,10 @@ public class GetSettingsEndpoint(AppSettingsRepository repository)
             BugRatioTarget = settings.BugRatioTarget,
             XrayEnabled = settings.XrayEnabled,
             XrayClientId = settings.XrayClientId,
-            XrayClientSecret = MaskSecret(settings.XrayClientSecret),
+            XrayClientSecret = XraySecretMask.Apply(settings.XrayClientSecret),
             QaHealthThresholds = settings.QaHealthThresholds,
             QualityHealthWeight = settings.QualityHealthWeight,
             QualitySubScoreWeights = settings.QualitySubScoreWeights
         }, ct);
     }
-
-    private static string? MaskSecret(string? secret) =>
-        string.IsNullOrEmpty(secret) ? string.Empty : "****";
 }

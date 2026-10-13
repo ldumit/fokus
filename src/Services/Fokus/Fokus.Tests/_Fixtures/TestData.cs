@@ -74,15 +74,18 @@ public static class TestData
         string ticketId,
         decimal? storyPoints = 3m,
         DateTime? removedAt = null,
-        Ticket? ticket = null) =>
+        Ticket? ticket = null,
+        DateTime? addedAt = null,
+        string finalStatus = "In Progress",
+        bool wasCommitted = true) =>
         new()
         {
             SprintId = sprintId,
             TicketId = ticketId,
-            AddedAt = DateTime.UtcNow.AddDays(-5),
+            AddedAt = addedAt ?? DateTime.UtcNow.AddDays(-5),
             RemovedAt = removedAt,
-            WasCommitted = true,
-            FinalStatus = "In Progress",
+            WasCommitted = wasCommitted,
+            FinalStatus = finalStatus,
             StoryPoints = storyPoints,
             Ticket = ticket ?? FeatureTicket(ticketId)
         };

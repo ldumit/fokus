@@ -113,6 +113,7 @@ public class ScopeChangeService
         // Resolve transition boundaries once
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var sprintInfos = sortedSprints
             .Select(s => new ScopeChangeSprintInfo(s.Id, s.Name, s.StartDate, s.EndDate))
@@ -122,7 +123,7 @@ public class ScopeChangeService
             .Select(s => ComputePerSprintData(
                 s,
                 FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds),
-                statusTransitions,
+                statusTransitions, transitionIndex,
                 orderedStages, startIndex, endIndex,
                 excludedStatuses, defaultSpPerBug, settings.PlanningWindowDays))
             .ToList();
@@ -130,7 +131,7 @@ public class ScopeChangeService
         var allClassificationEntries = sortedSprints
             .SelectMany(s => GetMidSprintAdditions(
                 FilterMemberships(s.Memberships, subTeam, excludedDeveloperIds), s, settings.PlanningWindowDays,
-                statusTransitions, orderedStages, startIndex, excludedStatuses))
+                transitionIndex, orderedStages, startIndex, excludedStatuses))
             .ToList();
 
         var classificationBreakdown = BuildClassificationBreakdown(allClassificationEntries, defaultSpPerBug);
@@ -170,6 +171,7 @@ public class ScopeChangeService
         // Resolve transition boundaries once
         var (orderedStages, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         var memberships = FilterMemberships(targetSprint.Memberships, subTeam, excludedDeveloperIds);
         var priorMemberships = priorSprint is not null
@@ -181,12 +183,12 @@ public class ScopeChangeService
 
         // Core metrics for target sprint
         var current = ComputeSprintMetrics(
-            memberships, statusTransitions, targetSprint,
+            memberships, statusTransitions, transitionIndex, targetSprint,
             orderedStages, startIndex, endIndex,
             excludedStatuses, defaultSpPerBug, settings.PlanningWindowDays);
         ScopeSprintMetrics? prior = priorMemberships is not null && priorSprint is not null
             ? ComputeSprintMetrics(
-                priorMemberships, statusTransitions, priorSprint,
+                priorMemberships, statusTransitions, transitionIndex, priorSprint,
                 orderedStages, startIndex, endIndex,
                 excludedStatuses, defaultSpPerBug, settings.PlanningWindowDays)
             : null;
@@ -210,21 +212,21 @@ public class ScopeChangeService
 
         // Classification breakdown for this sprint
         var midSprintAdditions = GetMidSprintAdditions(memberships, targetSprint, settings.PlanningWindowDays,
-            statusTransitions, orderedStages, startIndex, excludedStatuses);
+            transitionIndex, orderedStages, startIndex, excludedStatuses);
         var classificationBreakdown = BuildClassificationBreakdown(midSprintAdditions, defaultSpPerBug);
 
         // Event table
         var events = BuildEventTable(memberships, targetSprint, excludedStatuses, settings.PlanningWindowDays, defaultSpPerBug,
-            statusTransitions, orderedStages, startIndex);
+            transitionIndex, orderedStages, startIndex);
 
         // Burnup chart (transition-based cumulative scope and completed lines — spec BR11)
         var burnupData = BuildBurnupData(
-            memberships, targetSprint, statusTransitions,
+            memberships, targetSprint, transitionIndex,
             orderedStages, startIndex, endIndex,
             excludedStatuses, settings.PlanningWindowDays, defaultSpPerBug);
 
         // Bug time-in-progress
-        var bugTimeInProgress = ComputeBugTimeInProgress(memberships, statusTransitions, targetSprint, workflowStages);
+        var bugTimeInProgress = ComputeBugTimeInProgress(memberships, transitionIndex, targetSprint, workflowStages);
 
         return new ScopeChangeSingleSprintResponse(
             sprintInfo, metrics, burnupData, classificationBreakdown, events, bugTimeInProgress);
@@ -251,6 +253,7 @@ public class ScopeChangeService
         Sprint sprint,
         List<SprintMembership> memberships,
         List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int startIndex,
         int endIndex,
@@ -259,7 +262,7 @@ public class ScopeChangeService
         int planningWindowDays)
     {
         var metrics = ComputeSprintMetrics(
-            memberships, statusTransitions, sprint,
+            memberships, statusTransitions, transitionIndex, sprint,
             orderedStages, startIndex, endIndex,
             excludedStatuses, defaultSpPerBug, planningWindowDays);
         return new ScopeChangePerSprintData(
@@ -289,6 +292,7 @@ public class ScopeChangeService
     private static ScopeSprintMetrics ComputeSprintMetrics(
         List<SprintMembership> memberships,
         List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         Sprint sprint,
         List<string> orderedStages,
         int startIndex,
@@ -317,13 +321,12 @@ public class ScopeChangeService
             var sp = m.GetEffectiveSp(defaultSpPerBug);
             if (!sp.HasValue) continue;
 
-            var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
-
             // Removed tickets: only count in removedSp if post-planning AND cycle-entered AND non-excluded (spec BR4)
             if (m.RemovedAt != null)
             {
                 if (m.Ticket?.IssueType == "Bug") continue;
                 if (IsExcluded(m.FinalStatus, excludedStatuses)) continue;
+                var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
                 if (TransitionAttributionChecker.IsRemovedPostPlanning(
                         m, ticketTransitions, sprintStart, planningCutoff, orderedStages, startIndex))
                     removedSp += sp.Value;
@@ -333,9 +336,9 @@ public class ScopeChangeService
             if (IsExcluded(m.FinalStatus, excludedStatuses)) continue;
 
             var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, startIndex);
+                m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, startIndex);
             var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, endIndex);
+                m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, endIndex);
             var isAdded = TransitionAttributionChecker.IsAddedInSprint(m, isStarted, planningCutoff);
 
             if (m.Ticket?.IssueType == "Bug")
@@ -383,7 +386,7 @@ public class ScopeChangeService
         List<SprintMembership> memberships,
         Sprint sprint,
         int planningWindowDays,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int startIndex,
         List<string> excludedStatuses)
@@ -391,10 +394,6 @@ public class ScopeChangeService
         var planningCutoff = sprint.StartDate.AddDays(planningWindowDays);
         var sprintStart = sprint.StartDate;
         var sprintEnd = sprint.EndDate;
-
-        var transitionsByTicket = statusTransitions
-            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
         var result = new List<MidSprintAddition>();
         foreach (var m in memberships)
@@ -405,9 +404,8 @@ public class ScopeChangeService
             if (m.Ticket?.IssueType == "Bug") continue;
             if (IsExcluded(m.FinalStatus, excludedStatuses)) continue;
 
-            var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
             var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, startIndex);
+                m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, startIndex);
             if (!isStarted) continue;
 
             result.Add(new MidSprintAddition(m, ClassifyAddition(m, sprint)));
@@ -454,17 +452,13 @@ public class ScopeChangeService
         List<string> excludedStatuses,
         int planningWindowDays,
         int defaultSpPerBug,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int startIndex)
     {
         var planningCutoff = sprint.StartDate.AddDays(planningWindowDays);
         var sprintStart = sprint.StartDate;
         var sprintEnd = sprint.EndDate;
-
-        var transitionsByTicket = statusTransitions
-            .GroupBy(t => t.TicketId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
 
         var events = new List<ScopeChangeEvent>();
 
@@ -489,9 +483,8 @@ public class ScopeChangeService
                     && m.Ticket?.IssueType != "Bug"
                     && !isExcluded)
                 {
-                    var ticketTransitions = transitionsByTicket.GetValueOrDefault(m.TicketId, []);
                     var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                        m.TicketId, ticketTransitions, sprintStart, sprintEnd, orderedStages, startIndex);
+                        m.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, startIndex);
                     if (isStarted)
                         category = ClassifyAddition(m, sprint);
                 }
@@ -519,7 +512,7 @@ public class ScopeChangeService
     private static List<BurnupDataPoint> BuildBurnupData(
         List<SprintMembership> memberships,
         Sprint sprint,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         List<string> orderedStages,
         int startIndex,
         int endIndex,
@@ -534,85 +527,46 @@ public class ScopeChangeService
         var startTransitionByFeatureTicket = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
         // Build lookup: ticketId -> first qualifying end transition timestamp (feature-only)
         var endTransitionByFeatureTicket = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
-        // Build lookup: ticketId -> first qualifying end transition timestamp (bug-only, for bug area)
-        var endTransitionByBugTicket = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var m in memberships)
         {
             if (m.RemovedAt != null) continue;
             if (!m.GetEffectiveSp(defaultSpPerBug).HasValue) continue;
             if (IsExcluded(m.FinalStatus, excludedStatuses)) continue;
+            if (m.Ticket?.IssueType == "Bug") continue;
 
-            var isBug = m.Ticket?.IssueType == "Bug";
+            // Feature: record first start transition within sprint
+            var firstStart = transitionIndex.ForTicket(m.TicketId)
+                .Where(t => t.Timestamp >= sprint.StartDate
+                            && t.Timestamp <= sprint.EndDate
+                            && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= startIndex)
+                .OrderBy(t => t.Timestamp)
+                .FirstOrDefault();
+            if (firstStart is not null)
+                startTransitionByFeatureTicket[m.TicketId] = firstStart.Timestamp;
 
-            if (!isBug)
+            // Feature: record first end transition within sprint
+            if (endIndex >= 0)
             {
-                // Feature: record first start transition within sprint
-                var firstStart = statusTransitions
-                    .Where(t => t.TicketId == m.TicketId
-                                && t.Timestamp >= sprint.StartDate
+                var firstEnd = transitionIndex.ForTicket(m.TicketId)
+                    .Where(t => t.Timestamp >= sprint.StartDate
                                 && t.Timestamp <= sprint.EndDate
-                                && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= startIndex)
+                                && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
                     .OrderBy(t => t.Timestamp)
                     .FirstOrDefault();
-                if (firstStart is not null)
-                    startTransitionByFeatureTicket[m.TicketId] = firstStart.Timestamp;
-
-                // Feature: record first end transition within sprint
-                if (endIndex >= 0)
-                {
-                    var firstEnd = statusTransitions
-                        .Where(t => t.TicketId == m.TicketId
-                                    && t.Timestamp >= sprint.StartDate
-                                    && t.Timestamp <= sprint.EndDate
-                                    && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
-                        .OrderBy(t => t.Timestamp)
-                        .FirstOrDefault();
-                    if (firstEnd is not null)
-                        endTransitionByFeatureTicket[m.TicketId] = firstEnd.Timestamp;
-                }
-            }
-            else
-            {
-                // Bug: record first end transition within sprint (for bug area removal)
-                if (endIndex >= 0)
-                {
-                    var firstEnd = statusTransitions
-                        .Where(t => t.TicketId == m.TicketId
-                                    && t.Timestamp >= sprint.StartDate
-                                    && t.Timestamp <= sprint.EndDate
-                                    && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
-                        .OrderBy(t => t.Timestamp)
-                        .FirstOrDefault();
-                    if (firstEnd is not null)
-                        endTransitionByBugTicket[m.TicketId] = firstEnd.Timestamp;
-                }
+                if (firstEnd is not null)
+                    endTransitionByFeatureTicket[m.TicketId] = firstEnd.Timestamp;
             }
         }
 
-        // Starting bug SP (bugs present at sprint start — committed or added before sprint start)
-        var startingBugSp = memberships
-            .Where(m => m.RemovedAt == null
-                        && m.Ticket?.IssueType == "Bug"
-                        && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                        && !IsExcluded(m.FinalStatus, excludedStatuses)
-                        && m.AddedAt <= sprint.StartDate)
-            .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
-
-        var startingBugTickets = memberships
-            .Count(m => m.RemovedAt == null
-                        && m.Ticket?.IssueType == "Bug"
-                        && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                        && !IsExcluded(m.FinalStatus, excludedStatuses)
-                        && m.AddedAt <= sprint.StartDate);
+        var bugAreaSpans = BuildBugAreaSpans(
+            memberships, sprint, transitionIndex, orderedStages, endIndex, excludedStatuses, defaultSpPerBug);
 
         var result = new List<BurnupDataPoint>();
         var cumulativeTotalScope = 0m;    // cumulative feature SP started (scope line starts near 0)
         var cumulativeCompleted = 0m;     // cumulative feature SP completed
-        var cumulativeBugSp = startingBugSp;
         var cumulativeTotalScopeTickets = 0;
         var cumulativeCompletedTickets = 0;
-        var cumulativeBugTickets = startingBugTickets;
 
         for (var i = 0; i < sprintDays; i++)
         {
@@ -661,56 +615,10 @@ public class ScopeChangeService
             cumulativeCompleted += completedTodaySp;
             cumulativeCompletedTickets += completedTodayTickets;
 
-            // Bug SP additions on this day (bug area: unchanged tracking)
-            var bugAddedToday = memberships
-                .Where(m => m.RemovedAt == null
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && !IsExcluded(m.FinalStatus, excludedStatuses)
-                            && m.AddedAt.Date == day.Date
-                            && m.AddedAt > sprint.StartDate)
-                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
-
-            var bugAddedTicketsToday = memberships
-                .Count(m => m.RemovedAt == null
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && !IsExcluded(m.FinalStatus, excludedStatuses)
-                            && m.AddedAt.Date == day.Date
-                            && m.AddedAt > sprint.StartDate);
-
-            var bugRemovedToday = memberships
-                .Where(m => m.RemovedAt.HasValue
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && m.RemovedAt.Value.Date == day.Date)
-                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
-
-            var bugRemovedTicketsToday = memberships
-                .Count(m => m.RemovedAt.HasValue
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && m.RemovedAt.Value.Date == day.Date);
-
-            var bugCompletedToday = memberships
-                .Where(m => m.RemovedAt == null
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && !IsExcluded(m.FinalStatus, excludedStatuses)
-                            && endTransitionByBugTicket.TryGetValue(m.TicketId, out var ts)
-                            && ts.Date == day.Date)
-                .Sum(m => m.GetEffectiveSp(defaultSpPerBug)!.Value);
-
-            var bugCompletedTicketsToday = memberships
-                .Count(m => m.RemovedAt == null
-                            && m.Ticket?.IssueType == "Bug"
-                            && m.GetEffectiveSp(defaultSpPerBug).HasValue
-                            && !IsExcluded(m.FinalStatus, excludedStatuses)
-                            && endTransitionByBugTicket.TryGetValue(m.TicketId, out var ts)
-                            && ts.Date == day.Date);
-
-            cumulativeBugSp += bugAddedToday - bugRemovedToday - bugCompletedToday;
-            cumulativeBugTickets += bugAddedTicketsToday - bugRemovedTicketsToday - bugCompletedTicketsToday;
+            var bugsInArea = bugAreaSpans
+                .Where(b => b.EntryDay <= day.Date && (b.ExitDay is null || b.ExitDay > day.Date))
+                .ToList();
+            var bugSpDay = bugsInArea.Sum(b => b.Sp);
 
             // Committed Total: feature SP in sprint on this day (WasCommitted from day 1, mid-sprint by AddedAt)
             var committedTotalSpDay = memberships
@@ -734,10 +642,10 @@ public class ScopeChangeService
                 Math.Round(cumulativeTotalScope, 1),
                 Math.Round(cumulativeCompleted, 1),
                 phase,
-                Math.Round(cumulativeBugSp, 1),
+                Math.Round(bugSpDay, 1),
                 cumulativeTotalScopeTickets,
                 cumulativeCompletedTickets,
-                cumulativeBugTickets,
+                bugsInArea.Count,
                 Math.Round(committedTotalSpDay, 1),
                 committedTotalTicketsDay));
         }
@@ -745,11 +653,62 @@ public class ScopeChangeService
         return result;
     }
 
+    // --- Burnup bug area ---
+
+    private record BugAreaSpan(decimal Sp, DateTime EntryDay, DateTime? ExitDay);
+
+    private static List<BugAreaSpan> BuildBugAreaSpans(
+        List<SprintMembership> memberships,
+        Sprint sprint,
+        StatusTransitionIndex transitionIndex,
+        List<string> orderedStages,
+        int endIndex,
+        List<string> excludedStatuses,
+        int defaultSpPerBug)
+    {
+        var spans = new List<BugAreaSpan>();
+        foreach (var m in memberships)
+        {
+            if (m.Ticket?.IssueType != "Bug") continue;
+            var sp = m.GetEffectiveSp(defaultSpPerBug);
+            if (!sp.HasValue || IsExcluded(m.FinalStatus, excludedStatuses)) continue;
+            if (m.RemovedAt <= sprint.StartDate) continue;
+
+            var entryDay = m.AddedAt <= sprint.StartDate ? sprint.StartDate.Date : m.AddedAt.Date;
+            var completedAt = endIndex >= 0
+                ? transitionIndex.ForTicket(m.TicketId)
+                    .Where(t => t.Timestamp >= sprint.StartDate
+                                && t.Timestamp <= sprint.EndDate
+                                && TransitionAttributionChecker.GetStageIndex(t.ToStatus, orderedStages) >= endIndex)
+                    .OrderBy(t => t.Timestamp)
+                    .FirstOrDefault()?.Timestamp
+                : null;
+
+            spans.Add(new BugAreaSpan(sp.Value, entryDay, ResolveExitDay(entryDay, completedAt, m.RemovedAt)));
+        }
+
+        return spans;
+    }
+
+    private static DateTime? ResolveExitDay(DateTime entryDay, DateTime? completedAt, DateTime? removedAt)
+    {
+        DateTime? leftAt = (completedAt, removedAt) switch
+        {
+            (null, null) => null,
+            (null, var removed) => removed,
+            (var completed, null) => completed,
+            var (completed, removed) => completed < removed ? completed : removed
+        };
+
+        if (leftAt is null) return null;
+        return leftAt.Value.Date > entryDay ? leftAt.Value.Date : entryDay;
+    }
+
     // --- Bug time-in-progress ---
 
     private static List<BugTimeInProgress> ComputeBugTimeInProgress(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         Sprint sprint,
         List<string> workflowStages)
     {
@@ -766,8 +725,7 @@ public class ScopeChangeService
 
         foreach (var m in midSprintBugs)
         {
-            var ticketTransitions = statusTransitions
-                .Where(t => t.TicketId == m.TicketId)
+            var ticketTransitions = transitionIndex.ForTicket(m.TicketId)
                 .OrderBy(t => t.Timestamp)
                 .ToList();
 

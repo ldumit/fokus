@@ -16,6 +16,12 @@ public class GetScopeChangeEndpoint(
         var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
         var ascending = analyticsSprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
 
+        // An explicit sprint id must exist, even when there are no closed sprints
+        var requestedSprint = req.SprintId.HasValue
+            ? analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
+                ?? throw new NotFoundException($"Sprint {req.SprintId.Value} was not found.")
+            : null;
+
         // 2. No closed sprints — return empty multi response
         if (ascending.Count == 0)
         {
@@ -33,17 +39,9 @@ public class GetScopeChangeEndpoint(
         var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(allClosedIds, ct);
 
         // 5. Determine mode
-        if (req.SprintId.HasValue)
+        if (requestedSprint is Sprint match)
         {
             // Single-sprint mode — accept active or closed sprint
-            var match = analyticsSprints.FirstOrDefault(s => s.Id == req.SprintId.Value);
-            if (match is null)
-            {
-                AddError(r => r.SprintId, "Sprint not found.");
-                await SendErrorsAsync(400, ct);
-                return;
-            }
-
             // 6b. Identify prior sprint (last closed sprint before target by start date)
             var closedIndex = ascending.FindIndex(s => s.Id == match.Id);
             var priorSprintLightweight = closedIndex > 0
@@ -63,10 +61,11 @@ public class GetScopeChangeEndpoint(
 
             // 8b. Load status transitions for all sprint tickets (replaces ticket-ID-based approach)
             var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(sprintIdsToLoad, ct);
+            var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
             // 9b. Compute excluded developer IDs for the target sprint
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-                targetSprint, allDevelopers, capacityRecords, statusTransitions, settings);
+                targetSprint, allDevelopers, capacityRecords, transitionIndex, settings);
 
             // 10b. Compute single-sprint response
             var singleResult = scopeChangeService.ComputeSingleSprint(
@@ -89,11 +88,12 @@ public class GetScopeChangeEndpoint(
 
             // 8a. Load status transitions for all target sprint tickets
             var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(targetIds, ct);
+            var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
             // 9a. Compute excluded developer IDs across all target sprints
             var excludedInAll = loadedSprints
                 .SelectMany(sprint =>
-                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, statusTransitions, settings))
+                    ExcludedDeveloperFilter.GetExcludedDeveloperIds(sprint, allDevelopers, capacityRecords, transitionIndex, settings))
                 .GroupBy(id => id)
                 .Where(g => g.Count() == loadedSprints.Count)
                 .Select(g => g.Key)

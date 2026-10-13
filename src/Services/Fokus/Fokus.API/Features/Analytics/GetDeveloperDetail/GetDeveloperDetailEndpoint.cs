@@ -52,6 +52,7 @@ public class GetDeveloperDetailEndpoint(
 
         // 7. Load status transitions for all closed sprint tickets
         var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allClosedIds, ct);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // 8. Excluded developer check: 0% capacity AND 0 completed in all sprints
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
@@ -71,7 +72,7 @@ public class GetDeveloperDetailEndpoint(
                 if (m.Ticket?.AssigneeId != req.AccountId) return false;
                 if (m.RemovedAt != null) return false;
                 var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, statusTransitions, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
+                    m.TicketId, transitionIndex, sprint.StartDate, sprint.EndDate, orderedStages, endIndex);
                 return isCompleted;
             });
         });

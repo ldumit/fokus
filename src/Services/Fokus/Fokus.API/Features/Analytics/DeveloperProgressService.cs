@@ -75,6 +75,7 @@ public class DeveloperProgressService
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
         var (_, startIndex) = TransitionAttributionChecker.ResolveStartIndex(settings);
+        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
 
         // Capacity lookup: accountId -> capacityPercent (sprint-specific first, then developer default)
         var capacityLookup = capacityRecords
@@ -123,7 +124,7 @@ public class DeveloperProgressService
             foreach (var m in memberships)
             {
                 var (isCompleted, completedAt) = TransitionAttributionChecker.IsCompletedInSprint(
-                    m.TicketId, statusTransitions,
+                    m.TicketId, transitionIndex,
                     activeSprint.StartDate, activeSprint.EndDate,
                     orderedStages, endIndex);
 
@@ -191,9 +192,9 @@ public class DeveloperProgressService
 
             // BR15-17: stall detection for today and yesterday (direction derivation)
             var stalledTickets = BuildStalledTickets(
-                memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex, todayDate);
+                memberships, transitionIndex, activeSprint, orderedStages, startIndex, endIndex, todayDate);
             var yesterdayStalledKeys = BuildStalledTickets(
-                memberships, statusTransitions, activeSprint, orderedStages, startIndex, endIndex, yesterdayDate)
+                memberships, transitionIndex, activeSprint, orderedStages, startIndex, endIndex, yesterdayDate)
                 .Select(t => t.Key)
                 .ToHashSet();
 
@@ -295,7 +296,7 @@ public class DeveloperProgressService
 
     private List<StalledTicketEntry> BuildStalledTickets(
         List<SprintMembership> memberships,
-        List<StatusTransition> statusTransitions,
+        StatusTransitionIndex transitionIndex,
         Sprint sprint,
         List<string> orderedStages,
         int startIndex,
@@ -309,7 +310,7 @@ public class DeveloperProgressService
             // BR15a: non-removed (already filtered by caller)
             // BR15b: started in sprint
             var (isStarted, _) = TransitionAttributionChecker.IsStartedInSprint(
-                m.TicketId, statusTransitions,
+                m.TicketId, transitionIndex,
                 sprint.StartDate, sprint.EndDate,
                 orderedStages, startIndex);
 
@@ -317,15 +318,14 @@ public class DeveloperProgressService
 
             // BR15c: NOT completed
             var (isCompleted, _) = TransitionAttributionChecker.IsCompletedInSprint(
-                m.TicketId, statusTransitions,
+                m.TicketId, transitionIndex,
                 sprint.StartDate, sprint.EndDate,
                 orderedStages, endIndex);
 
             if (isCompleted) continue;
 
             // BR15d: most recent transition > 2 business days ago
-            var ticketTransitions = statusTransitions
-                .Where(t => t.TicketId == m.TicketId)
+            var ticketTransitions = transitionIndex.ForTicket(m.TicketId)
                 .OrderByDescending(t => t.Timestamp)
                 .ToList();
 
