@@ -12,7 +12,7 @@
 
 ## Developer Lessons
 - `AppSettingsRepository.SaveAsync` uses `db.Entry(existing).CurrentValues.SetValues(settings)` which automatically copies all scalar int properties by name. Only list/complex properties with value converters need manual copy after `SetValues`. New scalar settings columns need no repository changes beyond domain model and endpoint mapping.
-- The Bash tool cwd does not persist between calls. Always use explicit absolute paths (e.g. `cd "D:/src/fokus" && dotnet ef ...`) in every command.
+- The Bash tool cwd does not persist between calls. Always use explicit absolute paths (e.g. `cd "<repo-root>" && dotnet ef ...`) in every command.
 - EF migration command requires paths relative to the solution root with the `src/` prefix: `-p src/Services/Fokus/Fokus.Persistence -s src/Services/Fokus/Fokus.API`.
 - TypeScript strict mode catches unused imports in `.vue` `<script setup>` blocks — remove type imports that are not referenced in code.
 - When adding fields to a TypeScript interface used as a `ref<T>` initial value, update all store initializations that use that interface.

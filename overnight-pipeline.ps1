@@ -1,3 +1,6 @@
+# Ran three features (F30, F31, F27) back to back, unattended, with the in-repo
+# Claude Code setup. To use it, edit the slug and label lists below.
+
 $slugs = @(
     "F30-TestExecutionTimeline",
     "F31-EpicTestHealth",

@@ -34,7 +34,7 @@
 ### Step 6: Reference paths
 - `.claude/skills/create-service-claude-md/workflows/WriteClaudeMd.md` — replaced 5 service-specific exemplar paths with description-based guidance
 - `.claude/skills/create-module/workflows/ScaffoldDomainApplication.md` — replaced `ArticleTimeline` and service-specific reference paths
-- `.claude/skills/create-domain-event-handler/workflows/Handler.md` — full rewrite: removed `Reflekt` namespace/paths, genericized handler patterns and variant headings
+- `.claude/skills/create-domain-event-handler/workflows/Handler.md` — full rewrite: removed `SampleApp` namespace/paths, genericized handler patterns and variant headings
 - `.claude/skills/create-feature/workflows/EndpointCarter.md` — replaced "Used by" service names and reference path
 - `.claude/skills/create-feature/workflows/EndpointMinimalApi.md` — replaced "Used by" service names, reference path, and entity examples
 - `.claude/skills/create-feature/workflows/Handler.md` — replaced "Used by" service names and reference path
@@ -73,7 +73,7 @@
 ## Key Decisions
 - Used `{Svc}`, `{Entity}`, `{Module}`, `{ProjectName}`, `{SolutionFile}` placeholders consistently across all files.
 - Files with 5+ targeted edits were rewritten in full for reliability.
-- In code blocks, generic domain names (`Order`, `LineItem`, `Assignee`) replace Reflekt-specific names (`Article`, `Asset`, `Typesetter`).
+- In code blocks, generic domain names (`Order`, `LineItem`, `Assignee`) replace sibling-project-specific names (`Article`, `Asset`, `Typesetter`).
 - Variant headings drop service names; every variant section adds "Check the service's CLAUDE.md for which variant to use."
 
 ## Deviations from Plan
@@ -83,7 +83,7 @@
 All 6 grep checks return 0 matches:
 1. `IArticleAction` — 0 matches
 2. `ArticleApproved|ArticleAccepted|ArticlePublished|ArticleReviewed` — 0 matches
-3. Service-specific paths (Submission/Review/Production/Auth/Journals/ArticleHub/Reflekt) — 0 matches
+3. Service-specific paths (Submission/Review/Production/Auth/Journals/ArticleHub/SampleApp) — 0 matches
 4. `Articles.sln|Articles.Abstractions|Articles.Security|Articles.Integration|Articles.Grpc` — 0 matches
 5. `Typesetter|ArticleStateMachine|ArticleStage|ArticleActionType` — 0 matches
 6. `JournalDbContext|SubmissionDbContext|ReviewDbContext|ProductionDbContext` — 0 matches

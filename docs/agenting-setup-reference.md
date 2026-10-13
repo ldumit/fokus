@@ -413,8 +413,8 @@ Each unit of work gets a slug that determines its folder path:
 | Type | Pattern | Example |
 |------|---------|---------|
 | Internal feature | `F{N}-{Name}` | `F5-SprintSummaryCard` |
-| Jira epic | `{KEY}-{summary}` | `PD-5234-shelf-compliance` |
-| Jira issue | `{KEY}-{summary}` | `PD-5226-split-config` |
+| Jira epic | `{KEY}-{summary}` | `ABC-106-invoice-export` |
+| Jira issue | `{KEY}-{summary}` | `ABC-104-split-config` |
 | Ad-hoc | `adhoc-{Name}` | `adhoc-SyncRefactoring` |
 | Bug | `BUG-{N}-{name}` | `BUG-1-bug-count-zero` |
 | Gap | `GAP-{N}-{name}` | `GAP-3-sub-team-mgmt-ui` |

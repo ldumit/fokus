@@ -438,6 +438,10 @@ appsettings.Development.json
 # Claude Code — local audit logs and agent-state (machine-local, not shared)
 docs/audit/
 .claude/.current-agent
+.claude/.worktree-target
+.claude/.approval-scope
+.claude/audit/
+.claude/settings.local.json
 
 # Graphify
 graphify-out/

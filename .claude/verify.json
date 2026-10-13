@@ -1,0 +1,14 @@
+{
+  "roles": {
+    "build": "dotnet build src/Fokus.slnx",
+    "unit": "dotnet build src/Fokus.slnx && dotnet test src/Services/Fokus/Fokus.Tests/Fokus.Tests.csproj --no-build --filter \"Speed!=Slow\"",
+    "full": "dotnet build src/Fokus.slnx && dotnet test src/Fokus.slnx --no-build && npm run build --prefix client"
+  },
+  "slow": { "thresholdMs": 2000, "runner": "vstest", "targets": ["src/Fokus.slnx"] },
+  "measured": {
+    "build": { "ms": 11486, "at": "2026-10-13" },
+    "unit": { "ms": 7469, "at": "2026-10-13" },
+    "full": { "ms": 11861, "at": "2026-10-13" }
+  },
+  "stepLimitSeconds": 30
+}

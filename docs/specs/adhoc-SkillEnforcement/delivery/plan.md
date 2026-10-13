@@ -4,7 +4,7 @@
 
 ## Context
 
-Phase 2 of the skill design proposal. Phase 1 (cleaning Reflekt-specific references from existing skills) is complete. This phase creates two new skills that structurally enforce skill awareness when writing architecture documents and implementation plans.
+Phase 2 of the skill design proposal. Phase 1 (cleaning sibling-project-specific references from existing skills) is complete. This phase creates two new skills that structurally enforce skill awareness when writing architecture documents and implementation plans.
 
 The root cause these skills address: the Scaffolding and JiraSync plans bypassed skills because (a) the architecture doc was written without checking the skill inventory, and (b) the plan format had no structural constraint requiring skill references. Prose rules in `architect.md` were insufficient — the architect "adapted" skills (meaning ignored them) with the architecture doc as justification.
 

@@ -2,7 +2,7 @@
 
 **Reported:** 2026-05-09
 **Reporter:** PO (Laurentiu)
-**Status:** Open
+**Status:** Done (via I11)
 **Severity:** Medium
 **Feature:** F5 — Sprint Sync (JiraSync)
 

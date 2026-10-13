@@ -1,10 +1,10 @@
-# Skill Cleanup — Remove Reflekt-Specific References
+# Skill Cleanup — Remove Sibling-Project-Specific References
 
 **Feature Spec:** None
 
 ## Context
 
-Skills in `.claude/skills/` were extracted from the Reflekt codebase and contain app-specific references (entity names, package names, service names, file paths, port numbers) that make them non-portable. 45 of 57 skill files contain leakage. This cleanup generalizes all skills so they work for any project using this skill library.
+Skills in `.claude/skills/` were extracted from a sibling project's codebase and contain app-specific references (entity names, package names, service names, file paths, port numbers) that make them non-portable. 45 of 57 skill files contain leakage. This cleanup generalizes all skills so they work for any project using this skill library.
 
 No feature spec required — this is infrastructure maintenance, not a user-facing feature.
 
@@ -140,7 +140,7 @@ Specific files with dense occurrences:
 
 **Files:** All workflow files with `**Reference:**` or `**File:**` lines (25+ files — see audit for full list)
 
-Replace all `src/Services/{ReflektService}/{ReflektService}.{Layer}/...` paths with `src/Services/{Svc}/{Svc}.{Layer}/...`. Keep the file name structure since that's the pattern being taught.
+Replace all `src/Services/{SampleAppService}/{SampleAppService}.{Layer}/...` paths with `src/Services/{Svc}/{Svc}.{Layer}/...`. Keep the file name structure since that's the pattern being taught.
 
 Mapping:
 - `src/Services/Submission/Submission.*` → `src/Services/{Svc}/{Svc}.*`
@@ -149,7 +149,7 @@ Mapping:
 - `src/Services/Auth/Auth.*` → `src/Services/{Svc}/{Svc}.*`
 - `src/Services/Journals/Journals.*` → `src/Services/{Svc}/{Svc}.*`
 - `src/Services/ArticleHub/ArticleHub.*` → `src/Services/{Svc}/{Svc}.*`
-- `src/Services/Reflekt/Reflekt.*` → `src/Services/{Svc}/{Svc}.*`
+- `src/Services/SampleApp/SampleApp.*` → `src/Services/{Svc}/{Svc}.*`
 - `src/Modules/ArticleTimeline/ArticleTimeline.*` → `src/Modules/{Module}/{Module}.*`
 - `src/BuildingBlocks/Articles.*/...` → `src/BuildingBlocks/{ProjectName}.*/...`
 
@@ -287,7 +287,7 @@ Apply the same rules from steps 5-7:
 - All service names → description-based or `{Svc}` placeholder
 - All file paths → `src/Services/{Svc}/...` or `src/Modules/{Module}/...`
 - All package names → `{ProjectName}.*`
-- "Reflekt" in any heading or text → remove
+- "SampleApp" in any heading or text → remove
 - Entity names (`Article`, `Journal`, `Person`, `Asset`, etc.) in code examples → generic equivalents
 - `Article.FromSubmission()` → `{Entity}.Create(...)` or `{Entity}.From{Source}()`
 - `ArticleAcceptedForProductionConsumer` → `{EventName}Consumer`
@@ -313,7 +313,7 @@ After all changes, run these checks (all must return zero matches):
 ```
 grep -r "IArticleAction" .claude/skills/
 grep -r "ArticleApproved\|ArticleAccepted\|ArticlePublished\|ArticleReviewed" .claude/skills/
-grep -r "src/Services/Submission\|src/Services/Review\|src/Services/Production\|src/Services/Auth\|src/Services/Journals\|src/Services/ArticleHub\|src/Services/Reflekt" .claude/skills/
+grep -r "src/Services/Submission\|src/Services/Review\|src/Services/Production\|src/Services/Auth\|src/Services/Journals\|src/Services/ArticleHub\|src/Services/SampleApp" .claude/skills/
 grep -r "Articles\.sln\|Articles\.Abstractions\|Articles\.Security\|Articles\.Integration\|Articles\.Grpc" .claude/skills/
 grep -r "Typesetter\|ArticleStateMachine\|ArticleStage\|ArticleActionType" .claude/skills/
 grep -r "JournalDbContext\|SubmissionDbContext\|ReviewDbContext\|ProductionDbContext" .claude/skills/
@@ -327,7 +327,7 @@ Allowed exceptions:
 
 - Grep verification (step 12) catches any missed references
 - Read each modified SKILL.md and confirm code templates are syntactically valid
-- Confirm variant tables still make sense when read without Reflekt context
+- Confirm variant tables still make sense when read without sibling-project context
 
 ## Open Questions
 

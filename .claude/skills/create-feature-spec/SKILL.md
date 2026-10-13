@@ -70,8 +70,8 @@ Before writing, ensure you have:
 
 The `{slug}` is determined by the PO before invoking this skill, following the naming convention in `agents-workflow.md` § Slug and Path Resolution:
 - Internal feature: `F{N}-{Name}` (e.g., `F5-SprintSummaryCard`)
-- Jira issue: `{KEY}-{2-3-words}` (e.g., `PD-5226-split-config`)
-- Jira epic: `{KEY}-{2-3-words}` (e.g., `PD-5234-shelf-compliance-kpis`) — writes `epic.md`, not `spec.md`
+- Jira issue: `{KEY}-{2-3-words}` (e.g., `ABC-104-split-config`)
+- Jira epic: `{KEY}-{2-3-words}` (e.g., `ABC-106-invoice-export`) — writes `epic.md`, not `spec.md`
 - Bug: `BUG-{N}-{name}` (e.g., `BUG-1-bug-count-zero`) — writes `bug.md`, not `spec.md`
 - Gap: `GAP-{N}-{name}` (e.g., `GAP-3-sub-team-management-ui`)
 

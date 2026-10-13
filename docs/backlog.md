@@ -275,6 +275,16 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 ---
 
+### Tier 13 — Public Release
+
+| ID | Feature | Status | Spec | Plan |
+|----|---------|--------|------|------|
+| F36 | Public Release Cleanup | Definition | [PublicReleaseCleanup](specs/F36-PublicReleaseCleanup/definition/spec.md) | — |
+
+**F36:** Prepare Fokus for a free public release to Udemy students: scrub private material, mine code quality and the architecture map, run a cleanup campaign, refresh product docs and conventions, and publish a rewritten feature-by-feature history in a new public repo. Private-only — this row and the F36 folder are left out of the public copy.
+
+---
+
 ### v2 Cross-Cutting Concerns
 
 | ID | Concern | Description |
@@ -291,9 +301,9 @@ All issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gap
 
 | ID | Issue | Type | Severity | Status | Feature | File |
 |----|-------|------|----------|--------|---------|------|
-| GAP-1 | Excluded from Scope Statuses UI | Gap | High | Open | F10 | [GAP-1](specs/GAP-1-excluded-statuses-ui/definition/spec.md) |
-| GAP-2 | Sprint Range Picker for Sync | Gap | Medium | Open | F5 | [GAP-2](specs/GAP-2-sprint-range-picker/definition/spec.md) |
-| GAP-3 | Sub-Team Management UI | Gap | Medium | Open | F3 | [GAP-3](specs/GAP-3-sub-team-management-ui/definition/spec.md) |
+| GAP-1 | Excluded from Scope Statuses UI | Gap | High | Done (via I11) | F10 | [GAP-1](specs/GAP-1-excluded-statuses-ui/definition/spec.md) |
+| GAP-2 | Sprint Range Picker for Sync | Gap | Medium | Done (via I11) | F5 | [GAP-2](specs/GAP-2-sprint-range-picker/definition/spec.md) |
+| GAP-3 | Sub-Team Management UI | Gap | Medium | Done (via I11) | F3 | [GAP-3](specs/GAP-3-sub-team-management-ui/definition/spec.md) |
 | GAP-4 | Sprint Cards Total-Scope vs Burnup Feature-Only | Gap | Medium | Open | F21 | [GAP-4](specs/GAP-4-sprint-cards-scope-mismatch/definition/spec.md) |
 | BUG-1 | Bug Count = 0 on Sprint 26 | Bug | High | Open | F10 | [BUG-1](specs/BUG-1-bug-count-zero/definition/bug.md) |
 | BUG-2 | Bar Chart vs Burnup Completed SP Disagree (63 SP gap) | Bug | High | Open | F10/F21 | [BUG-2](specs/BUG-2-barchart-burnup-completed-sp-mismatch/definition/bug.md) |
@@ -305,6 +315,7 @@ All issues use `docs/specs/{slug}/definition/` (bug.md for bugs, spec.md for gap
 | ID | Item | Priority | Notes |
 |----|------|----------|-------|
 | TD-1 | Cookie `SecurePolicy.Always` for production | High | Currently `SameAsRequest` — cookies not marked Secure over HTTP. Must be `Always` before Azure deployment behind HTTPS. |
+| TD-3 | Front-end package advisories (carry-over from F36 Phase 1) | Medium | `npm audit` in `client/` reports 6 high-severity advisories (`@vue/server-renderer`, `vue`, `vite`, `postcss`, `nanoid`, `source-map-js`); report kept in `docs/specs/F36-PublicReleaseCleanup/delivery/npm-audit.json`. Owner triage at F36 Phase 2 (spec O2). |
 | TD-2 | Google OAuth options pattern | Medium | `AuthConfiguration` reads `Google:ClientId`/`ClientSecret` via `configuration[]` + inline `Bind`. Should use a typed `GoogleAuthOptions` class with `ValidateDataAnnotations().ValidateOnStart()` like `JiraOptions`. |
 
 ---

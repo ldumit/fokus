@@ -60,7 +60,7 @@ This is infrastructure only -- no QA metrics or visualizations appear in existin
 
 **TestExecution** -- `Entity<string>` (PK = Xray IssueId)
 - IssueId (string, PK)
-- IssueKey (string) -- e.g. "PD-5384"
+- IssueKey (string) -- e.g. "ABC-107"
 - Summary (string)
 - Status (string) -- Jira issue status: To Do, In Progress, Done, Cancelled
 - AssigneeId (string?, FK to Developer)

@@ -13,10 +13,32 @@
       "Read(./**/.env)",
       "Read(./**/.env.*)",
       "Read(./**/secrets/**)",
-      "Read(./.credentials/**)",
-      "Edit(D:/src/code-forge/**)",
-      "Write(D:/src/code-forge/**)",
-      "Bash(*code-forge*)"
+      "Read(./.credentials/**)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/restore-agent.js\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/audit-logger.js\"",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
     ]
   }
 }

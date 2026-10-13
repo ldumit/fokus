@@ -1,0 +1,44 @@
+regex:D:[/\\]src[/\\]fokus[/\\]==>
+regex:D:[/\\]src[/\\]fokus\b==><repo-root>
+regex:C:[/\\]Users[/\\]Laurentiu\b==><home>
+regex:D:[/\\]src[/\\]sprint-rituals\b==><private-repo>
+regex:D:[/\\]src[/\\]dotnet-microservices\b==><private-repo>
+regex:D:[/\\]src[/\\]code-forge\b==><private-repo>
+regex:D:[/\\]Omnishelf[/\\]omnishelf-docs\b==><private-repo>
+regex:code-forge==>private-repo
+regex:Reflekt-Specific==>Sibling-Project-Specific
+regex:Reflekt-specific==>sibling-project-specific
+regex:the Reflekt codebase==>a sibling project's codebase
+regex:without Reflekt context==>without sibling-project context
+regex:the Reflekt system==>the SampleApp system
+regex:\(Reflekt,==>(SampleApp,
+regex:`Reflekt`==>`SampleApp`
+regex:"Reflekt"==>"SampleApp"
+regex:(?<=/)Reflekt\b==>SampleApp
+regex:Reflekt(?=[A-Z.{}/])==>SampleApp
+regex:reflekt(?=[.\-_/])==>sampleapp
+regex:SprintRituals(?=[A-Z.])==>SampleSuite
+regex:\bReflekt\b==>a sibling project
+regex:\bSprintRituals\b==>a sibling project
+regex:sprint-rituals==>sibling-project
+regex:the Agentic Rituals Suite memory layer==>a wider tool suite's memory layer
+regex:part of the Agentic Rituals Suite==>part of a wider tool suite
+regex:Agentic Rituals Suite==>a wider tool suite
+regex:omniaz\.atlassian\.net==>acme.atlassian.net
+regex:OmniShelf/Alfamart==>BrandA/BrandB
+regex:well-crafted Omnishelf skills==>well-crafted skills from an employer
+regex:(?i)omnishelf==>an employer
+regex:\bAlfamart\b==>a customer
+regex:\bPD-4019\b==>ABC-101
+regex:\bPD-4359\b==>ABC-102
+regex:\bPD-4942\b==>ABC-103
+regex:\bPD-5226\b==>ABC-104
+regex:\bPD-5228\b==>ABC-105
+regex:\bPD-5234\b==>ABC-106
+regex:\bPD-5384\b==>ABC-107
+regex:(Jira )?project PD\b==>\1project ABC
+regex:shelf-compliance-kpis==>invoice-export
+regex:shelf-compliance==>invoice-export
+regex:shelf compliance==>invoice export
+regex:\bTaylor\b==>QA engineer A
+regex:\bMateusz\b==>Developer B

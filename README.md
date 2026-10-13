@@ -32,53 +32,44 @@ Fokus reads sprint data from the Jira REST API, computes everything locally, and
 ### Prerequisites
 
 - .NET 10 SDK
-- Node.js 18+
+- Node.js `^20.19.0 || >=22.12.0` (the range the front-end build tools require)
 - A Jira account with an [API token](https://id.atlassian.com/manage-profile/security/api-tokens)
 - Google OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/) (for authentication)
 
+Running the app needs your own Jira account (the free tier works) and your own Google OAuth credentials. There is no sample data or demo mode: the dashboard shows the sprints it syncs from your Jira project.
+
 ### Setup
 
-1. Clone the repo:
+Every command below runs from the repository root (the folder the clone creates) unless the step says otherwise.
+
+1. Clone the repo (the public URL is set when the repository is published):
    ```
-   git clone https://github.com/ldumit/fokus.git
+   git clone <public-repo-url> fokus
    cd fokus
    ```
 
 2. Install frontend dependencies:
    ```
-   cd client
-   npm install
+   npm ci --prefix client
    ```
 
-3. Configure credentials — copy the example and fill in your values:
+3. Create your local settings file `src/Services/Fokus/Fokus.API/appsettings.Development.json` from the committed template (the file is git-ignored, so your secrets stay local):
    ```
-   cp deploy-config.example.ps1 .credentials/deploy-config.ps1
+   cp src/Services/Fokus/Fokus.API/appsettings.json src/Services/Fokus/Fokus.API/appsettings.Development.json
    ```
 
-4. Add your Google OAuth and Jira credentials to `appsettings.Development.json`:
-   ```json
-   {
-     "Google": {
-       "ClientId": "<your-client-id>",
-       "ClientSecret": "<your-client-secret>"
-     },
-     "Jira": {
-       "InstanceUrl": "https://your-org.atlassian.net",
-       "Email": "your-email@example.com",
-       "ApiToken": "<your-api-token>"
-     }
-   }
-   ```
+4. In `src/Services/Fokus/Fokus.API/appsettings.Development.json`, replace the `<…>` placeholders with your values:
+   - `Google:ClientId`, `Google:ClientSecret` — your OAuth 2.0 client (a web application client with `http://localhost:5000/auth/callback` registered as an authorized redirect URI — the backend's address, even when you open the app on 5173, because the dev server forwards `/auth` to the backend on port 5000)
+   - `Jira:InstanceUrl` (e.g. `https://your-org.atlassian.net`), `Jira:Email`, `Jira:ApiToken`, `Jira:ProjectKey`
 
 5. Run the backend:
    ```
    dotnet run --project src/Services/Fokus/Fokus.API
    ```
 
-6. Run the frontend (separate terminal):
+6. Run the frontend (a second terminal, from the repository root):
    ```
-   cd client
-   npm run dev
+   npm run dev --prefix client
    ```
 
 7. Open `http://localhost:5173` in your browser.
@@ -86,6 +77,13 @@ Fokus reads sprint data from the Jira REST API, computes everything locally, and
 ## Deployment
 
 See [docs/deployment-azure.md](docs/deployment-azure.md) for Azure App Service deployment instructions.
+
+The deploy script reads a config file that only Azure deployment needs — skip this for local development. From the repository root:
+```
+mkdir -p .credentials
+cp deploy-config.example.ps1 .credentials/deploy-config.ps1
+```
+Then fill in your values in `.credentials/deploy-config.ps1` and run `deploy.ps1`.
 
 ## License
 

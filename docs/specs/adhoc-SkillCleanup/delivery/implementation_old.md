@@ -34,7 +34,7 @@
 ### Step 6: Reference paths
 - `.claude/skills/create-service-claude-md/workflows/WriteClaudeMd.md` -- Replaced 5 service-specific exemplar paths with description-based guidance
 - `.claude/skills/create-module/workflows/ScaffoldDomainApplication.md` -- Replaced `ArticleTimeline` and service-specific reference paths
-- `.claude/skills/create-domain-event-handler/workflows/Handler.md` -- Full rewrite: removed `Reflekt` namespace/paths, genericized handler patterns and service-name variant headings
+- `.claude/skills/create-domain-event-handler/workflows/Handler.md` -- Full rewrite: removed `SampleApp` namespace/paths, genericized handler patterns and service-name variant headings
 - `.claude/skills/create-feature/workflows/EndpointCarter.md` -- Replaced "Used by" service names and reference path
 - `.claude/skills/create-feature/workflows/EndpointMinimalApi.md` -- Replaced "Used by" service names, reference path, `CreateArticleEndpoint` example, and file upload `articles/{articleId}` example
 - `.claude/skills/create-feature/workflows/Handler.md` -- Replaced "Used by" service names and reference path
@@ -76,7 +76,7 @@
 ## Key Decisions
 - Rewrote 8 files entirely (DomainEvent.md, Handler.md, EndpointFastEndpoints.md, Publisher.md, Consumer.md, EventContract.md, persistence-patterns/SKILL.md, redis-patterns/SKILL.md, CaptureAxes.md, redis-patterns/SKILL.md) where the number of edits per file exceeded 5-6. This was more reliable than many small targeted edits.
 - Used `{Svc}`, `{Entity}`, `{Module}`, `{ProjectName}`, `{SolutionFile}` placeholders consistently across all files.
-- In code blocks that need to look like valid C#, used generic domain names (Order, LineItem, Assignee) instead of Reflekt-specific ones (Article, Asset, Typesetter).
+- In code blocks that need to look like valid C#, used generic domain names (Order, LineItem, Assignee) instead of sibling-project-specific ones (Article, Asset, Typesetter).
 - Replaced argument examples in SKILL.md files (e.g., `/create-aggregate ArticleRevision` -> `/create-aggregate OrderItem`) since these are user-facing suggestions.
 
 ## Deviations from Plan
@@ -87,7 +87,7 @@
 All 6 grep checks returned 0 matches:
 1. `IArticleAction` -- 0 matches
 2. `ArticleApproved|ArticleAccepted|ArticlePublished|ArticleReviewed` -- 0 matches
-3. Service-specific paths (Submission/Review/Production/Auth/Journals/ArticleHub/Reflekt) -- 0 matches
+3. Service-specific paths (Submission/Review/Production/Auth/Journals/ArticleHub/SampleApp) -- 0 matches
 4. `Articles.sln|Articles.Abstractions|Articles.Security|Articles.Integration|Articles.Grpc` -- 0 matches
 5. `Typesetter|ArticleStateMachine|ArticleStage|ArticleActionType` -- 0 matches
 6. `JournalDbContext|SubmissionDbContext|ReviewDbContext|ProductionDbContext` -- 0 matches

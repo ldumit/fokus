@@ -8,8 +8,8 @@ Three-agent pipeline (architect, developer, reviewer) for feature development. A
 
 The `{slug}` identifies a unit of work and follows these conventions:
 - Internal feature: `F{N}-{Name}` — e.g., `F5-SprintSummaryCard`
-- Jira epic: `{KEY}-{2-3-words}` — e.g., `PD-5234-shelf-compliance-kpis`
-- Jira issue: `{KEY}-{2-3-words}` — e.g., `PD-5226-split-config`
+- Jira epic: `{KEY}-{2-3-words}` — e.g., `ABC-106-invoice-export`
+- Jira issue: `{KEY}-{2-3-words}` — e.g., `ABC-104-split-config`
 - Ad-hoc: `adhoc-{Name}` — e.g., `adhoc-SyncRefactoring`
 - Bug: `BUG-{N}-{name}` — e.g., `BUG-1-bug-count-zero`
 - Gap: `GAP-{N}-{name}` — e.g., `GAP-3-sub-team-management-ui`

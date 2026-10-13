@@ -51,7 +51,7 @@ The Jira ticket gives you a head start — the discussion is shorter because som
 
 ### From Jira epic
 An epic groups multiple stories. The epic has business requirements in Confluence; stories have ACs in Jira.
-1. Ask the user for the epic key (e.g., `PD-5234`)
+1. Ask the user for the epic key (e.g., `ABC-106`)
 2. Fetch the epic via Atlassian MCP (summary, description, linked issues)
 3. Search for the linked Confluence page (business requirements, technical specs) — use `search` or ask the user for the Confluence URL if not linked
 4. Write the epic-level spec to `docs/specs/{epic-slug}/definition/epic.md` — captures business problem, success metrics, story breakdown from Confluence content
@@ -63,8 +63,8 @@ The `epic.md` uses the same template as `spec.md` but is named `epic.md` to avoi
 ## Slug Assignment
 
 Before writing any spec, confirm the slug with the user. The slug follows the naming convention in `agents-workflow.md` § Slug and Path Resolution:
-- Jira ticket: `{KEY}-{2-3-word-summary}` (e.g., `PD-5226-split-config`)
-- Jira epic: `{KEY}-{2-3-word-title}` (e.g., `PD-5234-shelf-compliance-kpis`)
+- Jira ticket: `{KEY}-{2-3-word-summary}` (e.g., `ABC-104-split-config`)
+- Jira epic: `{KEY}-{2-3-word-title}` (e.g., `ABC-106-invoice-export`)
 - New feature: `F{N}-{Name}` where N follows the last F-number in `docs/backlog.md` (e.g., `F5-SprintSummaryCard`)
 - Bug: `BUG-{N}-{name}` (e.g., `BUG-1-bug-count-zero`)
 - Gap: `GAP-{N}-{name}` (e.g., `GAP-3-sub-team-management-ui`)

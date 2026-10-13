@@ -61,7 +61,7 @@
 
 | Check | Result | Command | Output |
 |-------|--------|---------|--------|
-| Build | PASS | `dotnet build "D:/src/fokus/src/Fokus.slnx"` | Build succeeded. 0 Error(s), 2 Warning(s) — pre-existing NU1903 vulnerability warning on `Microsoft.Build.Tasks.Core`, unrelated to this feature. |
+| Build | PASS | `dotnet build "src/Fokus.slnx"` | Build succeeded. 0 Error(s), 2 Warning(s) — pre-existing NU1903 vulnerability warning on `Microsoft.Build.Tasks.Core`, unrelated to this feature. |
 | Plan Step 1: JiraOptions | PASS | Read `JiraOptions.cs` | `IsTeamManaged` (bool, default false) and `ProjectKey` (string?) present, no `[Required]` on new fields. |
 | Plan Step 2: IJiraApi endpoint | PASS | Read `IJiraApi.cs` | `GetIssueChangelogPageAsync` added with correct URL and `[Query]` attributes. |
 | Plan Step 2: JiraChangelog DTO | PASS | Read `JiraChangelog.cs` | `MaxResults`, `Total`, `StartAt` added. |

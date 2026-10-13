@@ -27,7 +27,7 @@ Reference `docs/product/v2.md` §4 for canonical definitions.
 The primary QA entity. Represents a Test Execution issue from Xray, linked to sprint stories via issue links.
 
 - **Issue ID** — string, unique identifier from Xray (primary key)
-- **Issue Key** — string, Jira issue key (e.g., "PD-5384")
+- **Issue Key** — string, Jira issue key (e.g., "ABC-107")
 - **Summary** — string, human-readable title
 - **Status** — string, Jira issue status (To Do, In Progress, Done, Cancelled)
 - **Assignee** — references a Developer by account ID (who ran the execution). Nullable.
@@ -62,7 +62,7 @@ The individual result of running one test within one Test Execution. This is whe
 Represents a Test Set issue from Xray, used to group tests by feature area (e.g., "Dashboard", "Verification"). Linked to stories via issue links.
 
 - **Issue ID** — string, unique identifier from Xray (primary key)
-- **Issue Key** — string, Jira issue key (e.g., "PD-4019")
+- **Issue Key** — string, Jira issue key (e.g., "ABC-101")
 - **Summary** — string, human-readable title (e.g., "v6 | Dashboard")
 - **Assignee** — references a Developer by account ID, nullable
 - **Status** — string
@@ -183,7 +183,7 @@ The existing settings pattern uses per-section save endpoints (e.g., `/api/setti
 
 2. **Dual-API sync.** QA data requires two API sources: (a) Jira REST API for issue links — discovers which Test Executions and Test Sets are linked to sprint tickets, and which bugs are linked to TEs via "Blocks" links; (b) Xray GraphQL API for test run results — fetches the PASS/FAIL/TODO/EXECUTING/ABORTED status of each test run within each Test Execution. Jira provides the coverage graph; Xray provides the results.
 
-3. **Sprint derivation for Test Executions.** A TE's sprint membership is derived from its linked stories, not from the TE's own sprint field (which is inconsistently populated). If a TE is linked to story PD-5228 and PD-5228 belongs to Sprint 28, the TE belongs to Sprint 28. If a TE links to stories in multiple sprints, it belongs to the most recent sprint.
+3. **Sprint derivation for Test Executions.** A TE's sprint membership is derived from its linked stories, not from the TE's own sprint field (which is inconsistently populated). If a TE is linked to story ABC-105 and ABC-105 belongs to Sprint 28, the TE belongs to Sprint 28. If a TE links to stories in multiple sprints, it belongs to the most recent sprint.
 
 4. **Idempotent sync.** Re-syncing QA data for a sprint overwrites all existing QA data for that sprint's tickets with fresh data from Jira and Xray. No manual merge or conflict resolution.
 

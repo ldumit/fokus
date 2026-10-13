@@ -1,0 +1,8 @@
+regex:(?ms)^### Tier 13 — Public Release\r?\n(?:(?!^##).)*?^---\r?\n\r?\n==>
+regex:(?m)^\| F36 \|[^\n]*(?:\n|\Z)==>
+regex:(?m)^\*\*F36:\*\*[^\n]*(?:\n(?:\r?\n)?|\Z)==>
+regex:`docs/evaluations/cross-project-skill-mining\.md`(?! \(not included)==>`docs/evaluations/cross-project-skill-mining.md` (not included in the public release)
+regex:(\*\*Source:\*\* adhoc-SuiteScaffolding lessons)(?! \(not included)==>\1 (not included in the public release)
+regex:\| adhoc-SuiteScaffolding \|==>| adhoc-SuiteScaffolding (not included in the public release) |
+regex:\(F28-F32, adhoc-SuiteScaffolding\)==>(F28-F32, adhoc-SuiteScaffolding (not included in the public release))
+regex:F31, F32, adhoc-SuiteScaffolding\)==>F31, F32, adhoc-SuiteScaffolding (not included in the public release))

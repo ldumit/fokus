@@ -2,7 +2,7 @@
 
 ## Search Field
 
-Use the search field above the table to quickly find an epic by its name or Jira key (e.g., "PD-4942" or "Configuration"). The search is case-insensitive and matches any part of the name or key. When you search, the summary cards at the top recalculate to reflect only the matching epics. Search works on both the Active and Completed tabs and combines with the sub-team filter — both narrow the results independently.
+Use the search field above the table to quickly find an epic by its name or Jira key (e.g., "ABC-103" or "Configuration"). The search is case-insensitive and matches any part of the name or key. When you search, the summary cards at the top recalculate to reflect only the matching epics. Search works on both the Active and Completed tabs and combines with the sub-team filter — both narrow the results independently.
 
 ## Sort Indicator
 
