@@ -1,103 +1,125 @@
 # Create Endpoint — FastEndpoints
 
-Used by: FastEndpoints services
+Used by: services whose `CLAUDE.md` names FastEndpoints. No mediator: the endpoint's `HandleAsync` carries the
+logic.
 
 ## Inputs
-- Service name and domain area (from plan step)
-- Feature name — drives all file names
-- Route path and HTTP method
-- Request/response type names and properties
-- Required role (if auth-gated) or AllowAnonymous
+- Service name and feature area (from the plan step)
+- Operation name — drives every file name
+- Route and HTTP method
+- Request and reply members
+- Required roles, or anonymous access
 
 ## Outputs
-- `{Svc}.API/Features/{Domain}/{FeatureName}/{FeatureName}Endpoint.cs`
-- Optionally: `{FeatureName}Endpoint.Configure.cs` (if configuration is complex)
+- `{Svc}.API/Features/{Area}/{Operation}/{Operation}Endpoint.cs` — the endpoint, one type
+- `{Svc}.API/Features/{Area}/{Operation}/{Operation}Command.cs` or `…Query.cs` — the request, its reply and its
+  validator (the skill's § Requests, Replies and Names)
+- `{Svc}.API/Features/{Area}/{Operation}/{Operation}Extensions.cs` — where the reply is mapped from a Domain result
+  (`Mappings.md`)
+- Optionally `{Operation}Summary.cs` — text for the API reference pages
 
 ## Gate
-Proceed only after: service CLAUDE.md read, endpoint framework confirmed as FastEndpoints, one existing feature in the service reviewed for structure.
+Proceed only after: the service's `CLAUDE.md` read, FastEndpoints confirmed, one existing feature of the service read.
 
-Class extending `Endpoint<TRequest, TResponse>`. Handler logic lives directly in `HandleAsync` — no MediatR dispatch.
+## This Repo's Form
+
+- **Access:** an admin-only endpoint carries `[Authorize(Policy = AccessPolicies.Admins)]`
+  (`src/Services/Fokus/Fokus.API/Auth/AccessPolicies.cs`); every other endpoint takes authentication only, and the
+  anonymous ones say so (`authorization-patterns` § This Repo's Form).
+- **Routes are full paths on the attribute** (`[HttpGet("/api/analytics/bug-ratio")]`); there is no route prefix
+  set in start-up, and the existing route parameters carry no type constraint (`{sprintId}`, `{accountId}`). The
+  client (`client/src`) calls these addresses, so a route is not changed without moving the client's calls in the
+  same change.
+- **The request parameter** is `req` in most existing endpoints; new endpoints name it `command` or `query`.
+- **The endpoint coordinates:** it reads the request, calls an Application capability class where the loading is
+  large (a loader in `Fokus.Application/Analytics/{Area}/`), calls the Domain calculator (`domain-service`), and
+  maps the result with its `{Operation}Extensions.cs`.
+- **The one sanctioned `catch`:** `Sync/SyncSprints/SyncSprintsEndpoint.cs` catches the SignalR broadcast after a
+  successful sync, logs it and keeps the sync reply — a best-effort side effect, not an error reply.
 
 ## Pattern
 
-**Reference:** `src/Services/{Svc}/{Svc}.API/Features/{Domain}/{FeatureName}/{FeatureName}Endpoint.cs`
+The endpoint derives `Endpoint<TRequest, TResponse>`. Route, access and tag are attributes, in the order
+authorization, route, tags; the tag is the feature area. `HandleAsync` has a block body and passes the token on to
+every call that takes one.
 
-Create `{FeatureName}Endpoint.cs` in `Features/{Domain}/{FeatureName}/`:
-
-```csharp
-[Authorize(Policy = AccessPolicies.{PolicyName})]
-[Http{Method}("{route}")]
-[Tags("{Domain}")]
-public class {FeatureName}Endpoint({Dependencies})
-    : Endpoint<{CommandType}, {ResponseType}>
+```csharp file=ShipOrderEndpoint.cs
+[Authorize(Policy = Policy.Clerks)]
+[HttpPost("orders/{orderId:int}:ship")]
+[Tags("Orders")]
+public class ShipOrderEndpoint(OrderRepository _orderRepository)
+    : Endpoint<ShipOrderCommand, IdResponse>
 {
-    public override async Task HandleAsync({CommandType} command, CancellationToken ct)
+    public override async Task HandleAsync(ShipOrderCommand command, CancellationToken ct)
     {
-        // Load aggregate/data
-        // Execute domain logic
-        // Save changes
+        var order = await _orderRepository.GetByIdOrThrowAsync(command.OrderId, ct);
 
-        await Send.OkAsync(new {ResponseType}(...), ct);
+        order.Ship(command.TrackingNumber, command);
+
+        await _orderRepository.SaveChangesAsync(ct);
+
+        await Send.OkAsync(new IdResponse(order.Id), ct);
     }
 }
 ```
 
-## Optional: Custom Base Endpoint
+The route value `orderId` binds onto `ShipOrderCommand.OrderId`, and the body onto the rest of the command. The
+role check and the resource check — may this caller ship this order — are the attribute's policy, not code here
+(`authorization-patterns` § Phase 2 — Endpoint gate).
 
-If the service defines a custom base endpoint (check service CLAUDE.md), extend it instead of `Endpoint<TReq, TRes>`:
+A read binds its query-string values onto the query record:
 
-```csharp
-public class {FeatureName}Endpoint({Dependencies})
-    : BaseEndpoint<{CommandType}, {ResponseType}>
+```csharp file=ListOrdersEndpoint.cs
+[Authorize(Roles = Role.Clerk)]
+[HttpGet("orders")]
+[Tags("Orders")]
+public class ListOrdersEndpoint(OrderReadStore _orderReadStore)
+    : Endpoint<ListOrdersQuery, ListOrdersResponse>
 {
-    public override async Task HandleAsync({CommandType} command, CancellationToken ct)
+    public override async Task HandleAsync(ListOrdersQuery query, CancellationToken ct)
     {
-        // ...
+        var (orders, total) = await _orderReadStore.ListAsync(query.Status, query.Page, query.PageSize, ct);
+
+        await Send.OkAsync(new ListOrdersResponse(orders.Select(order => order.ToOrderDto()).ToList(), total), ct);
     }
 }
 ```
+
+## API Reference Text
+
+Where an endpoint needs text on the API reference pages, it goes in a summary class beside it — never a comment:
+
+```csharp file=ShipOrderSummary.cs
+public class ShipOrderSummary : Summary<ShipOrderEndpoint>
+{
+    public ShipOrderSummary()
+    {
+        Summary = "Ships an order";
+        Response<IdResponse>(StatusCodes.Status200OK, "The order was shipped");
+    }
+}
+```
+
+## Shared Flow
+
+Three or more sibling endpoints that share a flow derive a base endpoint in the area's `_Shared` folder (the skill's
+§ Shared Base Endpoint). Below three, keep the lines in each endpoint.
 
 ## Registration
 
-FastEndpoints auto-discovers endpoints — no manual registration needed.
+FastEndpoints finds its endpoints, validators and summary classes itself — no registration line.
 
-## Alternative: Configure() partial class split
+## Errors
 
-For complex configuration, split into two partial files:
-
-**`{FeatureName}Endpoint.Configure.cs`:**
-```csharp
-public partial class {FeatureName}Endpoint
-{
-    public override void Configure()
-    {
-        AllowAnonymous(); // or Policies(AccessPolicies.{PolicyName})
-        Post("{route}");
-        Description(x => x.WithSummary("...").WithTags("{Domain}"));
-    }
-}
-```
-
-## Error Handling
-
-**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
-
-The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
-
-```csharp
-catch (SomeDomainException ex)
-{
-    // side effect only — then re-throw for the middleware
-    throw;
-}
-```
-
-Never write a `catch` that answers through `Send.*` (a status code, an unauthorized reply) in an endpoint.
+No `try/catch` in an endpoint, and no reply built for an error: a missing entity is thrown by the throwing lookup,
+a broken rule by the domain, and the central mapper turns each into its status (`error-handling`). Never
+`Send.NotFoundAsync`, `Send.ForbiddenAsync` or a hand-written error status. `AddError` and `ThrowIfAnyErrors`
+belong to validation, never to business errors.
 
 ## Notes
 
-- If the service defines a custom base validator (check service CLAUDE.md), extend it instead of `Validator<T>`
-- Use `Send.OkAsync()` for FastEndpoints success replies (`Send.NoContentAsync()`, `Send.ResponseAsync(reply, status)` for the others) — the FastEndpoints 8 API (`framework-currency`)
-- Domain events: dispatched automatically via interceptor on SaveChanges, or via `await PublishAsync(new {Event}(...))` for FastEndpoints events
-
-Check the service's CLAUDE.md for which variant to use.
+- Replies go through the static `Send.…` API (`Send.OkAsync`, `Send.NoContentAsync`) — never the legacy
+  `SendOkAsync` instance methods. `framework-currency` owns the migration.
+- Domain events are published by the save interceptor when the data is saved (`create-domain-event-handler`); an
+  endpoint never publishes them by hand.
+- No response headers, and no settings read to branch on — except the headers a streaming reply needs.

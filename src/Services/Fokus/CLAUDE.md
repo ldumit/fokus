@@ -14,11 +14,12 @@ Fokus is a sprint analytics service that syncs data from Jira (sprints, tickets,
 - **Aggregates:** Sprint (int PK, owns SprintMemberships), Ticket (string PK, owns StatusTransitions)
 - **Key entities:** Developer (Entity<string>), StatusTransition (Entity<int>), SprintMembership (composite key child, plain class)
 - **Value objects:** HealthThresholdConfig, HealthWeightConfig (owned by AppSettings, stored as JSON columns)
-- **Application layer:** None — handler logic in endpoints
+- **Analytics calculators:** pure Domain classes in `Fokus.Domain/Analytics/{Sprints,Developers,Qa,Workflow}/`, each beside its result record, with the shared kernel (sub-team and excluded-developer filters, transition attribution, delta, metric cards, test coverage) in `Shared/`. No database, logger, options, clock or JSON: the clock arrives as a `today` parameter read from `TimeProvider` (`domain-service`).
+- **Application layer:** `Fokus.Application`, registered by `AddFokusApplication` (which also registers the instance Domain calculators; the `Shared/` classes are static) — injected capability classes, no mediator: the loaders of the fat analytics endpoints (`Analytics/{Sprints,Developers,Qa}/{Operation}Inputs`, named for what they load) and the two classes around another system, `Sync/SprintIssueSyncService` and `Xray/XrayIssueSyncService`.
 
 ## Endpoint pattern
 
-Class extending `Endpoint<TRequest, TResponse>` or `EndpointWithoutRequest<TResponse>`. Handler logic lives directly in `HandleAsync`. The endpoint file holds the endpoint class only; its request, reply and validator (`Validator<T>`) live in `{Operation}Command.cs` or `{Operation}Query.cs` in the same feature folder (`extract-endpoint-types`). Endpoints are auto-discovered by `AddFastEndpoints()`.
+Class extending `Endpoint<TRequest, TResponse>` or `EndpointWithoutRequest<TResponse>`. `HandleAsync` coordinates: it reads the request, loads (repositories directly, or the endpoint's `Fokus.Application` loader where the loading spans many repositories), calls the Domain calculator, and maps the result to its own reply with the `To…()` extensions in `{Operation}Extensions.cs` (`create-feature`). The endpoint file holds the endpoint class only; its request, reply and validator (`Validator<T>`) live in `{Operation}Command.cs` or `{Operation}Query.cs` in the same feature folder (`extract-endpoint-types`). Endpoints are auto-discovered by `AddFastEndpoints()`.
 
 ## MediatR pipeline behaviors
 
@@ -35,13 +36,13 @@ N/A — FastEndpoints native, no MediatR.
 
 - **Sync-from-external:** All data originates from Jira API. `JiraMapper` maps Jira DTOs → domain entities.
 - **Natural keys:** Ticket.Id = Jira issue key (e.g. "FOK-123"), Developer.Id = Jira accountId. Sprint.Id = Jira sprint ID. These are never auto-generated (`ValueGeneratedNever`).
-- **Computed metrics:** Health scores are computed on-the-fly in endpoints — never stored in the DB.
+- **Computed metrics:** Health scores and every analytics metric are computed per request by the Domain calculators the endpoint calls, from data the endpoint or its loader reads; the endpoint maps the result to its reply — never stored in the DB.
 - **Domain split:** each aggregate is a partial class — state in `{Aggregate}.cs`, behaviour in `Behaviors/{Aggregate}.cs`. Most behaviour is factory mapping from Jira/Xray DTOs (`FromJira`, `FromXray`); the Auth aggregates carry real behaviour (`AppUser.CreateBootstrapAdmin`/`CreateFromInvitation`/`RecordLogin`, `Invitation.Create`/`Accept`/`Revoke`).
 - **AppSettings singleton:** Single row (Id=1). Added by the start-up line `SeedDefaultAppSettingsAsync()` (`Fokus.Persistence/SeedExtensions.cs`, called from `Program.cs` after `MigrateFokusDatabase()`) when the table is empty, in every environment. `AppSettingsRepository.GetAsync` only reads; a missing row is a start-up fault (500). Holds board config, done-status list, workflow stages, health thresholds, health weights.
 - **Errors:** a required lookup throws (`OrThrowNotFound(message)`, or `throw new NotFoundException(message)` where a rule decides the 404); a handler throws `BadRequestException` for a rule it checks. No endpoint or pre-processor writes an error reply — `GlobalExceptionMiddleware` writes every one (`error-handling`).
 - **Access roles:** `AccessRole` / `AccessRoles` (`Admin`, `Manager`) in `Fokus.Domain/Auth/`, never a literal. Admin-only endpoints carry `[Authorize(Policy = AccessPolicies.Admins)]` (`Fokus.API/Auth/AccessPolicies.cs`, registered in `AuthConfiguration.cs`); every other endpoint takes authentication only (`authorization-patterns`), except the two sign-in endpoints that allow anonymous calls: `Auth/Login` (`/auth/login`) and `Auth/ValidateInvitation` (`/api/invitations/{token}/validate`).
 - **Replies:** FastEndpoints 8's `Send.*` API (`Send.OkAsync`, `Send.NoContentAsync`, `Send.ResponseAsync`) — never the removed `Send…Async` instance methods (`framework-currency`).
-- **Focused operation services:** When handler logic is shared across endpoints in the same feature area, extract into a service class named after the operation (not the entity). Lives in the feature area root (e.g., `Features/Sync/SprintIssueSyncService.cs`). Must stay single-purpose — if it grows beyond one operation, split it.
+- **Shared logic:** logic shared across endpoints is a pure Domain calculator (in `Fokus.Domain/Analytics/{Area}`, or `Shared/` when several areas use it) or an injected `Fokus.Application` capability class, named for its job (calculator, resolver, checker, `…Inputs` loader). `…Service` names only a class around another system (`SprintIssueSyncService`, `XrayIssueSyncService`). Each stays single-purpose — if it grows beyond one job, split it.
 
 ## Existing features
 

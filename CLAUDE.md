@@ -23,7 +23,8 @@ src/
   Services/                    # Microservices — one folder per service
     {Svc}/
       {Svc}.API/               #   FastEndpoints feature slices (endpoint + request + response + validator + event handlers), SignalR hubs, DI, migration startup host
-      {Svc}.Domain/            #   Aggregates, value objects, domain events
+      {Svc}.Application/       #   Injected capability classes (loaders, classes around another system); no mediator — only when the logic outgrows the endpoints
+      {Svc}.Domain/            #   Aggregates, value objects, domain events, pure calculators
       {Svc}.Persistence/       #   EF Core DbContext, configs, migrations, repositories
   Modules/                     # Modular monolith (Contracts + Implementation per module)
   ApiGateway/                  # YARP reverse proxy
@@ -31,7 +32,7 @@ docker-compose                 # Local dev environment
 ```
 
 Default to **module**; only use a microservice when deployment/scaling/ownership demands it.
-New services use the three-project split above (API / Domain / Persistence). There is no separate Application project — FastEndpoints endpoint classes own feature slices directly (request + response + validator + handler logic + event handlers all live in `{Svc}.API/Features/`).
+New services use the three-project split above (API / Domain / Persistence). A service adds an `{Svc}.Application` project when its logic outgrows the endpoints (Fokus does, since F39). Application holds injected capability classes with no mediator; the endpoint stays the coordinator; pure rules and calculators live in `{Svc}.Domain`.
 
 See `docs/conventions/project-rules.md` for the project reference graph, coding conventions, and build verification.
 
@@ -41,7 +42,7 @@ See `docs/conventions/project-rules.md` for the project reference graph, coding 
 - **FastEndpoints** — endpoint classes per feature. One class owns request + response + handler logic; validator is a sibling class in the same folder. Built-in FluentValidation integration runs pre-handler; pre/post processors handle cross-cutting (logging, auth enrichment).
 - **FluentValidation** — request validators, auto-discovered and executed by FastEndpoints before the handler runs.
 - **FastEndpoints `IEvent` bus** — in-process publish/subscribe for domain events. Aggregates raise events onto a `DomainEvents` list; a `SaveChangesInterceptor` in Persistence publishes them after a successful save. `IEventHandler<T>` implementations (SignalR broadcasters, background-job triggers) live alongside their feature slices in `{Svc}.API`.
-- Mapster — object mapping
+- Hand-written `To…()` mapping extensions in `{Op}Extensions.cs` — object mapping; no mapping library.
 - EF Core — SQLite (file-backed, local dev and single-node deploys)
 - MassTransit + RabbitMQ — integration events
 - gRPC code-first — service-to-service sync communication

@@ -1,80 +1,94 @@
-# Create MediatR Handler
+# Create Mediator Handler
 
-Used by: MediatR services
+Used by: services built on a mediator (Carter or minimal-API endpoints). A FastEndpoints service has no handler —
+its logic lives in `HandleAsync`.
 
 ## Inputs
-- Feature name and domain area
-- Command/query type (command = write, query = read)
-- Handler dependencies (repositories, services)
-- Return type
+- Operation name and feature area
+- Command (a write) or query (a read), and its reply
+- The handler's dependencies
 
 ## Outputs
-- `{Svc}.Application/Features/{Domain}/{FeatureName}/{FeatureName}Command.cs` (or Query)
-- `{Svc}.Application/Features/{Domain}/{FeatureName}/{FeatureName}CommandHandler.cs`
+- `{Svc}.Application/Features/{Area}/{Operation}/{Operation}Command.cs` (or `…Query.cs`) — the request, its reply
+  and its validator
+- `{Svc}.Application/Features/{Area}/{Operation}/{Operation}CommandHandler.cs` (or `…QueryHandler.cs`)
 
 ## Gate
-Proceed only after: service CLAUDE.md confirms MediatR usage.
+Proceed only after: the service's `CLAUDE.md` confirms a mediator.
 
-## Command + Handler Pattern
+## Command File
 
-**Reference:** `src/Services/{Svc}/{Svc}.Application/Features/{FeatureName}/{FeatureName}CommandHandler.cs`
+The command derives the area's command base, which carries the route id, the acting user and the time (the skill's
+§ Requests, Replies and Names); the stamping hook fills the last two. Its validator lives in the same file:
 
-### Command file: `{FeatureName}Command.cs`
-
-```csharp
-public record {FeatureName}Command : ICommand<{ResponseType}>, IAuditableAction
+```csharp file=ShipOrderCommand.cs
+public record ShipOrderCommand : OrderCommand, ICommand<IdResponse>
 {
-    public int CreatedById { get; set; } // set by pipeline behavior
-    public required int {EntityId} { get; init; }
-    // other properties...
+    public required string TrackingNumber { get; init; }
+
+    public override OrderActionType ActionType => OrderActionType.Ship;
 }
-```
 
-- Use `ICommand<T>` for mutations, `IQuery<T>` for reads
-- Implement `IAuditableAction` if the command needs user ID assignment via pipeline behavior
-- Validator class co-located in same file (see `workflows/Validator.md`)
-
-### Handler file: `{FeatureName}CommandHandler.cs`
-
-```csharp
-public class {FeatureName}CommandHandler({Dependencies})
-    : IRequestHandler<{FeatureName}Command, {ResponseType}>
+public class ShipOrderCommandValidator : OrderCommandValidator<ShipOrderCommand>
 {
-    public async Task<{ResponseType}> Handle({FeatureName}Command command, CancellationToken ct)
+    public ShipOrderCommandValidator()
     {
-        // Load aggregate
-        var entity = await _repository.FindByIdOrThrowAsync(command.{EntityId});
-
-        // Execute domain logic
-        entity.{DomainMethod}(command.{Params}, command);
-
-        // Save (domain events dispatch via interceptor)
-        await _repository.SaveChangesAsync();
-
-        return new {ResponseType}(entity.Id);
+        RuleFor(command => command.TrackingNumber).RequiredWithMaxLength(MaxLength.Code);
     }
 }
 ```
 
-### Query Handler Pattern
+`ICommand<T>` marks a write and `IQuery<T>` a read; the markers state intent, and no behaviour branches on them
+(`cqrs-patterns`).
 
-```csharp
-public class {FeatureName}QueryHandler({Dependencies})
-    : IRequestHandler<{FeatureName}Query, {ResponseType}>
+## Handler File
+
+The handler loads through the throwing lookup, calls the aggregate's behaviour with the command as its action
+object, saves, and replies. Domain events go out when the data is saved; the handler never publishes them.
+
+```csharp file=ShipOrderCommandHandler.cs
+public class ShipOrderCommandHandler(OrderRepository _orderRepository)
+    : IRequestHandler<ShipOrderCommand, IdResponse>
 {
-    public async Task<{ResponseType}> Handle({FeatureName}Query query, CancellationToken ct)
+    public async Task<IdResponse> Handle(ShipOrderCommand command, CancellationToken ct)
     {
-        var entity = await _repository.FindByIdOrThrowAsync(query.Id);
-        return entity.Adapt<{ResponseType}>();
+        var order = await _orderRepository.GetByIdOrThrowAsync(command.OrderId, ct);
+
+        order.Ship(command.TrackingNumber, command);
+
+        await _orderRepository.SaveChangesAsync(ct);
+
+        return new IdResponse(order.Id);
+    }
+}
+```
+
+A query handler reads and maps by hand (`Mappings.md`):
+
+```csharp file=GetOrderQueryHandler.cs
+public class GetOrderQueryHandler(OrderRepository _orderRepository)
+    : IRequestHandler<GetOrderQuery, GetOrderResponse>
+{
+    public async Task<GetOrderResponse> Handle(GetOrderQuery query, CancellationToken ct)
+    {
+        var order = await _orderRepository.GetByIdOrThrowAsync(query.OrderId, ct);
+
+        return order.ToGetOrderResponse();
     }
 }
 ```
 
 ## Location
 
-Handlers live in the Application project:
+```text
+{Svc}.Application/Features/{Area}/{Operation}/
+├── {Operation}Command.cs          the command, its reply and its validator
+└── {Operation}CommandHandler.cs   the handler
 ```
-{Service}.Application/Features/{Domain}/{FeatureName}/
-├── {FeatureName}Command.cs          (command record + validator)
-└── {FeatureName}CommandHandler.cs   (handler)
-```
+
+## Rules
+
+- Registering the handler follows `service-registration` § Registration Patterns.
+- No logging in a handler — logging is central (the error middleware logs every mapped error).
+- No `try/catch` that turns an error into a reply; no role check (`authorization-patterns`).
+- Private steps of a handler end in `Async` when they are asynchronous; `Handle` keeps the framework's name.

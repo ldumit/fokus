@@ -28,4 +28,4 @@ Per-sprint capacity override for a developer.
 
 **Exclusion rule (ExcludedDeveloperFilter):** A developer is excluded from sprint analytics if effective capacity == 0 AND they completed 0 tickets. A developer with 0% capacity who still completed a ticket is NOT excluded.
 
-**Key file:** `Fokus.API/Features/Analytics/ExcludedDeveloperFilter.cs`
+**Key file:** `Fokus.Domain/Analytics/Shared/ExcludedDeveloperFilter.cs`

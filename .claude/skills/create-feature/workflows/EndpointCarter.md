@@ -1,73 +1,78 @@
 # Create Endpoint — Carter
 
-Used by: Carter + MediatR services
+Used by: services whose `CLAUDE.md` names Carter with a mediator. The endpoint sends the command to its handler in
+the Application project.
 
 ## Inputs
-- Feature name, route path, HTTP method
-- Request/response type names
-- MediatR command/query type to dispatch to
+- Operation name, route and HTTP method
+- The command or query and its reply (written first — `Handler.md`)
+- Required roles
 
 ## Outputs
-- `{Svc}.API/Endpoints/{Domain}/{FeatureName}Endpoint.cs`
+- `{Svc}.API/Endpoints/{Operation}Endpoint.cs`
 
 ## Gate
-Proceed only after: service CLAUDE.md confirms Carter + MediatR, Handler.md workflow followed first.
-
-Class implementing `ICarterModule` with fluent route building. Dispatches to MediatR handler.
+Proceed only after: the service's `CLAUDE.md` confirms Carter with a mediator, and `Handler.md` is done.
 
 ## Pattern
 
-**Reference:** `src/Services/{Svc}/{Svc}.API/Endpoints/{Domain}/{FeatureName}Endpoint.cs`
+One `ICarterModule` per operation. Route values are set onto the command with a `with` expression — the command's
+route members are `init` — and the token is passed to `Send`.
 
-Create `{FeatureName}Endpoint.cs` in `Endpoints/{Domain}/`:
-
-```csharp
-public class {FeatureName}Endpoint : ICarterModule
+```csharp file=ShipOrderEndpoint.cs
+public class ShipOrderEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.Map{Method}("/{domain}/{route}", async ([{FromRoute}] int id, {CommandType} command, ISender sender) =>
+        app.MapPost("orders/{orderId:int}:ship", async (int orderId, ShipOrderCommand command, ISender sender, CancellationToken ct) =>
         {
-            var result = await sender.Send(command with { Id = id });
-            return Results.Ok(result);
+            var response = await sender.Send(command with { OrderId = orderId }, ct);
+            return Results.Ok(response);
         })
-        .WithTags("{Domain}")
-        .WithName("{FeatureName}")
-        .Produces<{ResponseType}>(StatusCodes.Status200OK)
+        .RequireRoleAuthorization(Role.Clerk, Role.Manager)
+        .WithName("ShipOrder")
+        .WithTags("Orders")
+        .Produces<IdResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .RequireRoleAuthorization(Role.{RequiredRole});
+        .ProducesProblem(StatusCodes.Status404NotFound);
+    }
+}
+```
+
+A read binds its query-string values into the query record with `[AsParameters]`:
+
+```csharp file=ListOrdersEndpoint.cs
+public class ListOrdersEndpoint : ICarterModule
+{
+    public void AddRoutes(IEndpointRouteBuilder app)
+    {
+        app.MapGet("orders", async ([AsParameters] ListOrdersQuery query, ISender sender, CancellationToken ct) =>
+        {
+            var response = await sender.Send(query, ct);
+            return Results.Ok(response);
+        })
+        .RequireRoleAuthorization(Role.Clerk)
+        .WithName("ListOrders")
+        .WithTags("Orders")
+        .Produces<ListOrdersResponse>(StatusCodes.Status200OK);
     }
 }
 ```
 
 ## Handler Location
 
-The endpoint dispatches to a handler in the Application project:
-- `{Service}.Application/Features/{Domain}/{FeatureName}/{FeatureName}CommandHandler.cs`
+`{Svc}.Application/Features/{Area}/{Operation}/{Operation}CommandHandler.cs` — see `Handler.md`.
 
 ## Registration
 
-Carter auto-discovers modules via `AddCarter()` + `app.MapCarter()` — no manual registration.
+Carter finds its modules through `AddCarter()` and `app.MapCarter()` — no line per endpoint.
 
-## Error Handling
+## Errors
 
-**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
+No `try/catch` in an endpoint and no `Results.Problem(…)` built for an error: the lookup throws, the domain throws,
+and the central mapper turns each into its status (`error-handling`).
 
-The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
+## Access
 
-```csharp
-catch (SomeDomainException ex)
-{
-    // side effect only — then re-throw for the middleware
-    throw;
-}
-```
-
-Never write `catch → Results.Problem(statusCode)` in an endpoint.
-
-## Notes
-
-- Route parameters bind via `[FromRoute]`, body via `[FromBody]` or parameter name matching
-- Multiple routes can be defined in a single `ICarterModule`
-- Group-level authorization: apply `.RequireAuthorization()` on the route
+Writes take the role gate and the resource gate together, through the one role-authorization extension
+(`authorization-patterns` § Phase 2 — Endpoint gate). A bare `.RequireAuthorization()` is the read-model case only.

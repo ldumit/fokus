@@ -2,11 +2,13 @@ using Blocks.AspNetCore.Middlewares;
 using Fokus.API;
 using Fokus.API.Features.Xray;
 using Fokus.API.Hubs;
+using Fokus.Application;
 using Fokus.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddFokusServices(builder.Configuration, builder.Environment);
+builder.Services.AddFokusApplication(builder.Configuration);
 builder.Services.AddFokusPersistence(builder.Configuration);
 
 var app = builder.Build();

@@ -7,7 +7,7 @@ public class GetBugRatioEndpoint(
     AppSettingsRepository appSettingsRepository,
     DeveloperRepository developerRepository,
     TicketRepository ticketRepository,
-    BugRatioService bugRatioService)
+    BugRatioCalculator bugRatioCalculator)
     : Endpoint<GetBugRatioRequest, BugRatioResponse>
 {
     public override async Task HandleAsync(GetBugRatioRequest req, CancellationToken ct)
@@ -69,10 +69,10 @@ public class GetBugRatioEndpoint(
                 target, allDevelopers, capacityRecords, transitionIndex, settings);
             var filteredActive = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
-            var singleResult = bugRatioService.ComputeSingleSprint(
+            var singleResult = bugRatioCalculator.ComputeSingleSprint(
                 target, priorSprint, allSprints, filteredActive, settings, statusTransitions, subTeam, excludedIds);
 
-            await Send.OkAsync(new BugRatioResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new BugRatioResponse("single", null, singleResult.ToBugRatioSingleSprintDto()), ct);
         }
         else
         {
@@ -89,10 +89,10 @@ public class GetBugRatioEndpoint(
                 .ToHashSet();
             var filteredActive = activeDevelopers.Where(d => !excludedInAll.Contains(d.Id)).ToList();
 
-            var multiResult = bugRatioService.ComputeMultiSprint(
+            var multiResult = bugRatioCalculator.ComputeMultiSprint(
                 selectedSprints, allSprints, filteredActive, settings, statusTransitions, subTeam, excludedInAll);
 
-            await Send.OkAsync(new BugRatioResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new BugRatioResponse("multi", multiResult.ToBugRatioMultiSprintDto(), null), ct);
         }
     }
 }

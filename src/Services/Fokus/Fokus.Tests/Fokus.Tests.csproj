@@ -13,5 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Fokus.API\Fokus.API.csproj" />
+    <ProjectReference Include="..\Fokus.Application\Fokus.Application.csproj" />
+    <ProjectReference Include="..\Fokus.Domain\Fokus.Domain.csproj" />
   </ItemGroup>
 </Project>

@@ -7,8 +7,9 @@ public class GetDeveloperProgressEndpoint(
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
     TicketRepository ticketRepository,
-    DeveloperProgressService developerProgressService)
-    : Endpoint<GetDeveloperProgressRequest, DeveloperProgressResponse>
+    DeveloperProgressCalculator developerProgressCalculator,
+    TimeProvider timeProvider)
+    : Endpoint<GetDeveloperProgressRequest, GetDeveloperProgressResponse>
 {
     public override async Task HandleAsync(GetDeveloperProgressRequest req, CancellationToken ct)
     {
@@ -21,7 +22,7 @@ public class GetDeveloperProgressEndpoint(
         // 3. No active sprint — return early with empty response
         if (activeSprint is null)
         {
-            await Send.OkAsync(new DeveloperProgressResponse(false, null, 0, 0, false, [], []), ct);
+            await Send.OkAsync(new GetDeveloperProgressResponse(false, null, 0, 0, false, [], []), ct);
             return;
         }
 
@@ -29,7 +30,7 @@ public class GetDeveloperProgressEndpoint(
         var sprintWithMemberships = await sprintRepository.GetSprintWithMembershipsAsync(activeSprint.Id, ct);
         if (sprintWithMemberships is null)
         {
-            await Send.OkAsync(new DeveloperProgressResponse(false, null, 0, 0, false, [], []), ct);
+            await Send.OkAsync(new GetDeveloperProgressResponse(false, null, 0, 0, false, [], []), ct);
             return;
         }
 
@@ -49,7 +50,7 @@ public class GetDeveloperProgressEndpoint(
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
 
         // 8. Compute and return
-        var result = developerProgressService.ComputeProgress(
+        var result = developerProgressCalculator.ComputeProgress(
             sprintWithMemberships,
             activeDevelopers,
             capacityRecords,
@@ -57,8 +58,9 @@ public class GetDeveloperProgressEndpoint(
             subTeam,
             allDevelopers,
             statusTransitions,
-            excludedDeveloperIds);
+            excludedDeveloperIds,
+            timeProvider.GetUtcNow().UtcDateTime.Date);
 
-        await Send.OkAsync(result, ct);
+        await Send.OkAsync(result.ToGetDeveloperProgressResponse(), ct);
     }
 }

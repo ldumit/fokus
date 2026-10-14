@@ -61,7 +61,7 @@ Priority order:
 2. Developer default capacity (`Developer.DefaultCapacityPercent`).
 3. Fallback: `100` (full capacity — indicator suppressed since `< 100%` condition not met).
 
-This matches the same resolution logic used in `DeveloperThroughputService`.
+This matches the same resolution logic used in `DeveloperThroughputCalculator`.
 
 ### Multi-Sprint Averaging (BR6)
 
@@ -73,9 +73,9 @@ This prevents a developer with one low-capacity sprint from distorting the avera
 
 ## Key Files
 
-- `src/Services/Fokus/Fokus.API/Features/Analytics/LeaderboardService.cs` — computation service
+- `src/Services/Fokus/Fokus.Domain/Analytics/Developers/LeaderboardCalculator.cs` — computation (Domain calculator; the endpoint maps its result to the reply)
 - `src/Services/Fokus/Fokus.API/Features/Analytics/GetLeaderboard/GetLeaderboardEndpoint.cs` — endpoint
-- `src/Services/Fokus/Fokus.API/Features/Analytics/SprintSummaryService.cs` — `DeveloperSummary` record and `ComputeLeaderboard` (Dashboard)
+- `src/Services/Fokus/Fokus.Domain/Analytics/Sprints/SprintSummaryCalculator.cs` — `ComputeLeaderboard` (Dashboard); its `DeveloperSummary` record is in `SprintSummaryResult.cs` beside it
 - `client/src/components/developers/LeaderboardTab.vue` — Developers page container
 - `client/src/components/developers/LeaderboardChart.vue` — stacked bar chart (CSS, no lib)
 - `client/src/components/developers/LeaderboardTable.vue` — metrics table with delta indicators

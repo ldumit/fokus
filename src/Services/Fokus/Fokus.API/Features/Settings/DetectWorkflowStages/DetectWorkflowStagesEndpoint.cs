@@ -5,7 +5,7 @@ namespace Fokus.API.Features.Settings.DetectWorkflowStages;
 public class DetectWorkflowStagesEndpoint(
     TicketRepository ticketRepository,
     AppSettingsRepository appSettingsRepository,
-    WorkflowDetectionService detectionService)
+    WorkflowStageResolver workflowStageResolver)
     : EndpointWithoutRequest<DetectWorkflowStagesResponse>
 {
     public override async Task HandleAsync(CancellationToken ct)
@@ -13,7 +13,7 @@ public class DetectWorkflowStagesEndpoint(
         var edgeData = await ticketRepository.GetTransitionEdgesForDetectionAsync(ct);
         var settings = await appSettingsRepository.GetAsync(ct);
 
-        var result = detectionService.Detect(edgeData, settings.DoneStatuses);
+        var result = workflowStageResolver.Detect(edgeData, settings.DoneStatuses);
 
         await Send.OkAsync(new DetectWorkflowStagesResponse
         {

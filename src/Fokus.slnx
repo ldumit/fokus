@@ -19,6 +19,7 @@
   <Folder Name="/Services/" />
   <Folder Name="/Services/Fokus/">
     <Project Path="Services/Fokus/Fokus.API/Fokus.API.csproj" />
+    <Project Path="Services/Fokus/Fokus.Application/Fokus.Application.csproj" />
     <Project Path="Services/Fokus/Fokus.Domain/Fokus.Domain.csproj" />
     <Project Path="Services/Fokus/Fokus.Persistence/Fokus.Persistence.csproj" />
     <Project Path="Services/Fokus/Fokus.Tests/Fokus.Tests.csproj" />

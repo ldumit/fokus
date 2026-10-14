@@ -2,7 +2,7 @@
 
 Measures how long completed tickets spend in each workflow stage.
 
-**Key file:** `Fokus.API/Features/Analytics/CycleTimeService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/CycleTimeCalculator.cs`
 **Endpoint:** `GET /analytics/cycle-time?sprintId&last&subTeam`
 **Store:** `client/src/stores/cycleTimeStore.ts`
 **View:** `client/src/views/CycleTimeView.vue`

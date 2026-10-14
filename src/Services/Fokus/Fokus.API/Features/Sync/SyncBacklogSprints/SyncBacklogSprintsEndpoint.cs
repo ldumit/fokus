@@ -1,3 +1,5 @@
+using Fokus.Application.Sync;
+
 namespace Fokus.API.Features.Sync.SyncBacklogSprints;
 
 [HttpPost("/api/sync/backlog")]

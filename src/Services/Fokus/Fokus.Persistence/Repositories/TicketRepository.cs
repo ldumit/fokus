@@ -1,14 +1,7 @@
 using Blocks.EntityFrameworkCore.Repositories;
+using Fokus.Domain.Analytics.Workflow;
 
 namespace Fokus.Persistence.Repositories;
-
-public record TransitionEdge(string FromStatus, string ToStatus, int Count);
-
-public record TransitionEdgeData(
-    List<TransitionEdge> Edges,
-    int TransitionCount,
-    int TicketCount,
-    int SprintCount);
 
 public class TicketRepository(FokusDbContext db)
     : RepositoryBase<FokusDbContext, Ticket, string>(db)

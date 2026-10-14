@@ -6,61 +6,28 @@ namespace Fokus.API.Features.Analytics.GetDeveloperDetail;
 [HttpGet("/api/analytics/developer-detail/{accountId}")]
 [Tags("Analytics")]
 public class GetDeveloperDetailEndpoint(
-    SprintRepository sprintRepository,
-    DeveloperRepository developerRepository,
-    AppSettingsRepository appSettingsRepository,
-    TicketRepository ticketRepository,
-    DeveloperDetailService developerDetailService,
-    IOptions<JiraOptions> jiraOptions)
-    : Endpoint<GetDeveloperDetailRequest, DeveloperDetailResponse>
+    DeveloperDetailInputs developerDetailInputs,
+    DeveloperDetailCalculator developerDetailCalculator,
+    IOptions<JiraOptions> jiraOptions,
+    TimeProvider timeProvider)
+    : Endpoint<GetDeveloperDetailRequest, GetDeveloperDetailResponse>
 {
     public override async Task HandleAsync(GetDeveloperDetailRequest req, CancellationToken ct)
     {
-        // 1. Look up developer
-        var allDevelopers = await developerRepository.GetAllAsync(ct);
-        var developer = allDevelopers.FirstOrDefault(d => d.Id == req.AccountId);
-        if (developer is null || !developer.IsActive)
-            throw new NotFoundException($"Developer {req.AccountId} was not found or is inactive.");
+        var source = await developerDetailInputs.LoadAsync(req.AccountId, ct);
+        var settings = source.Settings;
 
-        // 2. Load analytics sprints (active + closed)
-        var analyticsSprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
-        var closedSprintInfos = analyticsSprints
-            .Where(s => s.State == SprintState.Closed)
-            .OrderBy(s => s.StartDate)
-            .ToList();
-
-        // 3. Load settings
-        var settings = await appSettingsRepository.GetAsync(ct);
-
-        // 4. Load all closed sprint IDs with this developer's memberships — we need memberships to filter
-        var allClosedIds = closedSprintInfos.Select(s => s.Id).ToList();
-        var allLoadedSprints = await sprintRepository.GetSprintsWithMembershipsAsync(allClosedIds, ct);
-        var closedSprints = allLoadedSprints.OrderBy(s => s.StartDate).ToList();
-
-        // 5. Load capacities and all developers for capacity fallback
-        var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(allClosedIds, ct);
-
-        // 6. Build capacity lookup: accountId -> sprintId -> capacityPercent
-        var capacityLookup = capacityRecords
-            .GroupBy(c => c.DeveloperAccountId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.ToDictionary(c => c.SprintId, c => c.CapacityPercent));
-
-        // 7. Load status transitions for all closed sprint tickets
-        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(allClosedIds, ct);
-        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
-
-        // 8. Excluded developer check: 0% capacity AND 0 completed in all sprints
+        // Excluded developer check: 0% capacity AND 0 completed in all closed sprints
+        var transitionIndex = StatusTransitionIndex.Build(source.StatusTransitions);
         var (orderedStages, _) = TransitionAttributionChecker.ResolveStartIndex(settings);
         var endIndex = TransitionAttributionChecker.ResolveEndIndex(settings, orderedStages);
 
-        var hasAnyActivity = closedSprints.Any(sprint =>
+        var hasAnyActivity = source.ClosedSprints.Any(sprint =>
         {
-            var effectiveCapacity = capacityLookup.TryGetValue(req.AccountId, out var sprintMap) &&
+            var effectiveCapacity = source.CapacityLookup.TryGetValue(req.AccountId, out var sprintMap) &&
                                     sprintMap.TryGetValue(sprint.Id, out var cap)
                 ? cap
-                : developer.DefaultCapacityPercent;
+                : source.Developer.DefaultCapacityPercent;
 
             if (effectiveCapacity > 0) return true;
 
@@ -77,41 +44,25 @@ public class GetDeveloperDetailEndpoint(
         if (!hasAnyActivity)
             throw new NotFoundException($"Developer {req.AccountId} has no activity in closed sprints.");
 
-        // 9. Load active sprint with memberships (if any)
-        var activeSprintInfo = analyticsSprints.FirstOrDefault(s => s.State == SprintState.Active);
-        Sprint? activeSprint = null;
-        List<DeveloperSprintCapacity> activeCapacityRecords = [];
+        var active = await developerDetailInputs.LoadActiveSprintAsync(source.AnalyticsSprints, ct);
+        var statusTransitions = active.ActiveSprint is null
+            ? source.StatusTransitions
+            : [..source.StatusTransitions, ..active.StatusTransitions];
 
-        if (activeSprintInfo is not null)
-        {
-            activeSprint = await sprintRepository.GetSprintWithMembershipsAsync(activeSprintInfo.Id, ct);
-            if (activeSprint is not null)
-            {
-                activeCapacityRecords = await developerRepository.GetCapacitiesForSprintsAsync([activeSprintInfo.Id], ct);
-
-                // Load transitions for active sprint tickets too
-                var activeTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync([activeSprintInfo.Id], ct);
-                statusTransitions = [..statusTransitions, ..activeTransitions];
-            }
-        }
-
-        // 10. Determine last (sprint range)
-        var last = req.Last ?? 10;
-
-        // 11. Compute and return
-        var result = developerDetailService.ComputeDetail(
+        var result = developerDetailCalculator.ComputeDetail(
             req.AccountId,
-            developer,
-            closedSprints,
-            activeSprint,
-            capacityLookup,
-            activeCapacityRecords,
+            source.Developer,
+            source.ClosedSprints,
+            active.ActiveSprint,
+            source.CapacityLookup,
+            active.CapacityRecords,
             settings,
             statusTransitions,
-            last,
+            req.Last ?? 10,
             settings.BugRatioTarget,
-            jiraOptions.Value.InstanceUrl);
+            jiraOptions.Value.InstanceUrl,
+            timeProvider.GetUtcNow().UtcDateTime.Date);
 
-        await Send.OkAsync(result, ct);
+        await Send.OkAsync(result.ToGetDeveloperDetailResponse(), ct);
     }
 }

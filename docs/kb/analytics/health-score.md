@@ -2,7 +2,7 @@
 
 Composite 0-100 score summarizing sprint health. Displayed as a RAG badge on the Dashboard.
 
-**Key file:** `Fokus.API/Features/Analytics/SprintSummaryService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/SprintSummaryCalculator.cs`
 **Endpoint:** `GET /analytics/sprint-summary?sprintId&subTeam`
 **Store:** `client/src/stores/dashboardStore.ts`
 **View:** `client/src/views/DashboardView.vue`
@@ -56,7 +56,7 @@ Weights and thresholds are configurable in AppSettings. See [Settings](../domain
 **Leaderboard:** Active developers ordered by SP completed desc, then name asc.
 
 **Flags:**
-- Zombie: candidates are the (filtered) tickets of the sparkline-window sprints; a candidate is flagged when it appears in 3+ distinct analytics sprints (Closed + Active, Future excluded) over the whole synced history. `SprintCount` shown and sorted on (desc) is that whole-history count. Source: `SprintRepository.GetZombieSprintCountsAsync(3)` — one SQL projection, ticket ids grouped case-insensitively, removed memberships counted. The Carry-Over page's zombie list (`CarryOverService.GetZombieTicketKeys`) counts closed sprints only, so the two counts can differ by the active sprint.
+- Zombie: candidates are the (filtered) tickets of the sparkline-window sprints; a candidate is flagged when it appears in 3+ distinct analytics sprints (Closed + Active, Future excluded) over the whole synced history. `SprintCount` shown and sorted on (desc) is that whole-history count. Source: `SprintRepository.GetZombieSprintCountsAsync(3)` — one SQL projection, ticket ids grouped case-insensitively, removed memberships counted. The Carry-Over page's zombie list (`CarryOverCalculator.GetZombieTicketKeys`) counts closed sprints only, so the two counts can differ by the active sprint.
 - Mid-sprint disruption: tickets added after `sprint start + PlanningWindowDays`, not removed (`AppSettings.PlanningWindowDays`, default 2)
 - Zero-SP developers: active devs who completed 0 SP
 

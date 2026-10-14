@@ -2,6 +2,17 @@ namespace Fokus.Domain;
 
 public partial class Ticket
 {
+    public decimal? GetEffectiveSp(int defaultSpPerBug)
+    {
+        if (StoryPoints.HasValue && StoryPoints.Value > 0)
+            return StoryPoints;
+
+        if (IssueType == "Bug" && defaultSpPerBug > 0)
+            return (decimal)defaultSpPerBug;
+
+        return null;
+    }
+
     public static Ticket FromJira(JiraIssue dto) => new()
     {
         Id = dto.Key,

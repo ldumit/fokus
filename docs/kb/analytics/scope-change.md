@@ -2,7 +2,7 @@
 
 Measures what changed during a sprint — additions, removals, and disruption classification.
 
-**Key file:** `Fokus.API/Features/Analytics/ScopeChangeService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/ScopeChangeCalculator.cs`
 **Endpoint:** `GET /analytics/scope-change?sprintId&last&subTeam`
 **Store:** `client/src/stores/sprintsStore.ts`
 **View:** `client/src/views/SprintsView.vue`
@@ -38,7 +38,7 @@ Only tickets that qualify as Added SP (AddedAt > planningCutoff AND cycle-entere
 
 - **Scope line (orange):** Cumulative feature SP that have transitioned to CycleTimeStartStage (or beyond) within [sprintStart, current day]. Starts near zero and grows as tickets enter the pipeline.
 - **Completed line (green):** Cumulative feature SP that have transitioned to CycleTimeEndStage (or beyond) within [sprintStart, current day].
-- **Bug area (red):** Tracks remaining bug work. Each bug is a span `[entry day, exit day)` built once (`ScopeChangeService.BuildBugAreaSpans`); a day's `BugSp` / `BugTickets` = eligible bugs with `entry <= day < exit`, so the area never goes negative and each bug leaves at most once.
+- **Bug area (red):** Tracks remaining bug work. Each bug is a span `[entry day, exit day)` built once (`ScopeChangeCalculator.BuildBugAreaSpans`); a day's `BugSp` / `BugTickets` = eligible bugs with `entry <= day < exit`, so the area never goes negative and each bug leaves at most once.
   - **Eligible:** IssueType "Bug", effective SP (`GetEffectiveSp(defaultSpPerBug)`), final status not in `ExcludedFromScopeStatuses`, and not removed at or before sprint start (`RemovedAt <= StartDate` → never enters). Removed bugs are otherwise eligible (they enter, then exit on removal).
   - **Entry day:** sprint day 1 when `AddedAt <= StartDate`, else the `AddedAt` day.
   - **Exit day:** the later of the entry day and the earlier of {first in-sprint transition to CycleTimeEndStage or beyond, removal day}. A bug completed before it was added enters and exits on its entry day (adds 0).

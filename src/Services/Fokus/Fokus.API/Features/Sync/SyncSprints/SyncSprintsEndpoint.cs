@@ -1,4 +1,5 @@
 using Fokus.API.Hubs;
+using Fokus.Application.Sync;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Fokus.API.Features.Sync.SyncSprints;
@@ -71,7 +72,7 @@ public class SyncSprintsEndpoint(
             SprintsSynced = result.SprintsSynced,
             TicketsUpserted = result.TicketsUpserted,
             DevelopersDiscovered = result.DevelopersDiscovered,
-            Failures = result.Failures,
+            Failures = result.Failures.Select(SyncSprintsExtensions.ToSprintSyncFailureDto).ToList(),
             Xray = xray
         }, ct);
     }

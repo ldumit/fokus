@@ -7,8 +7,8 @@ public class GetEpicProgressEndpoint(
     TicketRepository ticketRepository,
     SprintRepository sprintRepository,
     TestExecutionRepository testExecutionRepository,
-    EpicProgressService epicProgressService)
-    : Endpoint<GetEpicProgressRequest, EpicProgressResponse>
+    EpicProgressCalculator epicProgressCalculator)
+    : Endpoint<GetEpicProgressRequest, GetEpicProgressResponse>
 {
     public override async Task HandleAsync(GetEpicProgressRequest req, CancellationToken ct)
     {
@@ -24,10 +24,10 @@ public class GetEpicProgressEndpoint(
         // 4. If no epic tickets, return empty response
         if (epicTickets.Count == 0)
         {
-            await Send.OkAsync(new EpicProgressResponse(
-                new EpicProgressSummaryMetrics(0, 0, 0m),
+            await Send.OkAsync(new GetEpicProgressResponse(
+                new EpicProgressSummaryMetricsDto(0, 0, 0m),
                 [],
-                new EpicProgressUnlinkedWork(0, 0m),
+                new EpicProgressUnlinkedWorkDto(0, 0m),
                 HasQaData: false,
                 AverageTestCoverage: null), ct);
             return;
@@ -59,9 +59,9 @@ public class GetEpicProgressEndpoint(
         }
 
         // 10. Compute epic progress
-        var result = epicProgressService.ComputeEpicProgress(
+        var result = epicProgressCalculator.ComputeEpicProgress(
             epicTickets, analyticsMemberships, unlinkedTickets, settings, statusTransitions, analyticsSprints, subTeam, qaData);
 
-        await Send.OkAsync(result, ct);
+        await Send.OkAsync(result.ToGetEpicProgressResponse(), ct);
     }
 }

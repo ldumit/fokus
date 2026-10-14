@@ -1,12 +1,9 @@
 using FastEndpoints.Swagger;
-using Fokus.API.Features.Analytics;
 using Fokus.API.Features.Auth.Login;
-using Fokus.API.Features.Settings;
-using Fokus.API.Features.Sync;
-using Fokus.API.Features.Xray;
 using Fokus.API.Hubs;
 using Fokus.Persistence;
 using Jira.RestApi;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Scalar.AspNetCore;
 using Xray.GraphQL;
 
@@ -22,28 +19,10 @@ public static class DependencyInjection
         services.SwaggerDocument();
         services.AddOpenApi();
         services.AddSignalR();
+        services.TryAddSingleton(TimeProvider.System);
 
         services.AddRestApiJira(configuration);
         services.AddGraphQLXray(configuration);
-
-        services.AddScoped<SprintIssueSyncService>();
-        services.AddScoped<XrayIssueSyncService>();
-        services.AddScoped<WorkflowDetectionService>();
-        services.AddScoped<SprintSummaryService>();
-        services.AddScoped<QaMetricsService>();
-        services.AddScoped<DeveloperThroughputService>();
-        services.AddScoped<ScopeChangeService>();
-        services.AddScoped<CarryOverService>();
-        services.AddScoped<BugRatioService>();
-        services.AddScoped<EpicProgressService>();
-        services.AddScoped<CycleTimeService>();
-        services.AddScoped<LeaderboardService>();
-        services.AddScoped<DeveloperQualityService>();
-        services.AddScoped<QaWorkloadService>();
-        services.AddScoped<TestTimelineService>();
-        services.AddScoped<QaTrendsService>();
-        services.AddScoped<DeveloperProgressService>();
-        services.AddScoped<DeveloperDetailService>();
 
         return services;
     }

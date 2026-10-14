@@ -7,7 +7,7 @@ public class GetCycleTimeEndpoint(
     TicketRepository ticketRepository,
     AppSettingsRepository appSettingsRepository,
     DeveloperRepository developerRepository,
-    CycleTimeService cycleTimeService)
+    CycleTimeCalculator cycleTimeCalculator)
     : Endpoint<GetCycleTimeRequest, CycleTimeResponse>
 {
     public override async Task HandleAsync(GetCycleTimeRequest req, CancellationToken ct)
@@ -67,10 +67,10 @@ public class GetCycleTimeEndpoint(
             var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
                 targetSprint, allDevelopers, capacityRecords, transitionIndex, settings);
 
-            var singleResult = cycleTimeService.ComputeSingleSprint(
+            var singleResult = cycleTimeCalculator.ComputeSingleSprint(
                 targetSprint, priorSprint, statusTransitions, settings, subTeam, excludedIds);
 
-            await Send.OkAsync(new CycleTimeResponse("single", singleResult, null), ct);
+            await Send.OkAsync(new CycleTimeResponse("single", singleResult.ToCycleTimeSingleSprintDto(), null), ct);
         }
         else
         {
@@ -95,10 +95,10 @@ public class GetCycleTimeEndpoint(
                 .Select(g => g.Key)
                 .ToHashSet();
 
-            var multiResult = cycleTimeService.ComputeMultiSprint(
+            var multiResult = cycleTimeCalculator.ComputeMultiSprint(
                 loadedSprints, statusTransitions, settings, subTeam, excludedInAll);
 
-            await Send.OkAsync(new CycleTimeResponse("multi", null, multiResult), ct);
+            await Send.OkAsync(new CycleTimeResponse("multi", null, multiResult.ToCycleTimeMultiSprintDto()), ct);
         }
     }
 }

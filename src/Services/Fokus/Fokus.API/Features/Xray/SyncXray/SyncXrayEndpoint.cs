@@ -1,4 +1,4 @@
-using Fokus.API.Features.Xray;
+using Fokus.Application.Xray;
 using Jira.RestApi;
 using Microsoft.Extensions.Options;
 

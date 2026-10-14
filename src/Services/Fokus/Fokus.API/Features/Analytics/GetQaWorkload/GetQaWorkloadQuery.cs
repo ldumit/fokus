@@ -1,3 +1,5 @@
+using Fokus.API.Features.Analytics.Shared;
+
 namespace Fokus.API.Features.Analytics.GetQaWorkload;
 
 public class GetQaWorkloadRequest
@@ -106,12 +108,6 @@ public class QaWorkloadMultiSprintDto
 }
 
 // --- Single-sprint DTOs ---
-
-public class SparklinePointDto
-{
-    public string SprintName { get; set; } = "";
-    public decimal Value { get; set; }
-}
 
 public class QaWorkloadMetricCardDto
 {

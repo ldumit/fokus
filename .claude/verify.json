@@ -10,5 +10,5 @@
     "unit": { "ms": 7469, "at": "2026-10-13" },
     "full": { "ms": 11861, "at": "2026-10-13" }
   },
-  "stepLimitSeconds": 30
+  "stepLimitSeconds": 60
 }

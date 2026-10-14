@@ -1,3 +1,5 @@
+using Fokus.API.Features.Analytics.Shared;
+
 namespace Fokus.API.Features.Analytics.GetDeveloperThroughput;
 
 public class GetDeveloperThroughputRequest
@@ -31,3 +33,39 @@ public class GetDeveloperThroughputRequestValidator : Validator<GetDeveloperThro
             .WithMessage("SubTeam must not be empty when provided.");
     }
 }
+
+public sealed record GetDeveloperThroughputResponse(
+    IReadOnlyList<SprintRefDto> Sprints,
+    IReadOnlyList<DeveloperThroughputEntryDto> Developers);
+
+public sealed record DeveloperThroughputEntryDto(
+    string AccountId,
+    string DisplayName,
+    string? SubTeam,
+    string? AvatarUrl,
+    IReadOnlyList<SprintBreakdownDto> SprintBreakdowns);
+
+public sealed record SprintBreakdownDto(
+    int SprintId,
+    decimal SpAssigned,
+    decimal SpCompleted,
+    decimal CompletionPercent,
+    int TicketsDone,
+    int TicketsCarriedOver,
+    int CapacityPercent,
+    decimal? RollingAverageSpCompleted,
+    decimal? SpAssignedDelta,
+    decimal? SpCompletedDelta,
+    decimal? CompletionPercentDelta,
+    int? TicketsDoneDelta,
+    int? TicketsCarriedOverDelta,
+    string? SpAssignedDeltaDirection,
+    string? SpCompletedDeltaDirection,
+    string? CompletionPercentDeltaDirection,
+    string? TicketsDoneDeltaDirection,
+    string? TicketsCarriedOverDeltaDirection,
+    string? SpAssignedDeltaPolarity,
+    string? SpCompletedDeltaPolarity,
+    string? CompletionPercentDeltaPolarity,
+    string? TicketsDoneDeltaPolarity,
+    string? TicketsCarriedOverDeltaPolarity);

@@ -1,5 +1,3 @@
-using Fokus.API.Features.Sync;
-
 namespace Fokus.API.Features.Sync.SyncSprints;
 
 public class SyncSprintsCommand
@@ -22,9 +20,13 @@ public class SyncSprintsResponse
     public int SprintsSynced { get; set; }
     public int TicketsUpserted { get; set; }
     public int DevelopersDiscovered { get; set; }
-    public List<SprintSyncFailure> Failures { get; set; } = [];
+    public List<SprintSyncFailureDto> Failures { get; set; } = [];
     public XraySyncSummary? Xray { get; set; }
 }
+
+public sealed record SprintSyncFailureDto(
+    int SprintId,
+    string Error);
 
 public class SyncSprintsCommandValidator : Validator<SyncSprintsCommand>
 {

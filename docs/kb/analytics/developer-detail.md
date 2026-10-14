@@ -2,13 +2,13 @@
 
 Individual developer analytics page. Composes data from Leaderboard (bug/feature SP split), DailyProgress (burnup, pace, stalls), and Throughput (rolling average) patterns into a single per-developer view.
 
-**Key file:** `Fokus.API/Features/Analytics/DeveloperDetailService.cs`
+**Key file:** `Fokus.Domain/Analytics/Developers/DeveloperDetailCalculator.cs`
 **Endpoint:** `GET /api/analytics/developer-detail/{accountId}?last={n}`
 
 ## Scope Model
 
 Follows the Leaderboard scope model (not Throughput's feature-only model):
-- **Completed filter:** `TransitionAttributionChecker.IsCompletedInSprint` + exclude removed memberships + exclude `ExcludedFromScopeStatuses` — same as `LeaderboardService.GetTransitionCompletedMemberships`
+- **Completed filter:** `TransitionAttributionChecker.IsCompletedInSprint` + exclude removed memberships + exclude `ExcludedFromScopeStatuses` — the shared `TransitionAttributionChecker.GetTransitionCompletedMemberships` (also used by the leaderboard and bug ratio)
 - **AssignedSp:** all non-removed memberships, all ticket types (features + bugs) — `m.RemovedAt == null`, `GetEffectiveSp(defaultSpPerBug)`
 - **CompletionPercent:** all-types (diverges from Throughput's feature-only by design)
 - **Bug classification:** `IssueType == "Bug"` (exact, case-sensitive)
@@ -25,7 +25,7 @@ Sprint range: `last=N` returns last N qualifying sprints (chronological). `last=
 
 3-sprint rolling average of **all-types SP** (not feature-only).
 - Null for first 2 sprints in the series
-- Skips sprints with 0% capacity when looking back (capacity-aware skip, same pattern as `DeveloperThroughputService`)
+- Skips sprints with 0% capacity when looking back (capacity-aware skip, same pattern as `DeveloperThroughputCalculator`)
 
 ## Work Allocation Summary
 

@@ -31,7 +31,7 @@ src/Services/{Name}/
     ├── Features/
 ```
 
-The `Features/` folder in `.Application/` is where handlers live for MediatR services. For FastEndpoints services that happen to need a `.Application` project, leave `Features/` out and let the Developer add feature folders to `.API/Features/` instead.
+The tree above is the MediatR branch: `Features/` in `.Application/` is where handlers live. A FastEndpoints service's `.Application` starts empty — one folder per capability class added when the first class lands (e.g. Fokus `Analytics/{Area}/`, `Sync/`, `Xray/`), no `Dtos/` or `Mappings/` (replies and mapping stay beside the endpoint in `.API/Features/`) — and the Developer adds feature folders to `.API/Features/`.
 
 **Rule:** create `.Application/Features/` **only when** the endpoint framework is Carter + MediatR or Minimal APIs + MediatR. For FastEndpoints services with shared state, omit `.Application/Features/`.
 
