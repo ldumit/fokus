@@ -1,13 +1,13 @@
 # Scaffold Application Project
 
-**Conditional step.** Only run this workflow if the CLAUDE.md shared-state axis is **Y** (service has cross-feature state: DTOs shared across features, state machines, seeders, mapping profiles, or a Features/ layer driven by MediatR).
+**Conditional step.** Only run this workflow if the CLAUDE.md shared-state axis is **Y** — the service's logic outgrows its endpoints (root `CLAUDE.md`): loading that spans many repositories, a class around another system, cross-feature state (state machines, seeders), or a Features/ layer driven by MediatR. Pure rules and calculators are not a reason: they live in `.Domain`.
 
 If shared-state = N, skip this workflow entirely. The service has no `.Application` project, and `.API` references `.Persistence` directly.
 
 ## Reference exemplars
 
 - **MediatR services (Carter / Minimal APIs):** `src/Services/{Svc}/{Svc}.Application/` — full Features/{Aggregate}/{Feature} layout
-- **FastEndpoints with shared state (no Features):** `src/Services/{Svc}/{Svc}.Application/` — StateMachines/, Dtos/, Mappings/ only, no Features/
+- **FastEndpoints (no Features, no mediator):** `src/Services/Fokus/Fokus.Application/` — injected capability classes, one folder per capability (`Analytics/{Sprints,Developers,Qa}/` loaders, `Sync/`, `Xray/`); the endpoint stays the coordinator
 
 ## `{Name}.Application/GlobalUsings.cs`
 
@@ -59,16 +59,20 @@ Keep all four folders:
 - `{Name}.Application/StateMachines/`
 - `{Name}.Application/Mappings/`
 
-### FastEndpoints framework branch (shared state only)
+### FastEndpoints framework branch (no mediator)
 
-Omit `Features/` — FastEndpoints collapses the feature slice into the endpoint class in `.API/Features/`. Keep:
-- `{Name}.Application/Dtos/`
-- `{Name}.Application/StateMachines/`
-- `{Name}.Application/Mappings/`
+Omit `Features/` — FastEndpoints collapses the feature slice into the endpoint class in `.API/Features/`. Create no folder up front: each capability gets its own folder when its first class lands (Fokus: `Analytics/{Area}/`, `Sync/`, `Xray/`). Add `StateMachines/` only if the service has a state machine. No `Mappings/` or `Dtos/`: an endpoint's reply types and its hand-written `To…()` mapping live beside the endpoint in `.API/Features/` (`create-feature`).
 
 ## What goes in `.Application` vs `.API/Features`
 
-**In `.Application` only:**
+**In `.Application` only (FastEndpoints):**
+- Injected capability classes, named for their job and never `…Service` unless they wrap another system: loaders that read many repositories for one endpoint (`{Operation}Inputs`), classes around another system (`…SyncService`)
+- State machines (Stateless library)
+- Seeders that depend on application services
+
+**In `.Domain`, not `.Application`:** pure calculators, resolvers and checkers over loaded entities (`domain-service`).
+
+**In `.Application` only (MediatR branch):**
 - Cross-feature reusable DTOs
 - State machines (Stateless library)
 - AutoMapper / Mapperly profiles

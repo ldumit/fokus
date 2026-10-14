@@ -1,6 +1,9 @@
 global using Xunit;
 global using FluentAssertions;
 global using Fokus.Domain;
-global using Fokus.API.Features.Analytics;
+global using Fokus.Domain.Analytics.Shared;
+global using Fokus.Domain.Analytics.Sprints;
+global using Fokus.Domain.Analytics.Developers;
+global using Fokus.Domain.Analytics.Qa;
 global using Jira.Contracts;
 global using Fokus.Tests._Fixtures;

@@ -17,6 +17,8 @@ For business rules, computation logic, and edge cases, see the relevant [KB entr
 
 **Sprint** — A Jira sprint synced into Fokus; the primary unit of work organization and analytics scope. Code: `Sprint` aggregate. Avoid: "iteration", "timebox."
 
+**Sprint Reference** — A sprint's id, name, start and end dates, carried inside an analytics result. Code: `SprintRef`. Not the `Sprint` aggregate.
+
 **Sprint State** — Lifecycle phase: Active, Closed, or Future. Mapped from Jira lowercase strings. Code: enum on `Sprint`.
 
 **Ticket** — A Jira issue tracked in Fokus, identified by its Jira issue key. Code: `Ticket` aggregate. Avoid: "issue" as the primary domain term (Jira uses "issue"; Fokus uses "Ticket").

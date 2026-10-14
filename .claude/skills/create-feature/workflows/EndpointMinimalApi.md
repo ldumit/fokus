@@ -1,60 +1,59 @@
 # Create Endpoint — Minimal APIs
 
-Used by: Minimal API + MediatR services
+Used by: services whose `CLAUDE.md` names minimal APIs with a mediator. The endpoint sends the command to its
+handler in the Application project.
 
 ## Inputs
-- Feature name, route path, HTTP method
-- Request/response type names
-- MediatR command/query type to dispatch to
+- Operation name, route and HTTP method
+- The command or query and its reply (written first — `Handler.md`)
+- Required roles
 
 ## Outputs
-- `{Svc}.API/Endpoints/{FeatureName}Endpoint.cs`
-- Registration entry in `EndpointRegistration.MapAllEndpoints()`
+- `{Svc}.API/Endpoints/{Operation}Endpoint.cs`
+- One line in the API project's endpoint registration
 
 ## Gate
-Proceed only after: service CLAUDE.md confirms Minimal APIs + MediatR, Handler.md workflow followed first.
-
-Static class with `Map(IEndpointRouteBuilder)` extension method. Dispatches to MediatR handler.
+Proceed only after: the service's `CLAUDE.md` confirms minimal APIs with a mediator, and `Handler.md` is done.
 
 ## Pattern
 
-**Reference:** `src/Services/{Svc}/{Svc}.API/Endpoints/{FeatureName}Endpoint.cs`
+A static class with one `Map` extension method. Route values are set onto the command with a `with` expression,
+and the token is passed to `Send`.
 
-Create `{FeatureName}Endpoint.cs` in `Endpoints/`:
-
-```csharp
-public static class {FeatureName}Endpoint
+```csharp file=ShipOrderEndpoint.cs
+public static class ShipOrderEndpoint
 {
     public static void Map(this IEndpointRouteBuilder app)
     {
-        app.Map{Method}("/{domain}/{route}", async ([{FromRoute}] int id, {CommandType} command, ISender sender) =>
+        app.MapPost("orders/{orderId:int}:ship", async (int orderId, ShipOrderCommand command, ISender sender, CancellationToken ct) =>
         {
-            var result = await sender.Send(command with { Id = id });
-            return Results.Ok(result);
+            var response = await sender.Send(command with { OrderId = orderId }, ct);
+            return Results.Ok(response);
         })
-        .WithTags("{Domain}")
-        .WithName("{FeatureName}")
-        .Produces<{ResponseType}>(StatusCodes.Status200OK)
+        .RequireRoleAuthorization(Role.Clerk, Role.Manager)
+        .WithName("ShipOrder")
+        .WithTags("Orders")
+        .Produces<IdResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .ProducesProblem(StatusCodes.Status404NotFound)
-        .RequireRoleAuthorization(Role.{RequiredRole});
+        .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }
 ```
 
-## Registration — MANUAL
+## Registration
 
-Add to `EndpointRegistration.cs`:
+Each endpoint is mapped by one explicit line in the API project's endpoint extensions, under the route group the
+host creates once (the prefix is set there, never on an endpoint). A `Map…` method lives in an `Extensions` class,
+never in a registration class (`service-registration` § Naming Conventions):
 
-```csharp
-public static class EndpointRegistration
+```csharp file=EndpointExtensions.cs
+public static class EndpointExtensions
 {
     public static IEndpointRouteBuilder MapAllEndpoints(this IEndpointRouteBuilder app)
     {
-        var api = app.MapGroup("/api");
+        var api = app.MapGroup("api");
 
-        // existing endpoints...
-        {FeatureName}Endpoint.Map(api); // ADD THIS LINE
+        ShipOrderEndpoint.Map(api);
 
         return app;
     }
@@ -63,31 +62,19 @@ public static class EndpointRegistration
 
 ## Handler Location
 
-The endpoint dispatches to a handler in the Application project:
-- `{Service}.Application/Features/{Domain}/{FeatureName}/{FeatureName}CommandHandler.cs`
+`{Svc}.Application/Features/{Area}/{Operation}/{Operation}CommandHandler.cs` — see `Handler.md`.
 
-## Error Handling
+## Errors
 
-**Do not catch exceptions to return HTTP responses.** The `GlobalExceptionMiddleware` handles exception-to-status-code mapping — endpoints must not duplicate that responsibility.
-
-The only acceptable catch in an endpoint is a domain exception where you need to perform a side effect (e.g. logging, cleanup) before re-throwing:
-
-```csharp
-catch (SomeDomainException ex)
-{
-    // side effect only — then re-throw for the middleware
-    throw;
-}
-```
-
-Never write `catch → Results.Problem(statusCode)` in an endpoint.
+No `try/catch` in an endpoint and no `Results.Problem(…)` built for an error: the lookup throws, the domain throws,
+and the central mapper turns each into its status (`error-handling`).
 
 ## File Upload Variant
 
-For file uploads, use `[FromForm]` + `.DisableAntiforgery()`:
+A file upload binds the form into the command with `[FromForm]` and turns off the antiforgery check:
 
 ```csharp
-app.MapPost("/{domain}/{entityId}/files",
-    async ([FromRoute] int entityId, [FromForm] {UploadCommand} command, ISender sender) => { ... })
+app.MapPost("orders/{orderId:int}/files:upload", async (int orderId, [FromForm] UploadOrderFileCommand command, ISender sender, CancellationToken ct) =>
+    Results.Ok(await sender.Send(command with { OrderId = orderId }, ct)))
     .DisableAntiforgery();
 ```

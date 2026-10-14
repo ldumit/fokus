@@ -7,8 +7,8 @@ public class GetDeveloperThroughputEndpoint(
     DeveloperRepository developerRepository,
     AppSettingsRepository appSettingsRepository,
     TicketRepository ticketRepository,
-    DeveloperThroughputService developerThroughputService)
-    : Endpoint<GetDeveloperThroughputRequest, DeveloperThroughputResponse>
+    DeveloperThroughputCalculator developerThroughputCalculator)
+    : Endpoint<GetDeveloperThroughputRequest, GetDeveloperThroughputResponse>
 {
     public override async Task HandleAsync(GetDeveloperThroughputRequest req, CancellationToken ct)
     {
@@ -25,7 +25,7 @@ public class GetDeveloperThroughputEndpoint(
         // 2. No closed sprints — return empty response
         if (ascending.Count == 0)
         {
-            await Send.OkAsync(new DeveloperThroughputResponse([], []), ct);
+            await Send.OkAsync(new GetDeveloperThroughputResponse([], []), ct);
             return;
         }
 
@@ -53,7 +53,7 @@ public class GetDeveloperThroughputEndpoint(
 
         // 4. Rolling average window: every closed sprint before the earliest target, so the walk-back
         // can skip 0%-capacity sprints and still find three qualifying ones
-        var extraSprintIds = DeveloperThroughputService.SelectRollingWindowSprintIds(ascending, targetSprintIds);
+        var extraSprintIds = DeveloperThroughputCalculator.SelectRollingWindowSprintIds(ascending, targetSprintIds);
 
         var allSprintIds = extraSprintIds.Concat(targetSprintIds).Distinct().ToList();
 
@@ -90,7 +90,7 @@ public class GetDeveloperThroughputEndpoint(
             .ToList();
 
         // 12. Compute throughput
-        var result = developerThroughputService.ComputeThroughput(
+        var result = developerThroughputCalculator.ComputeThroughput(
             loadedSprints,
             targetSprintIds,
             filteredActiveDevelopers,
@@ -100,6 +100,6 @@ public class GetDeveloperThroughputEndpoint(
             allDevelopers,
             statusTransitions);
 
-        await Send.OkAsync(result, ct);
+        await Send.OkAsync(result.ToGetDeveloperThroughputResponse(), ct);
     }
 }

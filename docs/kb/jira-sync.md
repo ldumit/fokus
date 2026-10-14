@@ -2,7 +2,7 @@
 
 Data pipeline from Jira REST API into the local SQLite database.
 
-**Key file:** `Fokus.API/Features/Sync/SprintIssueSyncService.cs`
+**Key file:** `Fokus.Application/Sync/SprintIssueSyncService.cs`
 **Jira client:** `Modules/Jira/Jira.RestApi/RestApiJiraClient.cs`
 **Endpoints:** `GET /sync/boards`, `GET /sync/jira-sprints`, `POST /sync/sprints`, `POST /sync/backlog-sprints`
 

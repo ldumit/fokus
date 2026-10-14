@@ -1,67 +1,69 @@
 ---
 name: extract-feature-service
-description: Extracts shared handler logic from endpoints into a focused operation service. Named after the operation, scoped to a feature area. Single-purpose with result record pattern.
+description: Extracts shared or complex endpoint logic into a pure Domain calculator (computation over loaded entities) or an injected Application capability class (loading across repositories, or a class around another system). Named for its job, single-purpose, returning a result record. Use when two endpoints share logic or one endpoint's HandleAsync has outgrown itself.
 ---
 
-# Extract Feature Service
+# Extract Shared Endpoint Logic
 
-Extracts shared or complex handler logic from one or more endpoints into a focused service class. The service is named after the **operation** it performs, not the entity it touches. It lives in the feature area root and stays single-purpose.
+Extracts shared or complex logic out of one or more endpoints. The endpoint stays the coordinator; what moves goes to one of two homes, decided by what the logic does:
+
+| The logic… | Goes to | Named | Structure skill |
+|------------|---------|-------|-----------------|
+| computes over entities already loaded (rules, figures, checks) | a pure Domain class in `Fokus.Domain/{Area}` — for analytics `Fokus.Domain/Analytics/{Area}/`, or `Shared/` when several areas use it | for its job: `…Calculator`, `…Resolver`, `…Checker`, `…Factory` | `domain-service` |
+| loads across several repositories, or selects the sprint window before the computation | an injected class in `Fokus.Application/{Area}/` | for what it loads: `{Operation}Inputs` | `service-registration` |
+| wraps another system (Jira, Xray) | an injected class in `Fokus.Application/{Area}/` | `…Service` — the only use of that suffix (`SprintIssueSyncService`) | `service-registration` |
+
+Logic that both loads and computes splits: the loading to Application, the computation to Domain.
 
 ## When to Use
 
-- Two or more endpoints in the same feature area share handler logic
-- A single endpoint's `HandleAsync` has grown too complex and the logic is reusable
-- A plan step specifies extraction of shared logic into a service
+- Two or more endpoints share handler logic
+- A single endpoint's `HandleAsync` has grown too complex, or its loading spans many repositories
+- A plan step specifies extraction of shared logic
 
 ## Steps
 
-1. **Identify the shared logic** — the code block(s) that will move out of endpoint(s). Note the exact line ranges.
+1. **Identify the logic** — the code block(s) that will move out of the endpoint(s). Note the exact line ranges, and split them into loading and computation.
 
-2. **Choose the service name** — name it after the operation, not the entity. Examples:
-   - `SprintIssueSyncService` (syncs sprint issues)
-   - `HealthScoreCalculator` (computes health scores)
-   - Bad: `SprintService` (entity wrapper — violates guardrails)
+2. **Choose the home and the name** from the table above. Bad: `SprintService` (an entity wrapper — violates the guardrails), or `…Service` on a class that does not wrap another system.
 
-3. **Define result record(s)** — each public method returns a result record. Define them in the same file, above the service class:
-   ```csharp
-   public record {Operation}Result({properties});
+3. **Define result record(s)** — each public method returns a result record (`sealed record` for new types). A Domain result carries computation results only — no HTTP mode, reply wrapper or JSON attribute; the endpoint maps it to its own reply.
+
+4. **Create the file:**
+   ```
+   Fokus.Domain/Analytics/{Area}/{Name}Calculator.cs    ← computation
+   Fokus.Domain/Analytics/{Area}/{Name}Result.cs        ← its result records
+   Fokus.Application/Analytics/{Area}/{Operation}Inputs.cs ← loading, returns a source record
    ```
 
-4. **Create the service file** — place it in the feature area root (parent of the endpoint folders):
-   ```
-   Features/{Area}/{ServiceName}.cs    ← service + result records
-   Features/{Area}/{Sub}/Endpoint.cs   ← endpoints that consume it
-   ```
+5. **Dependencies:**
+   - Domain class: none. No repository, `DbContext`, logger, options, clock or JSON; today's date is a `today` parameter.
+   - Application class: primary-constructor injection of concrete repositories, clients and loggers.
 
-5. **Use primary constructor injection** — the service takes its dependencies (repositories, clients, loggers) via primary constructor:
-   ```csharp
-   public class {ServiceName}(
-       {Repository} repository,
-       ILogger<{ServiceName}> logger)
-   ```
+6. **Move the logic** — each method one cohesive operation, at most ~60 lines (`docs/conventions/csharp.md` § Method Design).
 
-6. **Move the logic** — extract the shared code into service methods. Each method should be a single cohesive operation with clear inputs and a result record output.
+7. **Update the endpoint(s)** — inject the class, call it in place of the extracted code, map the result to the endpoint's reply in `{Operation}Extensions.cs` (`create-feature`).
 
-7. **Update the endpoint(s)** — inject the service, replace the extracted logic with a service method call, map the result record to the endpoint response.
-
-8. **Register the service** — add `services.AddScoped<{ServiceName}>()` in the service's `DependencyInjection.cs`.
+8. **Register** — `services.AddScoped<{Name}>()` in `Fokus.Application/DependencyInjection.cs` (`AddFokusApplication`). Static Domain helpers are not registered.
 
 9. **Verify the build** — `dotnet build` must pass.
 
 ## Guardrails
 
-- **Single-purpose** — if the service grows beyond one cohesive operation area, split it.
-- **Not an entity wrapper** — `SprintService` that accumulates all sprint logic is a guardrail violation. Each service covers one operation.
-- **Feature-scoped** — the service lives in the feature area, not in a `Services/` god folder.
+- **Single-purpose** — if the class grows beyond one cohesive job, split it.
+- **Not an entity wrapper** — a class that accumulates all logic about one entity is a guardrail violation.
+- **No god folders** — the class lives in its area folder, never in `Services/`, `Helpers/` or `Utils/`.
 - **No repository interfaces** — inject concrete repositories directly.
+- **No mediator** — the endpoint calls the class itself.
 
 ## Reference Examples
 
-Look for existing feature services in the codebase:
-- `Features/*/` — service files at the feature area root alongside endpoint subfolders
+- `Fokus.Domain/Analytics/Sprints/` and `Fokus.Domain/Analytics/Shared/` — calculators and the shared kernel
+- `Fokus.Application/Analytics/Qa/QaWorkloadInputs.cs` — a loader
+- `Fokus.Application/Sync/SprintIssueSyncService.cs` — a class around another system
 
 ## What This Skill Does NOT Do
 
-- Create entity-wrapper services — those violate guardrails.
-- Move logic to a separate project — services stay in the API project.
-- Introduce abstractions — no interface for the service unless it's a module contract.
+- Create entity-wrapper classes — those violate guardrails.
+- Introduce abstractions — no interface for the class unless it's a module contract.
+- Move the coordination out of the endpoint — reading the request, calling the classes and mapping the reply stay there.

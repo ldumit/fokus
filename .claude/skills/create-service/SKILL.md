@@ -29,7 +29,7 @@ Do not proceed without the CLAUDE.md.
 
 6. **Scaffold the `.Persistence` project files** — follow `workflows/ScaffoldPersistenceProject.md`. Branches by persistence technology.
 
-7. **Scaffold the `.Application` project files** (conditional) — follow `workflows/ScaffoldApplicationProject.md`. Only when the CLAUDE.md says shared-state = Y.
+7. **Scaffold the `.Application` project files** (conditional) — follow `workflows/ScaffoldApplicationProject.md`. Only when the CLAUDE.md's `**Application layer:**` line names one (shared-state = Y): a service adds `{Svc}.Application` when its logic outgrows the endpoints (root `CLAUDE.md`).
 
 8. **Scaffold the infrastructure** — follow `workflows/ScaffoldInfrastructure.md`. Updates `the solution file`, `docker-compose.yml`, `docker-compose.dcproj`. Runs `dotnet sln add` inline.
 

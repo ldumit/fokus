@@ -19,7 +19,7 @@ These are NOT source files (agents may read/write them freely):
 
 ## Guardrails — DO NOT
 
-- **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Focused operation services scoped to a feature area (e.g. `SprintIssueSyncService`) are allowed.
+- **No entity-wrapper service classes** (e.g. `ArticleService`, `SprintService`) — classes that accumulate business logic around a single entity. Logic shared by a feature area is a Domain calculator or an Application capability class; `…Service` names only a class around another system.
 - **No repository interfaces** — single implementation, interfaces add zero value. Other components (modules, cross-cutting) do use interfaces where contracts are needed.
 - **No god folders** (`Services/`, `Helpers/`, `Utils/`).
 - **No bypassing domain rules** via EF configs or endpoints.
@@ -37,7 +37,8 @@ src/
   Services/                    # Microservices — one folder per service
     {Svc}/
       {Svc}.API/               #   FastEndpoints feature slices, SignalR hubs, DI, migration startup host
-      {Svc}.Domain/            #   Aggregates, value objects, domain events
+      {Svc}.Application/       #   Injected capability classes (loaders, classes around another system); no mediator — only when the logic outgrows the endpoints
+      {Svc}.Domain/            #   Aggregates, value objects, domain events, pure calculators
       {Svc}.Persistence/       #   EF Core DbContext, configs, migrations, repositories
   Modules/                     # Modular monolith (Contracts + Implementation per module)
   ApiGateway/                  # YARP reverse proxy
@@ -49,12 +50,14 @@ Default to **module**; only use a microservice when deployment/scaling/ownership
 ## Project Reference Graph
 
 ```
-API  ──▶  Domain
-  │
-  └─▶  Persistence  ──▶  Domain
+API  ──▶  Application  ──▶  Domain
+  │            │
+  │            └─▶  Persistence  ──▶  Domain
+  └─▶  Persistence
 ```
 
-- `API` references both `Domain` and `Persistence` directly. Endpoints consume concrete repositories — no abstraction layer.
+- `API` references `Application`, `Persistence` and `Domain` directly (it maps Domain results to its replies). Endpoints that load one or two rows consume concrete repositories directly — no abstraction layer; multi-repository loading for a fat endpoint goes through an `Application` loader.
+- `Application` references `Domain` and `Persistence`. It holds injected capability classes (loaders, the sync classes) and no mediator; the endpoint stays the coordinator.
 - `Persistence` references `Domain`.
 - `Domain` references nothing.
 

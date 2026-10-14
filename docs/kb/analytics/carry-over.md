@@ -2,7 +2,7 @@
 
 Measures incomplete work — what didn't finish, where it's stuck, and whether it keeps rolling.
 
-**Key file:** `Fokus.API/Features/Analytics/CarryOverService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/CarryOverCalculator.cs`
 **Endpoint:** `GET /analytics/carry-over?sprintId&last&subTeam`
 **Store:** `client/src/stores/sprintsStore.ts` (shared with scope-change)
 **View:** `client/src/views/SprintsView.vue` (sections below scope-change)

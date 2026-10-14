@@ -6,7 +6,7 @@ F30 answers **when** testing happened relative to the sprint lifecycle. Distinct
 
 ## Key File
 
-`src/Services/Fokus/Fokus.API/Features/Analytics/TestTimelineService.cs`
+`src/Services/Fokus/Fokus.Domain/Analytics/Sprints/TestTimelineCalculator.cs`
 
 Endpoint: `GET /api/sprints/{sprintId}/test-timeline`
 
@@ -52,7 +52,7 @@ When subTeam provided, filters SprintMembership to tickets whose Assignee.SubTea
 From SprintMembership AddedAt/RemovedAt, aggregates per-day SP added/removed/net. Only days with events included. AddedAt is non-nullable DateTime (not DateTime?).
 
 ## Prior Sprint Resolution
-Most recent closed sprint before selected sprint by StartDate — consistent with SprintSummaryService pattern. Used for dev-to-test gap delta only.
+Most recent closed sprint before selected sprint by StartDate — consistent with SprintSummaryCalculator pattern. Used for dev-to-test gap delta only.
 
 ## Relationship to F26
 F26 = coverage/pass rate (what was tested). F30 = timing (when testing happened). Different questions, different metrics, separate endpoints.

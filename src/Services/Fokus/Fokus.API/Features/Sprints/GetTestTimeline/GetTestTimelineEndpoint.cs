@@ -1,5 +1,3 @@
-using Fokus.API.Features.Analytics;
-
 namespace Fokus.API.Features.Sprints.GetTestTimeline;
 
 [HttpGet("/api/sprints/{sprintId}/test-timeline")]
@@ -9,7 +7,7 @@ public class GetTestTimelineEndpoint(
     AppSettingsRepository appSettingsRepository,
     TestExecutionRepository testExecutionRepository,
     TicketRepository ticketRepository,
-    TestTimelineService testTimelineService)
+    TestTimelineCalculator testTimelineCalculator)
     : Endpoint<GetTestTimelineRequest, TestTimelineResponse>
 {
     public override async Task HandleAsync(GetTestTimelineRequest req, CancellationToken ct)
@@ -83,7 +81,7 @@ public class GetTestTimelineEndpoint(
         }
 
         // 11. Compute and return
-        var result = testTimelineService.ComputeTimeline(
+        var result = testTimelineCalculator.ComputeTimeline(
             sprintTEs,
             sprint.Memberships.ToList(),
             statusTransitions,
@@ -95,7 +93,7 @@ public class GetTestTimelineEndpoint(
             settings,
             subTeam);
 
-        await Send.OkAsync(result, ct);
+        await Send.OkAsync(result.ToTestTimelineResponse(sprint, settings.PlanningWindowDays), ct);
     }
 
     private static TestTimelineResponse BuildEmptyResponse(Sprint sprint, AppSettings settings, bool isXrayEnabled) =>
@@ -107,8 +105,8 @@ public class GetTestTimelineEndpoint(
             PlanningWindowDays: settings.PlanningWindowDays,
             BurnupData: [],
             ScopeChangeOverlay: [],
-            TestingCrunch: new TestingCrunchResult(false, null, 0, 0, []),
-            PostSprintTesting: new PostSprintTestingResult(false, null, 0, 0, []),
-            UntestedAtClose: new UntestedAtCloseResult(false, 0, []),
-            DevToTestGap: new DevToTestGapResult(null, null, null, []));
+            TestingCrunch: new TestingCrunchDto(false, null, 0, 0, []),
+            PostSprintTesting: new PostSprintTestingDto(false, null, 0, 0, []),
+            UntestedAtClose: new UntestedAtCloseDto(false, 0, []),
+            DevToTestGap: new DevToTestGapDto(null, null, null, []));
 }

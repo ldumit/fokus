@@ -1,0 +1,1042 @@
+{
+  "format_version": 1,
+  "feature": "F39-ServiceLayerSplit",
+  "kind_of_run": "team run",
+  "state": "complete",
+  "started": "2026-10-14T02:49:23.322Z",
+  "closed": "2026-10-14T15:41:55.890Z",
+  "plugin_versions": [
+    "2.4.14",
+    "2.4.15",
+    "2.4.16"
+  ],
+  "claude_code_versions": [
+    "2.1.296",
+    "2.1.299"
+  ],
+  "spawns": [
+    {
+      "role": "architect",
+      "name": "architect-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.14"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 40,
+      "tokens": {
+        "input": 82,
+        "cache_written_5m": 0,
+        "cache_written_1h": 84058,
+        "cache_read": 22844063,
+        "output": 60171
+      },
+      "peak_context": 612578,
+      "compactions": 0,
+      "first_activity": "2026-10-14T02:49:23.322Z",
+      "last_activity": "2026-10-14T03:41:37.202Z",
+      "active_ms": 3162634
+    },
+    {
+      "role": "main",
+      "name": "main-1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.14",
+        "2.4.15",
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 106,
+      "tokens": {
+        "input": 252,
+        "cache_written_5m": 0,
+        "cache_written_1h": 742681,
+        "cache_read": 23982627,
+        "output": 78739
+      },
+      "peak_context": 324274,
+      "compactions": 0,
+      "first_activity": "2026-10-14T03:42:04.743Z",
+      "last_activity": "2026-10-14T15:41:54.928Z",
+      "active_ms": 7462915
+    },
+    {
+      "role": "critic",
+      "name": "critic-second-f39",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.14"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      },
+      "calls": 70,
+      "tokens": {
+        "input": 140,
+        "cache_written_5m": 256309,
+        "cache_written_1h": 0,
+        "cache_read": 12197600,
+        "output": 97009
+      },
+      "peak_context": 256311,
+      "compactions": 0,
+      "first_activity": "2026-10-14T02:54:14.625Z",
+      "last_activity": "2026-10-14T03:09:55.213Z",
+      "active_ms": 940588
+    },
+    {
+      "role": "developer",
+      "name": "dev-s1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 160,
+      "tokens": {
+        "input": 328,
+        "cache_written_5m": 954163,
+        "cache_written_1h": 0,
+        "cache_read": 45877092,
+        "output": 167134
+      },
+      "peak_context": 450117,
+      "compactions": 0,
+      "first_activity": "2026-10-14T03:58:08.346Z",
+      "last_activity": "2026-10-14T07:09:52.789Z",
+      "active_ms": 2262382
+    },
+    {
+      "role": "architect",
+      "name": "architect",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 28,
+      "tokens": {
+        "input": 60,
+        "cache_written_5m": 380759,
+        "cache_written_1h": 0,
+        "cache_read": 4738304,
+        "output": 31722
+      },
+      "peak_context": 205907,
+      "compactions": 0,
+      "first_activity": "2026-10-14T04:02:51.265Z",
+      "last_activity": "2026-10-14T07:14:14.143Z",
+      "active_ms": 344317
+    },
+    {
+      "role": "developer",
+      "name": "dev-s2",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 66,
+      "tokens": {
+        "input": 136,
+        "cache_written_5m": 236384,
+        "cache_written_1h": 0,
+        "cache_read": 12759291,
+        "output": 59487
+      },
+      "peak_context": 263778,
+      "compactions": 0,
+      "first_activity": "2026-10-14T07:10:19.797Z",
+      "last_activity": "2026-10-14T07:23:23.611Z",
+      "active_ms": 783814
+    },
+    {
+      "role": "developer",
+      "name": "dev-s3",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 89,
+      "tokens": {
+        "input": 178,
+        "cache_written_5m": 437422,
+        "cache_written_1h": 0,
+        "cache_read": 26496504,
+        "output": 158888
+      },
+      "peak_context": 464816,
+      "compactions": 0,
+      "first_activity": "2026-10-14T07:23:37.076Z",
+      "last_activity": "2026-10-14T07:49:22.181Z",
+      "active_ms": 1545105
+    },
+    {
+      "role": "developer",
+      "name": "dev-s4",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 90,
+      "tokens": {
+        "input": 184,
+        "cache_written_5m": 388579,
+        "cache_written_1h": 0,
+        "cache_read": 26480383,
+        "output": 120816
+      },
+      "peak_context": 415973,
+      "compactions": 0,
+      "first_activity": "2026-10-14T07:49:35.522Z",
+      "last_activity": "2026-10-14T08:10:01.744Z",
+      "active_ms": 1226222
+    },
+    {
+      "role": "developer",
+      "name": "dev-s5",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 86,
+      "tokens": {
+        "input": 176,
+        "cache_written_5m": 235416,
+        "cache_written_1h": 0,
+        "cache_read": 15970657,
+        "output": 57351
+      },
+      "peak_context": 262810,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:10:15.905Z",
+      "last_activity": "2026-10-14T08:21:45.180Z",
+      "active_ms": 689275
+    },
+    {
+      "role": "architect",
+      "name": "architect-donecheck",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 25,
+      "tokens": {
+        "input": 52,
+        "cache_written_5m": 464472,
+        "cache_written_1h": 0,
+        "cache_read": 5030373,
+        "output": 20265
+      },
+      "peak_context": 247921,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:22:21.352Z",
+      "last_activity": "2026-10-14T15:40:29.904Z",
+      "active_ms": 242265
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-second",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      },
+      "calls": 114,
+      "tokens": {
+        "input": 244,
+        "cache_written_5m": 357377,
+        "cache_written_1h": 0,
+        "cache_read": 31343428,
+        "output": 68791
+      },
+      "peak_context": 357381,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:22:27.206Z",
+      "last_activity": "2026-10-14T08:42:49.565Z",
+      "active_ms": 1222359
+    },
+    {
+      "role": "helper",
+      "agent_type": "general-purpose",
+      "name": "helper-1",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 25,
+      "tokens": {
+        "input": 50,
+        "cache_written_5m": 299047,
+        "cache_written_1h": 0,
+        "cache_read": 4319248,
+        "output": 30269
+      },
+      "peak_context": 299049,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:23:36.481Z",
+      "last_activity": "2026-10-14T08:28:55.330Z",
+      "active_ms": 318849
+    },
+    {
+      "role": "helper",
+      "agent_type": "general-purpose",
+      "name": "helper-2",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 21,
+      "tokens": {
+        "input": 42,
+        "cache_written_5m": 213393,
+        "cache_written_1h": 0,
+        "cache_read": 3196418,
+        "output": 20196
+      },
+      "peak_context": 236514,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:23:42.876Z",
+      "last_activity": "2026-10-14T08:27:46.179Z",
+      "active_ms": 243303
+    },
+    {
+      "role": "helper",
+      "agent_type": "general-purpose",
+      "name": "helper-3",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 68,
+      "tokens": {
+        "input": 136,
+        "cache_written_5m": 269985,
+        "cache_written_1h": 0,
+        "cache_read": 13281945,
+        "output": 45439
+      },
+      "peak_context": 293106,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:23:51.479Z",
+      "last_activity": "2026-10-14T08:34:05.673Z",
+      "active_ms": 614194
+    },
+    {
+      "role": "helper",
+      "agent_type": "general-purpose",
+      "name": "helper-4",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 16,
+      "tokens": {
+        "input": 32,
+        "cache_written_5m": 139949,
+        "cache_written_1h": 0,
+        "cache_read": 2071459,
+        "output": 22820
+      },
+      "peak_context": 163070,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:24:00.540Z",
+      "last_activity": "2026-10-14T08:27:38.323Z",
+      "active_ms": 217783
+    },
+    {
+      "role": "helper",
+      "agent_type": "general-purpose",
+      "name": "helper-5",
+      "models": [
+        "claude-sonnet-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 51,
+      "tokens": {
+        "input": 104,
+        "cache_written_5m": 566790,
+        "cache_written_1h": 0,
+        "cache_read": 9765384,
+        "output": 43589
+      },
+      "peak_context": 296356,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:24:09.057Z",
+      "last_activity": "2026-10-14T08:44:25.371Z",
+      "active_ms": 1216314
+    },
+    {
+      "role": "developer",
+      "name": "dev-fix-c1",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "plugin_versions": [
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 77,
+      "tokens": {
+        "input": 156,
+        "cache_written_5m": 430425,
+        "cache_written_1h": 0,
+        "cache_read": 13838313,
+        "output": 53237
+      },
+      "peak_context": 252447,
+      "compactions": 0,
+      "first_activity": "2026-10-14T08:35:22.740Z",
+      "last_activity": "2026-10-14T15:39:37.179Z",
+      "active_ms": 932183
+    },
+    {
+      "role": "critic",
+      "name": "critic-1",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "plan",
+        "round": 1
+      },
+      "plugin_versions": [
+        "2.4.14"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 21,
+      "tokens": {
+        "input": 196103,
+        "cache_written": 0,
+        "cache_read": 2284032,
+        "output": 24263
+      },
+      "first_activity": "2026-10-14T02:54:14.057Z",
+      "last_activity": "2026-10-14T03:08:23.682Z",
+      "active_ms": 849625
+    },
+    {
+      "role": "critic",
+      "name": "critic-2",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "plan",
+        "round": 2
+      },
+      "plugin_versions": [
+        "2.4.14"
+      ],
+      "claude_code_versions": [
+        "2.1.296"
+      ],
+      "calls": 13,
+      "tokens": {
+        "input": 75514,
+        "cache_written": 0,
+        "cache_read": 642560,
+        "output": 16856
+      },
+      "first_activity": "2026-10-14T03:13:26.671Z",
+      "last_activity": "2026-10-14T03:23:58.439Z",
+      "active_ms": 631768
+    },
+    {
+      "role": "reviewer",
+      "name": "reviewer-1",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "forwarder_model": "claude-opus-5-5",
+      "review_link": {
+        "kind": "code",
+        "round": 1
+      },
+      "plugin_versions": [
+        "2.4.14",
+        "2.4.15",
+        "2.4.16"
+      ],
+      "claude_code_versions": [
+        "2.1.299"
+      ],
+      "calls": 26,
+      "tokens": {
+        "input": 166616,
+        "cache_written": 0,
+        "cache_read": 2677248,
+        "output": 17436
+      },
+      "first_activity": "2026-10-14T08:22:30.612Z",
+      "last_activity": "2026-10-14T08:34:31.365Z",
+      "active_ms": 720753
+    }
+  ],
+  "plan_steps": {
+    "steps": [
+      {
+        "step": "1",
+        "spawns": [
+          "dev-s1"
+        ],
+        "tokens": {
+          "input": 74,
+          "cache_written_5m": 230485,
+          "cache_written_1h": 0,
+          "cache_read": 7616872,
+          "output": 38790
+        },
+        "active_ms": 747604
+      },
+      {
+        "step": "2",
+        "spawns": [
+          "dev-s1"
+        ],
+        "tokens": {
+          "input": 102,
+          "cache_written_5m": 111891,
+          "cache_written_1h": 0,
+          "cache_read": 15924109,
+          "output": 69460
+        },
+        "active_ms": 827633
+      },
+      {
+        "step": "3",
+        "spawns": [
+          "dev-s1"
+        ],
+        "tokens": {
+          "input": 20,
+          "cache_written_5m": 390103,
+          "cache_written_1h": 0,
+          "cache_read": 3069288,
+          "output": 6945
+        },
+        "active_ms": 80379
+      },
+      {
+        "step": "5",
+        "spawns": [
+          "dev-s2"
+        ],
+        "tokens": {
+          "input": 50,
+          "cache_written_5m": 48043,
+          "cache_written_1h": 0,
+          "cache_read": 4540136,
+          "output": 22033
+        },
+        "active_ms": 342582
+      },
+      {
+        "step": "7",
+        "spawns": [
+          "dev-s3"
+        ],
+        "tokens": {
+          "input": 178,
+          "cache_written_5m": 437422,
+          "cache_written_1h": 0,
+          "cache_read": 26496504,
+          "output": 158888
+        },
+        "active_ms": 1545105
+      },
+      {
+        "step": "8",
+        "spawns": [
+          "dev-s4"
+        ],
+        "tokens": {
+          "input": 86,
+          "cache_written_5m": 277795,
+          "cache_written_1h": 0,
+          "cache_read": 9409281,
+          "output": 54175
+        },
+        "active_ms": 569017
+      },
+      {
+        "step": "9",
+        "spawns": [
+          "dev-s4"
+        ],
+        "tokens": {
+          "input": 72,
+          "cache_written_5m": 78512,
+          "cache_written_1h": 0,
+          "cache_read": 12247769,
+          "output": 53629
+        },
+        "active_ms": 500752
+      },
+      {
+        "step": "11",
+        "spawns": [
+          "dev-s5"
+        ],
+        "tokens": {
+          "input": 48,
+          "cache_written_5m": 126192,
+          "cache_written_1h": 0,
+          "cache_read": 3128616,
+          "output": 10904
+        },
+        "active_ms": 140654
+      },
+      {
+        "step": "12",
+        "spawns": [
+          "dev-s5"
+        ],
+        "tokens": {
+          "input": 92,
+          "cache_written_5m": 75706,
+          "cache_written_1h": 0,
+          "cache_read": 8735412,
+          "output": 34383
+        },
+        "active_ms": 368621
+      }
+    ],
+    "before_first_step": {
+      "spawns": [
+        "dev-s1"
+      ],
+      "tokens": {
+        "input": 56,
+        "cache_written_5m": 161672,
+        "cache_written_1h": 0,
+        "cache_read": 3590039,
+        "output": 23822
+      },
+      "active_ms": 262187
+    },
+    "after_last_step": {
+      "spawns": [
+        "dev-fix-c1",
+        "dev-s1",
+        "dev-s2",
+        "dev-s4",
+        "dev-s5"
+      ],
+      "tokens": {
+        "input": 380,
+        "cache_written_5m": 744568,
+        "cache_written_1h": 0,
+        "cache_read": 46664214,
+        "output": 143884
+      },
+      "active_ms": 2054447
+    }
+  },
+  "review_rounds": {
+    "spec": [],
+    "plan": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "critic-second-f39",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "critic-1",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "readers": [
+          {
+            "name": "critic-2",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      }
+    ],
+    "code": [
+      {
+        "round": 1,
+        "readers": [
+          {
+            "name": "reviewer-second",
+            "models": [
+              "claude-sonnet-5-5"
+            ]
+          },
+          {
+            "name": "reviewer-1",
+            "models": [
+              "gpt-6.1-sol"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fix_cycles": 1,
+  "test_build_runs": {
+    "count": 63,
+    "total_duration_ms": 628353,
+    "runs": [
+      {
+        "runner": "agent",
+        "duration_ms": 33989
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 10519
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 10896
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3788
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3359
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3353
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 7581
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3967
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3234
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3272
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3349
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 4024
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3439
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3497
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 9727
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5218
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3659
+      },
+      {
+        "runner": "close",
+        "duration_ms": 13741
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 13432
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 8300
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 24236
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 27150
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 31429
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16571
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16509
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5923
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 6286
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 12255
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5065
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 15258
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5077
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16677
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 2933
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 2926
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3120
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3348
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3661
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3377
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3400
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3262
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3015
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3071
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3239
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3447
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 3613
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16668
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5717
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 6935
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16639
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 4355
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 11778
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 12908
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 4612
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 4368
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 5578
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16886
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 16354
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 19104
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 21888
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 22157
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 27216
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 9814
+      },
+      {
+        "runner": "agent",
+        "duration_ms": 28184
+      }
+    ]
+  },
+  "owner_touches": {
+    "question_box_answered": 6,
+    "typed_message": 10
+  },
+  "completeness": {
+    "spawns": [],
+    "fields": []
+  },
+  "output_tokens_note": "output tokens are as the platform recorded them, which can fall short of what the model produced"
+}

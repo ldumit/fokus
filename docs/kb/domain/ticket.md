@@ -14,7 +14,7 @@ A Jira issue. ID is the Jira issue key (e.g. "FOK-123"), never auto-generated.
 - EpicName: Fields.EpicName first; fallback to Parent.Fields.Summary if parent is Epic
 - Priority defaults to "Medium"; CurrentStatus defaults to "Unknown"
 
-**Bug classification:** `IssueType == "Bug"` (exact match, case-sensitive). Used by BugRatioService and ScopeChangeService classification.
+**Bug classification:** `IssueType == "Bug"` (exact match, case-sensitive). Used by BugRatioCalculator and ScopeChangeCalculator classification.
 
 **Epic linkage:** Tickets with the same EpicKey belong to the same epic. Epic progress uses `Ticket.CurrentStatus` (current reality), NOT sprint membership FinalStatus (sprint snapshot).
 
@@ -31,4 +31,4 @@ A status change event on a ticket, extracted from Jira changelog.
 - Only processes items where `Field == "status"` (exact match)
 - Returns empty list if no changelog
 
-**Used by:** CycleTimeService (stage duration calculation), ScopeChangeService (bug time-in-progress, burnup completion dates)
+**Used by:** CycleTimeCalculator (stage duration calculation), ScopeChangeCalculator (bug time-in-progress, burnup completion dates)

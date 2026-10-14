@@ -2,7 +2,7 @@
 
 Measures how much developer capacity goes to bug fixing vs. planned work.
 
-**Key file:** `Fokus.API/Features/Analytics/BugRatioService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/BugRatioCalculator.cs`
 **Endpoint:** `GET /analytics/bug-ratio?sprintId&last&subTeam`
 **Store:** `client/src/stores/developersStore.ts` (lazy-loaded on tab switch)
 **View:** `client/src/views/DevelopersView.vue` (Bug Ratio tab)

@@ -39,9 +39,9 @@ There are two sync paths. They run independently.
 Sprint sync piggbacks TestSet-only Xray sync: calls `SyncTestSetsFromIssuesAsync(issues)` for each sprint's Jira issues. TE discovery does **not** run here — it is project-wide and belongs in the dedicated endpoint.
 
 Key files:
-- `Fokus.API/Features/Xray/XrayIssueSyncService.cs` — `SyncTestExecutionsForProjectAsync`, `SyncTestSetsFromIssuesAsync`, `BuildLinkMap`
+- `Fokus.Application/Xray/XrayIssueSyncService.cs` — `SyncTestExecutionsForProjectAsync`, `SyncTestSetsFromIssuesAsync`, `BuildLinkMap`
 - `Fokus.API/Features/Xray/SyncXray/SyncXrayEndpoint.cs` — `POST /api/xray/sync` (Admin only)
-- `Fokus.API/Features/Sync/SprintIssueSyncService.cs` — piggyback TestSet sync in `SyncAsync`
+- `Fokus.Application/Sync/SprintIssueSyncService.cs` — piggyback TestSet sync in `SyncAsync`
 - `Fokus.API/Features/Settings/SaveXraySettings/SaveXraySettingsEndpoint.cs` — `PUT /api/settings/xray`
 - `Fokus.Persistence/Repositories/TestExecutionRepository.cs` — sprint attribution and coverage queries
 

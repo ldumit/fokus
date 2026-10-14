@@ -4,7 +4,7 @@ Real-time per-developer sprint progress for the active sprint only. No multi-spr
 
 ## Key Files
 
-- `Fokus.API/Features/Analytics/DeveloperProgressService.cs` — computation
+- `Fokus.Domain/Analytics/Developers/DeveloperProgressCalculator.cs` — computation
 - `Fokus.API/Features/Analytics/GetDeveloperProgress/GetDeveloperProgressEndpoint.cs` — endpoint
 - `Fokus.API/Hubs/SprintHub.cs` — SignalR hub + method name constants
 - `client/src/stores/dailyProgressStore.ts` — SignalR lifecycle + fetch
@@ -19,7 +19,7 @@ Returns `DeveloperProgressResponse`. Always targets the active sprint (state = "
 
 ## Scope: All Ticket Types
 
-Unlike DeveloperThroughputService (feature-only), daily progress includes ALL ticket types (features, bugs, tasks). Assigned SP = sum of SP for all non-removed memberships. Completed SP = sum for tickets with a qualifying done-status transition within the sprint.
+Unlike DeveloperThroughputCalculator (feature-only), daily progress includes ALL ticket types (features, bugs, tasks). Assigned SP = sum of SP for all non-removed memberships. Completed SP = sum for tickets with a qualifying done-status transition within the sprint.
 
 ## Pace Formula
 
@@ -114,4 +114,4 @@ Per developer: array of `DayBreakdownEntry` (one per sprint calendar day up to t
 
 ## Excluded Developers
 
-Endpoint loads `Developer.ExcludedFromAnalytics` flag; excluded developer accountIds are passed to `DeveloperProgressService` and filtered from results.
+Endpoint loads `Developer.ExcludedFromAnalytics` flag; excluded developer accountIds are passed to `DeveloperProgressCalculator` and filtered from results.

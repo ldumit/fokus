@@ -3,131 +3,79 @@ namespace Fokus.API.Features.Analytics.GetSprintSummary;
 [HttpGet("/api/analytics/sprint-summary")]
 [Tags("Analytics")]
 public class GetSprintSummaryEndpoint(
-    SprintRepository sprintRepository,
-    DeveloperRepository developerRepository,
-    AppSettingsRepository appSettingsRepository,
-    TicketRepository ticketRepository,
-    SprintSummaryService sprintSummaryService,
-    TestExecutionRepository testExecutionRepository,
-    QaMetricsService qaMetricsService)
-    : Endpoint<GetSprintSummaryRequest, SprintSummaryResponse>
+    SprintSummaryInputs sprintSummaryInputs,
+    SprintSummaryCalculator sprintSummaryCalculator,
+    QaMetricsCalculator qaMetricsCalculator)
+    : Endpoint<GetSprintSummaryRequest, GetSprintSummaryResponse>
 {
-    private const int ZombieMinSprintCount = 3;
-
     public override async Task HandleAsync(GetSprintSummaryRequest req, CancellationToken ct)
     {
-        // 1. Load all analytics sprints (lightweight, no memberships)
-        var sprints = await sprintRepository.GetAnalyticsSprintsAsync(ct);
-
-        // 2. An explicit sprint id must exist, even when there are no sprints at all
-        var requestedSprint = req.SprintId.HasValue
-            ? sprints.FirstOrDefault(s => s.Id == req.SprintId.Value)
-                .OrThrowNotFound($"Sprint {req.SprintId.Value} was not found.")
-            : null;
-
-        // 3. No sprints — return empty response
-        if (sprints.Count == 0)
+        var source = await sprintSummaryInputs.LoadAsync(req.SprintId, ct);
+        if (source is null)
         {
-            await Send.OkAsync(new SprintSummaryResponse(null, null, null, [], [], new FlagsResult([], null, [], false)), ct);
+            await Send.OkAsync(new GetSprintSummaryResponse(null, null, null, [], [], new FlagsDto([], null, [], false)), ct);
             return;
         }
 
-        var selectedSprintInfo = requestedSprint ?? sprints[0]; // most recent (sorted descending)
-
-        // 4. Build sparkline window: up to 4 closed sprints ending at selected, from ascending list
-        // Sparklines use closed sprints only — active sprint is not a data point
-        var ascending = sprints.Where(s => s.State == SprintState.Closed).OrderBy(s => s.StartDate).ToList();
-        var selectedIndex = ascending.FindIndex(s => s.Id == selectedSprintInfo.Id);
-        // If selected is active (not in closed list), use last closed sprint as anchor for sparkline
-        var sparklineAnchorIndex = selectedIndex >= 0 ? selectedIndex : ascending.Count - 1;
-        var windowIds = ascending
-            .Take(sparklineAnchorIndex + 1)
-            .TakeLast(4)
-            .Select(s => s.Id)
-            .ToList();
-
-        // Always include the selected sprint even when it's active (not in the closed list)
-        if (!windowIds.Contains(selectedSprintInfo.Id))
-            windowIds.Add(selectedSprintInfo.Id);
-
-        // 5. Bulk load sprints with memberships for the window
-        var windowSprints = await sprintRepository.GetSprintsWithMembershipsAsync(windowIds, ct);
-
-        // 6. Load active developers and app settings
-        var activeDevelopers = await developerRepository.GetActiveDevelopersAsync(ct);
-        var allDevelopers = await developerRepository.GetAllAsync(ct);
-        var settings = await appSettingsRepository.GetAsync(ct);
-
-        // 7. Normalize sub-team (empty string -> null)
         var subTeam = string.IsNullOrWhiteSpace(req.SubTeam) ? null : req.SubTeam;
+        var selectedSprint = source.SelectedSprint;
 
-        // 8. Load capacity records for the window sprints
-        var capacityRecords = await developerRepository.GetCapacitiesForSprintsAsync(windowIds, ct);
-
-        // 8a. Build capacity lookup: accountId -> sprintId -> capacityPercent
-        var capacityLookup = capacityRecords
-            .GroupBy(c => c.DeveloperAccountId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.ToDictionary(c => c.SprintId, c => c.CapacityPercent));
-
-        // 8b. Load status transitions for all window sprint tickets
-        var statusTransitions = await ticketRepository.GetStatusTransitionsForSprintTicketsAsync(windowIds, ct);
-        var transitionIndex = StatusTransitionIndex.Build(statusTransitions);
-
-        // 9. Apply cross-cutting exclusion for the selected sprint
-        var selectedSprint = windowSprints.First(s => s.Id == selectedSprintInfo.Id);
+        // Cross-cutting exclusion for the selected sprint
+        var transitionIndex = StatusTransitionIndex.Build(source.StatusTransitions);
         var excludedIds = ExcludedDeveloperFilter.GetExcludedDeveloperIds(
-            selectedSprint, allDevelopers, capacityRecords, transitionIndex, settings);
-        var filteredActiveDevelopers = activeDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
+            selectedSprint, source.AllDevelopers, source.CapacityRecords, transitionIndex, source.Settings);
+        var filteredActiveDevelopers = source.ActiveDevelopers.Where(d => !excludedIds.Contains(d.Id)).ToList();
 
-        // 10. Load all epic tickets for F8/F14 alignment (BR20)
-        var allEpicTickets = await ticketRepository.GetTicketsWithEpicAsync(ct);
+        var quality = ComputeQuality(source, subTeam);
 
-        // 11. Load QA data and compute quality sub-score when Xray is enabled (BR19)
-        decimal? qualitySubScore = null;
-        QualityBreakdownResult? qualityBreakdown = null;
-        TestingCrunchFlag? testingCrunch = null;
-        var hasQaData = false;
+        // Exclusion applied inside the calculator via excludedIds
+        var result = sprintSummaryCalculator.ComputeSummary(
+            selectedSprint, source.WindowSprints, filteredActiveDevelopers, source.Settings, subTeam, source.AllEpicTickets,
+            source.CapacityLookup, source.AllDevelopers, source.StatusTransitions, source.ZombieSprintCounts, excludedIds,
+            quality.QualitySubScore, quality.QualityBreakdown, quality.HasQaData, quality.TestingCrunch);
 
-        if (settings.XrayEnabled)
-        {
-            var sprintTEs = await testExecutionRepository.GetTestExecutionsForSprintAsync(selectedSprint.Id, ct);
-            hasQaData = true;
+        await Send.OkAsync(result.ToGetSprintSummaryResponse(), ct);
+    }
 
-            var qaResult = qaMetricsService.ComputeQaMetrics(
-                sprintTEs,
-                selectedSprint.Memberships.ToList(),
-                statusTransitions,
-                selectedSprint,
-                priorSprint: null,
-                priorSprintTEs: null,
-                priorMemberships: null,
-                sparklineWindow: [],
-                sparklineTEsBySprintId: [],
-                sparklineMembershipsBySprintId: [],
-                settings,
-                subTeam);
+    private sealed record SprintQuality(
+        decimal? QualitySubScore,
+        QualityBreakdownResult? QualityBreakdown,
+        TestingCrunchFlag? TestingCrunch,
+        bool HasQaData);
 
-            qualitySubScore = qaResult.QualitySubScore;
-            qualityBreakdown = new QualityBreakdownResult(
-                qaResult.QualityBreakdown.CoverageScore,
-                qaResult.QualityBreakdown.CoverageWeight,
-                qaResult.QualityBreakdown.PassRateScore,
-                qaResult.QualityBreakdown.PassRateWeight);
+    // Quality sub-score and testing crunch when Xray is enabled (BR19)
+    private SprintQuality ComputeQuality(SprintSummarySource source, string? subTeam)
+    {
+        if (source.SprintTes is null)
+            return new SprintQuality(null, null, null, false);
 
-            testingCrunch = TestTimelineService.ComputeCrunchFlag(
-                sprintTEs,
-                selectedSprint.Memberships.ToList(),
-                selectedSprint,
-                subTeam);
-        }
+        var selectedSprint = source.SelectedSprint;
+        var qaResult = qaMetricsCalculator.ComputeQaMetrics(
+            source.SprintTes,
+            selectedSprint.Memberships.ToList(),
+            source.StatusTransitions,
+            selectedSprint,
+            priorSprint: null,
+            priorSprintTEs: null,
+            priorMemberships: null,
+            sparklineWindow: [],
+            sparklineTEsBySprintId: [],
+            sparklineMembershipsBySprintId: [],
+            source.Settings,
+            subTeam);
 
-        var zombieSprintCounts = await sprintRepository.GetZombieSprintCountsAsync(ZombieMinSprintCount, ct);
+        var qualityBreakdown = new QualityBreakdownResult(
+            qaResult.QualityBreakdown.CoverageScore,
+            qaResult.QualityBreakdown.CoverageWeight,
+            qaResult.QualityBreakdown.PassRateScore,
+            qaResult.QualityBreakdown.PassRateWeight);
 
-        // 12. Compute summary (exclusion applied internally via excludedIds)
-        var result = sprintSummaryService.ComputeSummary(selectedSprint, windowSprints, filteredActiveDevelopers, settings, subTeam, allEpicTickets, capacityLookup, allDevelopers, statusTransitions, zombieSprintCounts, excludedIds, qualitySubScore, qualityBreakdown, hasQaData, testingCrunch);
+        var testingCrunch = TestTimelineCalculator.ComputeCrunchFlag(
+            source.SprintTes,
+            selectedSprint.Memberships.ToList(),
+            selectedSprint,
+            subTeam);
 
-        await Send.OkAsync(result, ct);
+        return new SprintQuality(qaResult.QualitySubScore, qualityBreakdown, testingCrunch, HasQaData: true);
     }
 }

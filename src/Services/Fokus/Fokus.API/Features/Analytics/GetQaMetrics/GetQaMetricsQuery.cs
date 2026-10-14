@@ -1,3 +1,5 @@
+using Fokus.API.Features.Analytics.Shared;
+
 namespace Fokus.API.Features.Analytics.GetQaMetrics;
 
 public class GetQaMetricsRequest
@@ -24,9 +26,9 @@ public class GetQaMetricsRequestValidator : Validator<GetQaMetricsRequest>
 public class QaMetricsResponse
 {
     public bool HasQaData { get; set; }
-    public MetricCard? CoverageRate { get; set; }
-    public MetricCard? ExecutionRate { get; set; }
-    public MetricCard? PassRate { get; set; }
+    public MetricCardDto? CoverageRate { get; set; }
+    public MetricCardDto? ExecutionRate { get; set; }
+    public MetricCardDto? PassRate { get; set; }
     public int BugsFound { get; set; }
     public decimal QualitySubScore { get; set; }
     public QualityBreakdownResponse? QualityBreakdown { get; set; }

@@ -2,14 +2,14 @@
 
 Dual tracking (ticket count + story points) with velocity and projected completion.
 
-**Key file:** `Fokus.API/Features/Analytics/EpicProgressService.cs`
+**Key file:** `Fokus.Domain/Analytics/Sprints/EpicProgressCalculator.cs`
 **Endpoint:** `GET /analytics/epic-progress?subTeam`
 **Store:** `client/src/stores/epicsStore.ts`
 **View:** `client/src/views/EpicsView.vue`
 
 ## Per-Epic Metrics
 
-All SP sums use `GetEffectiveTicketSp(ticket, defaultSpPerBug)` (local helper on `EpicProgressService`): returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if IssueType == "Bug" and default > 0, else null. Velocity uses `SprintMembership.GetEffectiveSp(defaultSpPerBug)`. Configured via `AppSettings.DefaultSpPerBug` (default 3).
+All SP sums use `Ticket.GetEffectiveSp(defaultSpPerBug)` (the `Ticket` behaviour method, also used by `SprintSummaryCalculator`'s top epics): returns `StoryPoints` if non-null and > 0, else `defaultSpPerBug` if IssueType == "Bug" and default > 0, else null. Velocity uses `SprintMembership.GetEffectiveSp(defaultSpPerBug)`. Configured via `AppSettings.DefaultSpPerBug` (default 3).
 
 ```
 doneTickets          = tickets where CurrentStatus IN completedStatuses  (boundary-driven, see cross-cutting.md)
@@ -20,7 +20,7 @@ remainingSp          = sum(effectiveSP) for remaining tickets
 
 **Uses Ticket.CurrentStatus, NOT FinalStatus.** Epic progress reflects current reality, not historical sprint snapshots.
 
-An "unestimated" ticket is one where `GetEffectiveTicketSp` returns null (no own SP, and either not a Bug or DefaultSpPerBug is 0).
+An "unestimated" ticket is one where `Ticket.GetEffectiveSp` returns null (no own SP, and either not a Bug or DefaultSpPerBug is 0).
 
 **F35 additions:** `startedDate` (DateOnly?, nullable) and `lastWorkDate` (DateOnly?, nullable) are computed per-epic from transition data. See "## Activity Dates (F35)" for derivation. These are computed fields — not stored in the DB.
 
@@ -64,7 +64,7 @@ Confidence = "low" if fewer than 3 data points; null otherwise.
 
 Two computed date fields added to `EpicProgressEntry`: `startedDate` and `lastWorkDate`.
 
-**Derivation rule:** For each epic, iterate all status transitions across its tickets (from `transitionsByTicket` dictionary in `EpicProgressService`). A transition qualifies if `TransitionAttributionChecker.GetStageIndex(transition.ToStatus, orderedStages) >= startIndex` — same cycle time start boundary used by velocity.
+**Derivation rule:** For each epic, iterate all status transitions across its tickets (from the `TransitionsByTicket` dictionary in `EpicProgressCalculator`'s context). A transition qualifies if `TransitionAttributionChecker.GetStageIndex(transition.ToStatus, orderedStages) >= startIndex` — same cycle time start boundary used by velocity.
 
 - `startedDate` = earliest qualifying `transition.Timestamp` as `DateOnly`. Null if no qualifying transitions exist.
 - `lastWorkDate` = most recent qualifying `transition.Timestamp` as `DateOnly`. Null if no qualifying transitions exist.
@@ -113,7 +113,7 @@ Two computed date fields added to `EpicProgressEntry`: `startedDate` and `lastWo
 
 **Key files:**
 - Repository method: `Fokus.Persistence/Repositories/TestExecutionRepository.cs` — `GetTestExecutionDataForTicketsAsync`
-- Service QA helpers: `Fokus.API/Features/Analytics/EpicProgressService.cs` — `ComputeEpicQaMetrics`, `BuildTicketEntry`
+- Calculator QA helpers: `Fokus.Domain/Analytics/Sprints/EpicProgressCalculator.cs` — `ComputeEpicQaMetrics`, `BuildTicketEntry`
 - Store: `client/src/stores/epicsStore.ts` — `isXrayEnabled`, `averageTestCoverage` computed
 
 ## Client-Side Interactions (F35)

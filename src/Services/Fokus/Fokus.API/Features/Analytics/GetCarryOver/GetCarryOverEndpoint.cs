@@ -7,7 +7,7 @@ public class GetCarryOverEndpoint(
     AppSettingsRepository appSettingsRepository,
     DeveloperRepository developerRepository,
     TicketRepository ticketRepository,
-    CarryOverService carryOverService)
+    CarryOverCalculator carryOverCalculator)
     : Endpoint<GetCarryOverRequest, CarryOverResponse>
 {
     public override async Task HandleAsync(GetCarryOverRequest req, CancellationToken ct)
@@ -65,10 +65,10 @@ public class GetCarryOverEndpoint(
                 target, allDevelopers, capacityRecords, transitionIndex, settings);
 
             // 10b. Compute single-sprint response
-            var singleResult = carryOverService.ComputeSingleSprint(
+            var singleResult = carryOverCalculator.ComputeSingleSprint(
                 target, priorSprint, allSprints, statusTransitions, settings, subTeam, excludedIds);
 
-            await Send.OkAsync(new CarryOverResponse("single", null, singleResult), ct);
+            await Send.OkAsync(new CarryOverResponse("single", null, singleResult.ToCarryOverSingleSprintDto()), ct);
         }
         else
         {
@@ -89,10 +89,10 @@ public class GetCarryOverEndpoint(
                 .ToHashSet();
 
             // 10a. Compute multi-sprint response
-            var multiResult = carryOverService.ComputeMultiSprint(
+            var multiResult = carryOverCalculator.ComputeMultiSprint(
                 selectedSprints, allSprints, statusTransitions, settings, subTeam, excludedInAll);
 
-            await Send.OkAsync(new CarryOverResponse("multi", multiResult, null), ct);
+            await Send.OkAsync(new CarryOverResponse("multi", multiResult.ToCarryOverMultiSprintDto(), null), ct);
         }
     }
 }

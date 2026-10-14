@@ -291,6 +291,10 @@ Xray client (GraphQL + auth), domain model (TestExecution, TestExecutionLink, Te
 
 **F38:** Bring the code in line with eight nexus-dotnet skills rated 6+ with S/S–M effort (`docs/specs/F36-PublicReleaseCleanup/delivery/nexus-dotnet-skill-fit.md`): central-package-management, framework-currency, error-handling, authorization-patterns, extract-endpoint-types, add-hosted-service, persistence-patterns (seeding), create-service-claude-md. Step 1 copies/merges those skills into `.claude/skills/` (3 new, 5 refreshed without losing Fokus edits); the code is then aligned from the local copies. Builds after F37 (shared endpoint files). Private-only record, like F36.
 
+| F39 | Service Layer Split | Done | — (plan-only definition; team run, full lane; operator check owed — plan Step 14) | [plan](specs/F39-ServiceLayerSplit/delivery/plan.md) · [summary](specs/F39-ServiceLayerSplit/delivery/summary.md) |
+
+**F39:** Split the API-layer `*Service` classes (18, ~9,400 lines; 15 in Analytics) into pure Domain calculators (`domain-service` skill) and Application-layer orchestration in a new `Fokus.Application` project, shrinking the large services and endpoints. Reverses the root `CLAUDE.md` "no separate Application project" rule and the thin-domain note, by owner decision (2026-10-14). Behaviour is proven by an external before/after golden comparison on a seeded synthetic database (no new committed tests). Builds after F38 merges. Private-only record, like F36.
+
 ---
 
 ### v2 Cross-Cutting Concerns

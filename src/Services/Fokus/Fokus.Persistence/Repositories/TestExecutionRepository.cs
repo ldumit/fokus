@@ -1,4 +1,5 @@
 using Blocks.EntityFrameworkCore.Repositories;
+using Fokus.Domain.Analytics.Shared;
 
 namespace Fokus.Persistence.Repositories;
 
@@ -144,7 +145,7 @@ public class TestExecutionRepository(FokusDbContext db)
                 sm.Ticket != null &&
                 sm.Ticket.IssueType != "Bug" &&
                 !excludedStatuses.Contains(sm.FinalStatus, StringComparer.OrdinalIgnoreCase) &&
-                GetEffectiveSp(sm, defaultSpPerBug) != null)
+                sm.GetEffectiveSp(defaultSpPerBug) != null)
             .ToList();
 
         if (featureMemberships.Count == 0)
@@ -158,19 +159,10 @@ public class TestExecutionRepository(FokusDbContext db)
             .Where(st => ticketIds.Contains(st.TicketId))
             .ToListAsync(ct);
 
-        // Apply IsStartedInSprint filter (replicate logic inline — TransitionAttributionChecker is in API layer)
+        var transitionIndex = StatusTransitionIndex.Build(transitions);
         var startedMemberships = featureMemberships
-            .Where(sm =>
-            {
-                if (startIndex < 0) return false;
-                var ticketTransitions = transitions
-                    .Where(t => t.TicketId == sm.TicketId)
-                    .ToList();
-                return ticketTransitions.Any(t =>
-                    t.Timestamp >= sprintStart &&
-                    t.Timestamp <= sprintEnd &&
-                    GetStageIndex(t.ToStatus, orderedStages) >= startIndex);
-            })
+            .Where(sm => TransitionAttributionChecker.IsStartedInSprint(
+                sm.TicketId, transitionIndex, sprintStart, sprintEnd, orderedStages, startIndex).IsStarted)
             .ToList();
 
         if (startedMemberships.Count == 0)
@@ -278,18 +270,6 @@ public class TestExecutionRepository(FokusDbContext db)
         // TE predates all sprints: attribute to first sprint
         return sprints[0].Id;
     }
-
-    private static decimal? GetEffectiveSp(SprintMembership sm, int defaultSpPerBug)
-    {
-        if (sm.StoryPoints.HasValue && sm.StoryPoints.Value > 0)
-            return sm.StoryPoints;
-        if (sm.Ticket?.IssueType == "Bug" && defaultSpPerBug > 0)
-            return (decimal)defaultSpPerBug;
-        return null;
-    }
-
-    private static int GetStageIndex(string status, List<string> orderedStages) =>
-        orderedStages.FindIndex(s => string.Equals(s, status, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Returns the set of sprint IDs (from the provided list) that have at least one non-cancelled

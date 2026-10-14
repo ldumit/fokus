@@ -1,3 +1,5 @@
+using Fokus.API.Features.Analytics.Shared;
+
 namespace Fokus.API.Features.Analytics.GetLeaderboard;
 
 public class GetLeaderboardRequest
@@ -31,3 +33,70 @@ public class GetLeaderboardRequestValidator : Validator<GetLeaderboardRequest>
             .WithMessage("SubTeam must not be empty when provided.");
     }
 }
+
+public record LeaderboardResponse(
+    string Mode,
+    LeaderboardMultiSprintDto? MultiSprint,
+    LeaderboardSingleSprintDto? SingleSprint);
+
+public sealed record LeaderboardMultiSprintDto(
+    IReadOnlyList<SprintRefDto> Sprints,
+    IReadOnlyList<LeaderboardDeveloperEntryDto> Developers);
+
+public sealed record LeaderboardSingleSprintDto(
+    SprintRefDto Sprint,
+    IReadOnlyList<LeaderboardDeveloperSingleEntryDto> Developers);
+
+public sealed record LeaderboardDeveloperEntryDto(
+    string AccountId,
+    string DisplayName,
+    string? SubTeam,
+    string? AvatarUrl,
+    decimal FeatureSp,
+    decimal BugSp,
+    decimal TotalSp,
+    int FeatureTickets,
+    int BugTickets,
+    int TotalTickets,
+    int CapacityPercent,
+    IReadOnlyList<LeaderboardDeveloperSprintBreakdownDto> SprintBreakdowns);
+
+public sealed record LeaderboardDeveloperSingleEntryDto(
+    string AccountId,
+    string DisplayName,
+    string? SubTeam,
+    string? AvatarUrl,
+    decimal FeatureSp,
+    decimal BugSp,
+    decimal TotalSp,
+    int FeatureTickets,
+    int BugTickets,
+    int TotalTickets,
+    int CapacityPercent,
+    LeaderboardDeveloperDeltaDto? Delta);
+
+public sealed record LeaderboardDeveloperSprintBreakdownDto(
+    int SprintId,
+    decimal FeatureSp,
+    decimal BugSp,
+    decimal TotalSp,
+    int FeatureTickets,
+    int BugTickets,
+    int CapacityPercent);
+
+public sealed record LeaderboardDeveloperDeltaDto(
+    decimal FeatureSpDelta,
+    string FeatureSpDeltaDirection,
+    string FeatureSpDeltaPolarity,
+    decimal BugSpDelta,
+    string BugSpDeltaDirection,
+    string BugSpDeltaPolarity,
+    decimal TotalSpDelta,
+    string TotalSpDeltaDirection,
+    string TotalSpDeltaPolarity,
+    int FeatureTicketsDelta,
+    string FeatureTicketsDeltaDirection,
+    string FeatureTicketsDeltaPolarity,
+    int BugTicketsDelta,
+    string BugTicketsDeltaDirection,
+    string BugTicketsDeltaPolarity);

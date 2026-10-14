@@ -5,7 +5,7 @@ Create the `.csproj` files for each layer of the new service with the correct `P
 - `.Application` depends on `.Persistence` **directly** — no repository interfaces in `.Domain`.
 - `.Persistence` depends only on its own `.Domain` + the EF/Redis building block.
 - `.Domain` depends only on `Blocks.Domain`.
-- `.API` depends on `.Application` (if present) or `.Persistence` (if not).
+- `.API` depends on `.Application` (if present) or `.Persistence` (if not). A FastEndpoints service whose endpoints still load single rows from repositories also keeps `.Persistence` (Fokus does — `docs/conventions/project-rules.md` § Project Reference Graph).
 
 ## {Name}.Domain.csproj
 
@@ -168,7 +168,7 @@ Comment out lines that do not apply. Generate a fresh GUID for `<UserSecretsId>`
 
 ## Rule: one reference path per concern
 
-When both `.Application` and `.Persistence` exist, `.API` references **only** `.Application` — the Application project transitively pulls in Persistence. Do not double-reference.
+When both `.Application` and `.Persistence` exist, `.API` references **only** `.Application` — the Application project transitively pulls in Persistence. Do not double-reference. The one exception is a FastEndpoints service whose endpoints load single rows from repositories directly while only the heavy loading goes through `.Application` (Fokus): `.API` then names `.Persistence` too, so the direct use is declared rather than borrowed transitively.
 
 When `.Application` is absent, `.API` references `.Persistence` directly.
 

@@ -2,7 +2,7 @@
 
 Per-developer SP completed with capacity-aware rolling averages.
 
-**Key file:** `Fokus.API/Features/Analytics/DeveloperThroughputService.cs`
+**Key file:** `Fokus.Domain/Analytics/Developers/DeveloperThroughputCalculator.cs`
 **Endpoint:** `GET /analytics/developer-throughput?sprintId&last&subTeam`
 **Store:** `client/src/stores/developersStore.ts`
 **View:** `client/src/views/DevelopersView.vue` (Throughput tab, default)
@@ -25,7 +25,7 @@ ticketsCarriedOver = count where isStarted AND !isCompleted AND !Removed AND !Is
 
 ## Rolling Average (3-sprint, capacity-aware, transition-based)
 
-- Window: every closed sprint before the earliest target sprint, plus the targets (`DeveloperThroughputService.SelectRollingWindowSprintIds`; all closed sprints when the target is active). Loading only a fixed number of prior sprints would return null for a developer with a 0%-capacity sprint in that range.
+- Window: every closed sprint before the earliest target sprint, plus the targets (`DeveloperThroughputCalculator.SelectRollingWindowSprintIds`; all closed sprints when the target is active). Loading only a fixed number of prior sprints would return null for a developer with a 0%-capacity sprint in that range.
 - Walks backward from current sprint (inclusive)
 - Skips sprints where developer has 0% effective capacity
 - Collects up to 3 qualifying sprints

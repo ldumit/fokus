@@ -29,7 +29,7 @@ The API project holds 18 `*Service` classes, 9,397 lines (plan-time `wc -l`): 15
     - `IsBug`, `FilterDevelopers`: 5 each. `GetCapacity`, `GetDeveloperMemberships`: 4 each.
     - `IsStartedInSprint`: 3 list-based copies plus the Persistence one. `GetStageIndex`/`ResolveStartIndex`: 3 each.
     - `ComputeRollingAverage`: 2, coupled to each service's own `ComputeMetrics`. `CountBusinessDays`: 2.
-    - Nine 4-field sprint-info records (`SprintInfo` itself carries two more fields).
+    - Eight byte-identical 4-field sprint-info records (`SprintSummaryService.cs:5` `SprintInfo` carries two more fields).
     - Four sparkline builders and two consecutive-sprint alert evaluators.
   - **Long methods:** 25 methods in these classes are over 80 lines (35 over 60, the `csharp.md` § Method Design limit). The largest:
     - `ComputeEpicProgress` 293, `ComputeProgress` 242, `Detect` 180;
@@ -93,7 +93,7 @@ The API project holds 18 `*Service` classes, 9,397 lines (plan-time `wc -l`): 15
 ## Domain Model Changes
 
 - New tree `Fokus.Domain/Analytics/`:
-  - one folder per area (`Sprint/`, `Developer/`, `Qa/`, `Workflow/`, `Shared/`);
+  - one folder per area (`Sprints/`, `Developers/`, `Qa/`, `Workflow/`, `Shared/`). An area name never equals an aggregate type name: a namespace `…Analytics.Sprint` hides the `Sprint` aggregate from every `Fokus.Domain.Analytics.*` file (CS0118; questions.md Q4, D14);
   - each calculator sits beside its own result record;
   - the shared kernel goes in `Shared/`.
 - Names come from the skill's vocabulary (calculator, resolver, checker, provider), never `…Service`.
@@ -118,16 +118,19 @@ Same recipe and accept as F38 Step 1 (`docs/specs/F38-DotnetSkillAlignment/deliv
   - Registration method names keep this repo's `AddFokus{Layer}` form (Decision D10).
 - **Accept:**
   - the F38 Step 1 self-containment greps → 0 on the 4 folders;
-  - `grep -n "Adapt<\|IRegister\|Mapster" .claude/skills/create-feature -r` → 0;
+  - `grep -rni "Adapt<\|IRegister\|Mapster" .claude/skills/create-feature .claude/skills/cqrs-patterns .claude/skills/service-registration .claude/skills/domain-service` → 0 (the local `cqrs-patterns:108` and `service-registration:43` carry Mapster lines today; questions.md Q3);
   - `find .claude/skills -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l` equals the `.claude/README.md` count (43).
 
 ### Step 2 — The golden harness and the base capture
 
 The comparison is the agents' safety net (owner, 2026-10-14). It lives in `D:\temp\f39-golden\` and is never committed.
 
-- **Base:** record the base commit (`git rev-parse HEAD` before any F39 source edit) in `implementation.md`, and create a worktree of it at `D:\temp\f39-golden\base` (`git worktree add`). Every "before" capture runs there, never from a moving branch.
+- **Base (no git writes — owner constraint; questions.md Q1, D12):**
+  - record the base commit (`git rev-parse HEAD` before any F39 source edit) in `implementation.md`; confirm `git status --porcelain -- src Directory.Packages.props` is empty;
+  - extract it twice, read-only: `git archive {base} | tar -xf - -C "/d/temp/f39-golden/base"`, and the same into `/d/temp/f39-golden/pristine` (the `/d/...` form: GNU tar can read a `D:` prefix as a remote host);
+  - every "before" capture runs from the `base` extract, never from a moving branch; `pristine` is never built or edited.
 - **Harness project** `D:\temp\f39-golden\harness\` (.NET 10):
-  - It references `Fokus.API.csproj` by absolute path in the tree under test. For the base it targets the worktree's copy; the after runs target the main tree.
+  - It references `Fokus.API.csproj` by absolute path in the tree under test. For the base it targets the `base` extract's copy; the after runs target the main tree.
   - It references `Microsoft.AspNetCore.Mvc.Testing`, whose build targets write the content-root manifest.
   - Its entry type is a public type of `Fokus.API`, for example `SprintHub`, so `Program.cs` is not changed.
 - **Host settings:**
@@ -176,9 +179,9 @@ The comparison is the agents' safety net (owner, 2026-10-14). It lives in `D:\te
   - **SQL counts:** for every request, the after count ≤ the base count;
   - **API document:** the F38 method (per path, verb and resolved property location; schema type names may differ) finds no difference.
 - **Accept, all in `implementation.md`:**
-  - **Determinism:** two base captures are identical by the comparison method.
+  - **Determinism:** two base captures from the extract, and one from the main tree before any F39 source edit (main = base then), are identical by the comparison method — the third proves the extract behaves as the checkout.
   - **Fixture check:** for each route, at least one entry returns 200 with data: QA routes `hasQaData: true`, non-empty lists, the workflow detect reply listing stages, and each sync POST reaching its failing fake item.
-  - **Sabotage check:** change one calculator constant and one sub-team filter in the base worktree; the replies diff fails; revert both (`git -C "D:/temp/f39-golden/base" status --porcelain` empty).
+  - **Sabotage check:** change one calculator constant and one sub-team filter in the `base` extract; the replies diff fails; revert both, proven by `diff -r --exclude=bin --exclude=obj "/d/temp/f39-golden/base" "/d/temp/f39-golden/pristine"` exiting 0 (any further build-output exclusion is named in `implementation.md`).
   - **Coverage:** the manifest size and route count.
 
 ### Step 3 — The Application project
@@ -203,7 +206,7 @@ Follow service-registration (local copy).
 Follow domain-service (local copy). Move into `Fokus.Domain/Analytics/` only what has no dependency still in the API:
 - `TransitionAttributionChecker`, `StatusTransitionIndex`, `CompletionChecker`, `HealthScoreCalculator` and `ExcludedDeveloperFilter`;
 - `TransitionEdge` and `TransitionEdgeData` together, with `TicketRepository` and every caller updated;
-- the shared records with no API dependency (`SparklinePoint`, the sprint-info record, `TestingCrunchFlag`);
+- the shared records with no API dependency (`SparklinePoint`, `TestingCrunchFlag`, and the eight 4-field `{Area}SprintInfo` records merged into one `SprintRef` — questions.md Q2, D13). The 6-field `SprintInfo` moves with `SprintSummary` in Step 5. Add the glossary line to `docs/kb/glossary.md` beside **Sprint**: "**Sprint Reference** — A sprint's id, name, start and end dates, carried inside an analytics result. Code: `SprintRef`. Not the `Sprint` aggregate.";
 - the helpers with no coupling: delta direction and polarity, the bug test, business days, the stage index.
 
 **Merge rule (D6):** variants are merged only where byte-identical or provably equal on every input. Each surviving variant is named in `implementation.md` with its difference. Coupled helpers (the rolling average with its `ComputeMetrics`, the metric-card builders that return feature records) wait for Step 7.
@@ -213,22 +216,25 @@ Follow domain-service (local copy). Move into `Fokus.Domain/Analytics/` only wha
 **Accept:**
 - `grep -rlE "class (TransitionAttributionChecker|StatusTransitionIndex|CompletionChecker|HealthScoreCalculator|ExcludedDeveloperFilter)\b" --include=*.cs src/Services/Fokus/Fokus.API` → 0;
 - `grep -rn "TransitionEdge" --include=*.cs src/Services/Fokus/Fokus.Persistence | grep -c "record "` → 0;
+- `grep -rnE "record [A-Za-z]+SprintInfo\b" --include=*.cs src/Services/Fokus` → 0, and `grep -c "SprintRef" docs/kb/glossary.md` → 1;
 - full suite green;
 - the slice-end comparison runs after Step 4 (Step 2's comparison method).
 
 ### Step 5 — Sprint-level calculators
 
 Follow domain-service (local copy).
-- **Move** `SprintSummary`, `ScopeChange`, `CarryOver`, `BugRatio`, `CycleTime`, `EpicProgress` and `TestTimeline` to `Fokus.Domain/Analytics/Sprint/`, renamed by the skill's vocabulary.
+- **Move** `SprintSummary`, `ScopeChange`, `CarryOver`, `BugRatio`, `CycleTime`, `EpicProgress` and `TestTimeline` to `Fokus.Domain/Analytics/Sprints/` (namespace `Fokus.Domain.Analytics.Sprints`; D14), renamed by the skill's vocabulary.
+- **Skill text:** the local `domain-service` § This Repo's Form **Home** bullet names `Sprints/` and `Developers/` and states the no-aggregate-name rule (exact before/after in questions.md Q4).
 - **Only computation results move.** Each reply wrapper stays in the API until Step 8 as the endpoint's reply; until then the endpoint keeps the wrapper and fills it from the result.
 - **Tests and registrations move in the same step:** `SprintSummaryServiceTests`, `ScopeChangeServiceTests` and the registration lines.
 - **Accept:**
   - `for n in SprintSummary ScopeChange CarryOver BugRatio CycleTime EpicProgress TestTimeline; do test -e "src/Services/Fokus/Fokus.API/Features/Analytics/${n}Service.cs" && echo "$n"; done` → no output;
+  - `grep -rnE "namespace Fokus\.(Domain|Application)\.Analytics\.(Sprint|Developer|Ticket|TestExecution|TestRun|TestSet)\b" --include=*.cs src/Services/Fokus` → 0, and `grep -c "Sprints/" .claude/skills/domain-service/SKILL.md` ≥ 1;
   - full suite green.
 
 ### Step 6 — Developer, QA and workflow calculators; the clock as input
 
-Follow domain-service (local copy). Same as Step 5, into `Fokus.Domain/Analytics/{Developer,Qa,Workflow}/`, for:
+Follow domain-service (local copy). Same as Step 5, into `Fokus.Domain/Analytics/{Developers,Qa,Workflow}/` (D14), for:
 - `DeveloperProgress`, `DeveloperDetail`, `DeveloperQuality`, `DeveloperThroughput` and `Leaderboard`;
 - `QaMetrics`, `QaTrends` and `QaWorkload`;
 - `WorkflowDetection`.
@@ -270,7 +276,7 @@ Follow create-feature (local copy, hand-written mappings).
 ### Step 9 — Loading moves out of the fat endpoints
 
 Follow service-registration (local copy) for registrations; the shape is the knowledge-gateway one (§ Context).
-- **Endpoints:** for `GetQaWorkload`, `GetDeveloperQuality`, `GetQaTrends`, `GetQaMetrics`, `GetSprintSummary` and `GetDeveloperDetail`, the multi-repository loading and window selection move into one `Fokus.Application/Analytics/{Area}/` class per endpoint. Each is named for what it loads (for example `QaWorkloadInputs`), never `…Service`.
+- **Endpoints:** for `GetQaWorkload`, `GetDeveloperQuality`, `GetQaTrends`, `GetQaMetrics`, `GetSprintSummary` and `GetDeveloperDetail`, the multi-repository loading and window selection move into one `Fokus.Application/Analytics/{Area}/` class per endpoint, with the Domain area names (`Sprints/`, `Developers/`, `Qa/` — D14; a `…Analytics.Sprint` namespace hides the aggregate here too). Each is named for what it loads (for example `QaWorkloadInputs`), never `…Service`.
 - **The endpoint keeps** reading the request, calling the loader and the calculator, and the call to its mapping extension.
 - **`GetDeveloperDetail`'s inline activity check stays inline** (D11).
 - **No more queries:** the per-sprint loops keep the SQL command count per request at or below the base.
@@ -303,6 +309,7 @@ Follow service-registration (local copy).
 - **Root `CLAUDE.md`:**
   - **line 34** — before: "There is no separate Application project — FastEndpoints endpoint classes own feature slices directly (…)." After: "A service adds an `{Svc}.Application` project when its logic outgrows the endpoints (Fokus does, since F39). Application holds injected capability classes with no mediator; the endpoint stays the coordinator; pure rules and calculators live in `{Svc}.Domain`."
   - **Repo Structure** gains the `{Svc}.Application/` line.
+  - **Tech Stack line 44** — before: "- Mapster — object mapping". After: "- Hand-written `To…()` mapping extensions in `{Op}Extensions.cs` — object mapping; no mapping library." (Fokus has no Mapster package or use — Step 1; questions.md Q3.)
 - **`docs/architecture/v1.md`:**
   - the project reference graph and the "no separate Application project" text (lines 20–37);
   - the "No service layer classes" constraint;
@@ -325,14 +332,15 @@ Follow service-registration (local copy).
 - **KB:** every key-file path and prose type mention of a moved class (19 references in 15 files at plan time) is updated. KB lint: no stale key file, no orphan.
 - **Accept:**
   - `grep -rnE "(Features/(Analytics|Sync|Xray|Settings)/[A-Za-z]+(Service|Checker|Filter|Calculator|Index)\.cs)|\b[A-Z][A-Za-z]+(Progress|Summary|Change|Over|Ratio|Time|Timeline|Detail|Quality|Throughput|Metrics|Trends|Workload|Detection)Service\b" docs/kb .claude/skills docs/conventions docs/architecture CLAUDE.md src/Services/Fokus/CLAUDE.md` → 0, apart from the two sync services;
-  - `grep -rn "There is no separate Application project\|No separate Application project\|Thin domain" CLAUDE.md docs/architecture docs/conventions src/Services/Fokus/CLAUDE.md` → 0.
+  - `grep -rn "There is no separate Application project\|No separate Application project\|Thin domain" CLAUDE.md docs/architecture docs/conventions src/Services/Fokus/CLAUDE.md` → 0;
+  - `grep -ci "mapster" CLAUDE.md` → 0.
 
 ### Step 13 — The final comparison
 
-- **Run** the harness on the finished tree, and a fresh base capture in the base worktree, on the same UTC date (recorded).
+- **Run** the harness on the finished tree, and a fresh base capture from the `base` extract, on the same UTC date (recorded).
 - **Accept:** the comparison method of Step 2 holds on all three parts (replies, SQL counts, API document), for fixture variants A, B and C. Paste the results into `implementation.md`.
 - **Any difference is a defect to fix, never to accept.** The same method runs at every slice end: after Steps 4, 6, 7 and 10.
-- **Cleanup:** remove the base worktree after (`git worktree remove "D:/temp/f39-golden/base"`).
+- **Cleanup:** remove both extracts after (`rm -rf "/d/temp/f39-golden/base" "/d/temp/f39-golden/pristine"`).
 
 ### Step 14 — Operator check — Owner: operator
 
@@ -383,6 +391,9 @@ Key-file paths and type names only (Step 12): 19 references in 15 files at plan 
 | D9 | The harness uses a synthetic, seeded database | the comparison is the agents' check; the owner supplies nothing (owner, 2026-10-14) | a copy of real data | decided |
 | D10 | Registration methods keep this repo's `AddFokus{Layer}` names | the existing `AddFokusServices`/`AddFokusPersistence` form; the skill's `Add{Layer}Services` would rename both for no gain | rename to `AddApplicationServices` etc. | decided |
 | D11 | `GetDeveloperDetail`'s activity check stays inline | it is an any-sprint check, not the per-sprint `ExcludedDeveloperFilter`, and not provably equal | replace it with the filter | decided |
+| D12 | The base snapshot is a pair of `git archive` extracts (`base`, `pristine`), not a git worktree | the owner's "no git writes" constraint; the extract is byte-identical to the checkout (verified), and the determinism check adds a main-tree capture to prove it behaves the same | `git worktree add`/`remove` (a git write) | decided |
+| D13 | The eight byte-identical 4-field sprint-info records merge into one Domain `SprintRef` (glossary: Sprint Reference) | D6-legal, wire bytes unchanged; `SprintInfo` is taken by the 6-field record until Step 5 | reuse `SprintInfo`; defer to Step 7 | decided |
+| D14 | Analytics area folders and namespaces are `Sprints/` and `Developers/` (plural), in Domain and Application; no area name equals an aggregate type name | `…Analytics.Sprint` hides the `Sprint` aggregate (CS0118, reproduced by the developer); plural matches `Fokus.API/Features/Sprints` and `…/Developers`, and keeps namespaces equal to folders | a per-file alias (a trap for every new file); a namespace that differs from its folder | decided |
 
 ## Open Questions
 
@@ -392,3 +403,5 @@ None.
 
 - **Round 1 (2026-10-14):** Codex primary (NO-GO: 11 HIGH, 9 MEDIUM, 1 LOW) + Sonnet second reader (REVISE: 2 HIGH, 12 MEDIUM, 9 LOW). Merged in `review-critic.md` § Round 1; folded by this rewrite.
 - **Round 2 (2026-10-14):** Codex, a check of the fold only, MEDIUM and up. NO-GO: 22 closed, 4 partial, 1 HIGH + 6 MEDIUM (sync stack traces in replies; sync fixture prerequisites; the SyncSprints reply owning its failure type; helper-family declaration check; three-part comparison method; fixture variants B/C and the grace day; a check after every slice; Bash-safe commands). All folded as `fixed-real`. No CRITICAL, so there is no round 3. Record: `review-critic.md` § Round 2.
+- **Amendment (2026-10-14, developer Phase 1):** questions.md Q1 (Steps 2 and 13 use `git archive` extracts — D12), Q2 (`SprintRef` — D13, Step 4; § Context count corrected to eight) and Q3 (Step 12 rewrites the root `CLAUDE.md` Tech Stack Mapster line; Step 1's Mapster grep covers all four merged skill folders). Out of scope, not added: the Mapster lines in `add-integration-event/workflows/Consumer.md:71` and `create-grpc-contract/workflows/Server.md:39` (skills F39 does not touch) — a separate small fix.
+- **Amendment (2026-10-14, slice 2, Step 5):** questions.md Q4 — the `Sprint`/`Developer` area names clash with the aggregates (CS0118); areas become `Sprints/` and `Developers/` in Domain and Application (D14). Changed: § Domain Model Changes, Steps 5, 6 and 9; the developer applies the local `domain-service` Home-bullet edit in Step 5.
